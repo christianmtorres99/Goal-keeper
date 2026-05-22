@@ -11,11 +11,13 @@ import StatsScreen from '../screens/StatsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import GoalDetailScreen from '../screens/GoalDetailScreen';
 import AddGoalScreen from '../screens/AddGoalScreen';
+import ArchivedGoalsScreen from '../screens/ArchivedGoalsScreen';
 
 export type RootStackParamList = {
   Tabs: undefined;
   GoalDetail: { goalId: string };
   AddGoal: { goalId?: string };
+  ArchivedGoals: undefined;
 };
 
 export type TabParamList = {
@@ -76,6 +78,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="GoalDetail" component={GoalDetailScreen} options={{ title: '' }} />
         <Stack.Screen name="AddGoal" component={AddGoalScreen} options={{ title: 'New Goal' }} />
+        <Stack.Screen name="ArchivedGoals" component={ArchivedGoalsScreen} options={{ title: 'Archived Goals' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

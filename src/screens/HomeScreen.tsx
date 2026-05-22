@@ -1,10 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
@@ -12,7 +14,9 @@ import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
-import { todayString } from '../utils/dateUtils';
+import { sumXP } from '../utils/xpUtils';
+import { todayString, getWeekStart } from '../utils/dateUtils';
+import type { Goal } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { BadgeDefinition } from '../types';
 
@@ -20,34 +24,60 @@ import GoalCard from '../components/goals/GoalCard';
 import XPBar from '../components/common/XPBar';
 import EmptyState from '../components/common/EmptyState';
 import BadgeModal from '../components/common/BadgeModal';
+import LogNoteModal from '../components/common/LogNoteModal';
+import UndoToast from '../components/common/UndoToast';
+import WeeklyReviewScreen from './WeeklyReviewScreen';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const goals = useGoalStore(s => s.goals);
-  const { logs, graceStates, addLog } = useLogStore();
-  const { earnedBadges, checkAndAward } = useBadgeStore();
+  const { reorderGoals, loadGoals } = useGoalStore();
+  const { logs, graceStates, addLog, removeLog, loadLogs } = useLogStore();
+  const { earnedBadges, checkAndAward, loadBadges } = useBadgeStore();
 
   const [pendingBadges, setPendingBadges] = useState<BadgeDefinition[]>([]);
   const [pendingBonusXP, setPendingBonusXP] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const { loadGoals } = useGoalStore();
-  const { loadLogs } = useLogStore();
-  const { loadBadges } = useBadgeStore();
+
+  // Log note modal
+  const [logModalGoalId, setLogModalGoalId] = useState<string | null>(null);
+
+  // Undo toast
+  const [undoVisible, setUndoVisible] = useState(false);
+  const [undoLogId, setUndoLogId] = useState<string | null>(null);
+  const [undoMessage, setUndoMessage] = useState('');
+
+  // Weekly review
+  const [showWeeklyReview, setShowWeeklyReview] = useState(false);
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
+  const hasArchived = useMemo(() => goals.some(g => g.isArchived), [goals]);
 
-  const totalXP = useMemo(() => {
-    return logs.reduce((sum, l) => sum + l.xpAwarded, 0);
-  }, [logs]);
-
+  const totalXP = useMemo(() => sumXP(logs), [logs]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
 
   const todayLogged = useMemo(() => {
     const today = todayString();
     return new Set(logs.filter(l => l.logDate === today).map(l => l.goalId));
   }, [logs]);
+
+  // Check if weekly review should auto-show (Sunday)
+  useEffect(() => {
+    const checkWeeklyReview = async () => {
+      const day = new Date().getDay();
+      if (day !== 0) return; // Only Sunday
+      const lastShown = await AsyncStorage.getItem(WEEKLY_REVIEW_KEY);
+      const thisWeek = getWeekStart(todayString());
+      if (lastShown !== thisWeek) {
+        setShowWeeklyReview(true);
+        await AsyncStorage.setItem(WEEKLY_REVIEW_KEY, thisWeek);
+      }
+    };
+    checkWeeklyReview();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -57,14 +87,27 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, []);
 
-  const handleLog = useCallback(async (goalId: string) => {
+  const handleLogPress = useCallback((goalId: string) => {
+    setLogModalGoalId(goalId);
+  }, []);
+
+  const handleLogConfirm = useCallback(async (note?: string) => {
+    const goalId = logModalGoalId;
+    setLogModalGoalId(null);
+    if (!goalId) return;
+
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const result = await addLog(goalId);
+    const result = await addLog(goalId, note);
     if (!result) return;
+
+    // Undo toast
+    setUndoLogId(result.log.id);
+    setUndoMessage(`Logged "${goals.find(g => g.id === goalId)?.name ?? ''}" +${result.log.xpAwarded + result.bonusXP} XP`);
+    setUndoVisible(true);
 
     const goalLogs = logs.filter(l => l.goalId === goalId);
     const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
-    const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
+    const streakInfo = computeStreakWithGrace([...goalLogs, result.log], grace.graceDayUsed, grace.graceDayRefillDate);
 
     const newBadges = await checkAndAward({
       goalId,
@@ -72,6 +115,7 @@ export default function HomeScreen() {
       totalLogs: goalLogs.length + 1,
       playerLevel: playerStats.level,
       isPerfectWeek: result.events.includes('perfectWeek'),
+      isPerfectMonth: result.events.includes('perfectMonth'),
       isComeback: result.events.includes('comeback'),
       isNewBest: result.events.includes('newBest'),
     });
@@ -80,67 +124,121 @@ export default function HomeScreen() {
       setPendingBadges(newBadges);
       setPendingBonusXP(result.bonusXP);
     }
-  }, [logs, graceStates, playerStats, addLog, checkAndAward]);
+  }, [logModalGoalId, logs, graceStates, playerStats, addLog, checkAndAward, goals]);
+
+  const handleUndo = useCallback(async () => {
+    if (undoLogId) {
+      await removeLog(undoLogId);
+      setUndoLogId(null);
+    }
+  }, [undoLogId, removeLog]);
+
+  const handleDragEnd = useCallback(({ data }: { data: Goal[] }) => {
+    reorderGoals(data.map(g => g.id));
+  }, [reorderGoals]);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+  const logModalGoal = logModalGoalId ? goals.find(g => g.id === logModalGoalId) : null;
+  const logModalStreakInfo = logModalGoalId
+    ? (() => {
+        const gl = logs.filter(l => l.goalId === logModalGoalId);
+        const grace = graceStates[logModalGoalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
+        return computeStreakWithGrace(gl, grace.graceDayUsed, grace.graceDayRefillDate);
+      })()
+    : null;
+
+  const renderItem = useCallback(({ item: goal, drag, isActive }: RenderItemParams<Goal>) => {
+    const goalLogs = logs.filter(l => l.goalId === goal.id);
+    const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+    const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
+
+    return (
+      <ScaleDecorator>
+        <GoalCard
+          goal={goal}
+          logs={goalLogs}
+          streakInfo={streakInfo}
+          onPress={() => navigation.navigate('GoalDetail', { goalId: goal.id })}
+          onLog={() => handleLogPress(goal.id)}
+          isDragging={isActive}
+          dragHandle={
+            <TouchableOpacity onLongPress={drag} delayLongPress={200} hitSlop={8}>
+              <Ionicons name="reorder-two" size={20} color={Colors.textDisabled} />
+            </TouchableOpacity>
+          }
+        />
+      </ScaleDecorator>
+    );
+  }, [logs, graceStates, navigation, handleLogPress]);
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView
-        style={styles.scroll}
+      <DraggableFlatList
+        data={activeGoals}
+        keyExtractor={g => g.id}
+        onDragEnd={handleDragEnd}
+        renderItem={renderItem}
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Goal Keeper</Text>
-            <Text style={styles.date}>{today}</Text>
+        ListHeaderComponent={
+          <View style={styles.headerSection}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.greeting}>Goal Keeper</Text>
+                <Text style={styles.date}>{today}</Text>
+              </View>
+              <View style={styles.headerActions}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
+                  <Ionicons name="stats-chart" size={20} color={Colors.textSecondary} />
+                </TouchableOpacity>
+                {hasArchived && (
+                  <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('ArchivedGoals')}>
+                    <Ionicons name="archive-outline" size={20} color={Colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddGoal', {})}>
+                  <Ionicons name="add" size={24} color={Colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Global XP */}
+            <View style={styles.xpCard}>
+              <XPBar stats={playerStats} />
+              <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
+            </View>
+
+            <Text style={styles.sectionLabel}>
+              Today — {todayLogged.size}/{activeGoals.length} logged
+            </Text>
           </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddGoal', {})}>
-            <Ionicons name="add" size={24} color={Colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
+        }
+        ListEmptyComponent={
+          <EmptyState icon="flag-outline" title="No goals yet" subtitle="Tap + to add your first goal" />
+        }
+        ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
+      />
 
-        {/* Global XP */}
-        <View style={styles.xpCard}>
-          <XPBar stats={playerStats} />
-          <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
-        </View>
+      {/* Modals & toasts */}
+      {logModalGoal && logModalStreakInfo && (
+        <LogNoteModal
+          visible={!!logModalGoalId}
+          goalName={logModalGoal.name}
+          goalColor={logModalGoal.color}
+          currentStreak={logModalStreakInfo.currentStreak}
+          onConfirm={handleLogConfirm}
+          onCancel={() => setLogModalGoalId(null)}
+        />
+      )}
 
-        {/* Today's progress */}
-        <Text style={styles.sectionLabel}>
-          Today — {todayLogged.size}/{activeGoals.length} logged
-        </Text>
-
-        {activeGoals.length === 0 ? (
-          <EmptyState
-            icon="flag-outline"
-            title="No goals yet"
-            subtitle="Tap + to add your first goal"
-          />
-        ) : (
-          <View style={styles.goalList}>
-            {activeGoals.map(goal => {
-              const goalLogs = logs.filter(l => l.goalId === goal.id);
-              const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
-              const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
-              const goalXP = goalLogs.reduce((sum, l) => sum + l.xpAwarded, 0);
-              return (
-                <GoalCard
-                  key={goal.id}
-                  goal={goal}
-                  logs={goalLogs}
-                  streakInfo={streakInfo}
-                  totalXP={goalXP}
-                  onPress={() => navigation.navigate('GoalDetail', { goalId: goal.id })}
-                  onLog={() => handleLog(goal.id)}
-                />
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+      <UndoToast
+        visible={undoVisible}
+        message={undoMessage}
+        onUndo={handleUndo}
+        onDismiss={() => setUndoVisible(false)}
+      />
 
       <BadgeModal
         badges={pendingBadges}
@@ -148,20 +246,25 @@ export default function HomeScreen() {
         visible={pendingBadges.length > 0 || pendingBonusXP > 0}
         onClose={() => { setPendingBadges([]); setPendingBonusXP(0); }}
       />
+
+      <Modal visible={showWeeklyReview} animationType="slide" onRequestClose={() => setShowWeeklyReview(false)}>
+        <WeeklyReviewScreen onClose={() => setShowWeeklyReview(false)} />
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg0 },
-  scroll: { flex: 1 },
-  content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
+  content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
+  headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   greeting: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
   date: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  iconBtn: { padding: Spacing.sm },
   addBtn: { backgroundColor: Colors.accent, borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   xpCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   xpCaption: { color: Colors.textDisabled, fontSize: FontSize.xs },
   sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  goalList: { gap: Spacing.sm },
 });

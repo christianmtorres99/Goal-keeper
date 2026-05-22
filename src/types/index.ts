@@ -1,4 +1,5 @@
 export type GoalType = 'habit' | 'milestone';
+export type GoalCategory = 'creative' | 'physical' | 'learning' | 'wellness' | 'other';
 
 export interface Goal {
   id: string;
@@ -11,6 +12,12 @@ export interface Goal {
   isArchived: boolean;
   targetCount?: number;
   unit?: string;
+  sortOrder: number;
+  category: GoalCategory;
+  notificationTime?: string;   // "HH:MM"
+  notificationId?: string;
+  completedAt?: string;
+  cycleCount: number;
 }
 
 export interface Log {
@@ -20,6 +27,7 @@ export interface Log {
   note?: string;
   createdAt: string;
   xpAwarded: number;
+  bonusXp: number;
 }
 
 export interface StreakInfo {
@@ -30,7 +38,7 @@ export interface StreakInfo {
   graceDayRefillDate: string | null;
 }
 
-export type BadgeCategory = 'streak' | 'logs' | 'level' | 'consistency';
+export type BadgeCategory = 'streak' | 'logs' | 'level' | 'consistency' | 'cycle';
 
 export interface BadgeDefinition {
   id: string;
@@ -60,3 +68,10 @@ export interface PlayerStats {
   xpForNextLevel: number;
   progressPercent: number;
 }
+
+export type LogEvent =
+  | 'firstLog'
+  | 'perfectWeek'
+  | 'perfectMonth'
+  | 'comeback'
+  | 'newBest';

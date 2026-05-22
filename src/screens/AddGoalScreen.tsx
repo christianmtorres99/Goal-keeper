@@ -6,6 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
+import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
+import { requestNotificationPermissions, scheduleGoalReminder, cancelGoalReminder } from '../utils/notifications';
+import type { GoalCategory } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Route = RouteProp<RootStackParamList, 'AddGoal'>;
@@ -23,6 +26,8 @@ const COLORS = [
   '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899',
 ];
 
+const CATEGORIES: GoalCategory[] = ['creative', 'physical', 'learning', 'wellness', 'other'];
+
 export default function AddGoalScreen() {
   const navigation = useNavigation();
   const route = useRoute<Route>();
@@ -37,6 +42,9 @@ export default function AddGoalScreen() {
   const [unit, setUnit] = useState(existing?.unit ?? '');
   const [selectedIcon, setSelectedIcon] = useState(existing?.icon ?? 'flag');
   const [selectedColor, setSelectedColor] = useState(existing?.color ?? COLORS[0]);
+  const [category, setCategory] = useState<GoalCategory>(existing?.category ?? 'other');
+  const [reminderEnabled, setReminderEnabled] = useState(!!existing?.notificationTime);
+  const [reminderTime, setReminderTime] = useState(existing?.notificationTime ?? '09:00');
 
   useEffect(() => {
     navigation.setOptions({ title: editingId ? 'Edit Goal' : 'New Goal' });
@@ -48,8 +56,23 @@ export default function AddGoalScreen() {
       return;
     }
     if (isMilestone && (!targetCount || parseInt(targetCount) <= 0)) {
-      Alert.alert('Required', 'Please enter a valid target count for your milestone.');
+      Alert.alert('Required', 'Please enter a valid target count.');
       return;
+    }
+
+    let notificationId = existing?.notificationId;
+
+    if (reminderEnabled) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        Alert.alert('Permission denied', 'Enable notifications in Settings to use reminders.');
+        return;
+      }
+      if (notificationId) await cancelGoalReminder(notificationId).catch(() => {});
+      notificationId = await scheduleGoalReminder('temp', reminderTime, name.trim());
+    } else if (notificationId) {
+      await cancelGoalReminder(notificationId).catch(() => {});
+      notificationId = undefined;
     }
 
     const data = {
@@ -58,14 +81,23 @@ export default function AddGoalScreen() {
       type: isMilestone ? 'milestone' as const : 'habit' as const,
       color: selectedColor,
       icon: selectedIcon,
+      category,
       targetCount: isMilestone ? parseInt(targetCount) : undefined,
       unit: isMilestone ? unit.trim() || undefined : undefined,
+      notificationTime: reminderEnabled ? reminderTime : undefined,
+      notificationId,
     };
 
     if (editingId) {
       await updateGoal(editingId, data);
     } else {
-      await addGoal(data);
+      const newGoal = await addGoal(data);
+      // Fix: update notification with real goal id
+      if (notificationId && reminderEnabled) {
+        await cancelGoalReminder(notificationId).catch(() => {});
+        const realId = await scheduleGoalReminder(newGoal.id, reminderTime, name.trim());
+        await updateGoal(newGoal.id, { notificationId: realId });
+      }
     }
     navigation.goBack();
   };
@@ -100,63 +132,74 @@ export default function AddGoalScreen() {
             <Text style={styles.label}>Type</Text>
             <Text style={styles.sublabel}>{isMilestone ? 'Milestone — reach a target' : 'Habit — daily check-in'}</Text>
           </View>
-          <Switch
-            value={isMilestone}
-            onValueChange={setIsMilestone}
-            trackColor={{ true: Colors.accent, false: Colors.bg3 }}
-            thumbColor={Colors.textPrimary}
-          />
+          <Switch value={isMilestone} onValueChange={setIsMilestone} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
         </View>
 
         {isMilestone && (
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={styles.label}>Target Count</Text>
-              <TextInput
-                style={[styles.input, { marginTop: 4 }]}
-                value={targetCount}
-                onChangeText={setTargetCount}
-                placeholder="10"
-                placeholderTextColor={Colors.textDisabled}
-                keyboardType="number-pad"
-              />
+              <TextInput style={[styles.input, { marginTop: 4 }]} value={targetCount} onChangeText={setTargetCount} placeholder="10" placeholderTextColor={Colors.textDisabled} keyboardType="number-pad" />
             </View>
             <View style={[styles.flex1, { marginLeft: Spacing.md }]}>
               <Text style={styles.label}>Unit (optional)</Text>
-              <TextInput
-                style={[styles.input, { marginTop: 4 }]}
-                value={unit}
-                onChangeText={setUnit}
-                placeholder="songs, pages..."
-                placeholderTextColor={Colors.textDisabled}
-              />
+              <TextInput style={[styles.input, { marginTop: 4 }]} value={unit} onChangeText={setUnit} placeholder="songs, pages..." placeholderTextColor={Colors.textDisabled} />
             </View>
           </View>
         )}
 
+        <Text style={styles.label}>Category</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
+          {CATEGORIES.map(cat => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.categoryBtn, category === cat && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+              onPress={() => setCategory(cat)}
+            >
+              <Ionicons name={CATEGORY_ICONS[cat] as any} size={16} color={category === cat ? selectedColor : Colors.textSecondary} />
+              <Text style={[styles.categoryText, category === cat && { color: selectedColor }]}>{CATEGORY_LABELS[cat]}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         <Text style={styles.label}>Color</Text>
         <View style={styles.colorRow}>
           {COLORS.map(color => (
-            <TouchableOpacity
-              key={color}
-              style={[styles.colorSwatch, { backgroundColor: color }, selectedColor === color && styles.swatchSelected]}
-              onPress={() => setSelectedColor(color)}
-            />
+            <TouchableOpacity key={color} style={[styles.colorSwatch, { backgroundColor: color }, selectedColor === color && styles.swatchSelected]} onPress={() => setSelectedColor(color)} />
           ))}
         </View>
 
         <Text style={styles.label}>Icon</Text>
         <View style={styles.iconGrid}>
           {ICONS.map(icon => (
-            <TouchableOpacity
-              key={icon}
-              style={[styles.iconBtn, selectedIcon === icon && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
-              onPress={() => setSelectedIcon(icon)}
-            >
+            <TouchableOpacity key={icon} style={[styles.iconBtn, selectedIcon === icon && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]} onPress={() => setSelectedIcon(icon)}>
               <Ionicons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : Colors.textSecondary} />
             </TouchableOpacity>
           ))}
         </View>
+
+        <View style={styles.row}>
+          <View style={styles.flex1}>
+            <Text style={styles.label}>Daily Reminder</Text>
+            <Text style={styles.sublabel}>{reminderEnabled ? `Notify at ${reminderTime}` : 'No reminder'}</Text>
+          </View>
+          <Switch value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
+        </View>
+
+        {reminderEnabled && (
+          <View>
+            <Text style={styles.label}>Reminder Time (HH:MM)</Text>
+            <TextInput
+              style={styles.input}
+              value={reminderTime}
+              onChangeText={t => setReminderTime(t)}
+              placeholder="09:00"
+              placeholderTextColor={Colors.textDisabled}
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+            />
+          </View>
+        )}
 
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
           <Text style={styles.saveBtnText}>{editingId ? 'Save Changes' : 'Create Goal'}</Text>
@@ -173,18 +216,13 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   label: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   sublabel: { color: Colors.textDisabled, fontSize: FontSize.sm, marginTop: 2 },
-  input: {
-    backgroundColor: Colors.bg2,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    color: Colors.textPrimary,
-    fontSize: FontSize.md,
-    padding: Spacing.md,
-  },
+  input: { backgroundColor: Colors.bg2, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, color: Colors.textPrimary, fontSize: FontSize.md, padding: Spacing.md },
   multiline: { height: 80, textAlignVertical: 'top' },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   flex1: { flex: 1 },
+  categoryRow: { flexGrow: 0 },
+  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border, marginRight: Spacing.sm },
+  categoryText: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   colorSwatch: { width: 36, height: 36, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.15 }] },

@@ -5,6 +5,7 @@ import {
   CREATE_GRACE_DAYS,
   CREATE_LOGS,
   CREATE_LOGS_UNIQUE_INDEX,
+  MIGRATIONS_V2,
 } from './schema';
 
 let _db: SQLite.SQLiteDatabase | null = null;
@@ -24,4 +25,13 @@ export async function runMigrations(): Promise<void> {
   await db.execAsync(CREATE_LOGS_UNIQUE_INDEX);
   await db.execAsync(CREATE_EARNED_BADGES);
   await db.execAsync(CREATE_GRACE_DAYS);
+
+  // V2 column additions — each wrapped in try/catch so existing installs skip silently
+  for (const sql of MIGRATIONS_V2) {
+    try {
+      await db.execAsync(sql);
+    } catch {
+      // Column already exists — safe to ignore
+    }
+  }
 }

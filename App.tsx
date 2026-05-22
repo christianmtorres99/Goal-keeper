@@ -7,6 +7,7 @@ import { runMigrations } from './src/db/client';
 import { useGoalStore } from './src/store/goalStore';
 import { useLogStore } from './src/store/logStore';
 import { useBadgeStore } from './src/store/badgeStore';
+import { setupNotificationHandler } from './src/utils/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import { Colors } from './src/constants/theme';
 
@@ -17,6 +18,7 @@ export default function App() {
   useEffect(() => {
     async function bootstrap() {
       try {
+        setupNotificationHandler();
         await runMigrations();
         await useGoalStore.getState().loadGoals();
         await useLogStore.getState().loadLogs();

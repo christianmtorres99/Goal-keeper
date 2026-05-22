@@ -1,10 +1,11 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Dimensions } from 'react-native';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
@@ -13,6 +14,9 @@ import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
+import { sumXP } from '../utils/xpUtils';
+import { makeChartConfig } from '../utils/colorUtils';
+import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { todayString, addDays, formatShortDate } from '../utils/dateUtils';
@@ -20,21 +24,13 @@ import { todayString, addDays, formatShortDate } from '../utils/dateUtils';
 import XPBar from '../components/common/XPBar';
 import BadgeItem from '../components/common/BadgeItem';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
+import MilestoneCompleteModal from '../components/common/MilestoneCompleteModal';
+import ShareCard from '../components/common/ShareCard';
 
 type Route = RouteProp<RootStackParamList, 'GoalDetail'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const W = Dimensions.get('window').width - Spacing.md * 2;
-
-const chartConfig = {
-  backgroundGradientFrom: Colors.bg1,
-  backgroundGradientTo: Colors.bg1,
-  color: (opacity = 1) => `rgba(155, 127, 212, ${opacity})`,
-  labelColor: () => Colors.textSecondary,
-  decimalPlaces: 0,
-  propsForBackgroundLines: { strokeDasharray: '', stroke: Colors.bg3 },
-  barPercentage: 0.6,
-};
 
 export default function GoalDetailScreen() {
   const navigation = useNavigation<Nav>();
@@ -42,18 +38,35 @@ export default function GoalDetailScreen() {
   const { goalId } = route.params;
 
   const goal = useGoalStore(s => s.goals.find(g => g.id === goalId));
-  const archiveGoal = useGoalStore(s => s.archiveGoal);
-  const deleteGoal = useGoalStore(s => s.deleteGoal);
-  const { logs, graceStates } = useLogStore();
+  const { archiveGoal, deleteGoal, updateGoal, resetMilestoneLogs } = useGoalStore();
+  const { logs, graceStates, removeLog, loadLogs } = useLogStore();
   const { earnedBadges } = useBadgeStore();
+
+  const shareCardRef = useRef<View>(null);
+  const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
 
   const goalLogs = useMemo(() => logs.filter(l => l.goalId === goalId), [logs, goalId]);
   const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
   const streakInfo = useMemo(() => computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate), [goalLogs, grace]);
-  const totalXP = useMemo(() => goalLogs.reduce((s, l) => s + l.xpAwarded, 0), [goalLogs]);
+  const totalXP = useMemo(() => sumXP(goalLogs), [goalLogs]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
 
-  // Weekly bar chart data — last 8 weeks
+  // Detect milestone completion
+  const isMilestoneComplete = !!(
+    goal?.type === 'milestone' &&
+    goal.targetCount &&
+    goalLogs.length >= goal.targetCount &&
+    !goal.completedAt
+  );
+
+  // Auto-show milestone modal on first completion detection
+  React.useEffect(() => {
+    if (isMilestoneComplete) {
+      updateGoal(goalId, { completedAt: todayString() });
+      setMilestoneModalVisible(true);
+    }
+  }, [isMilestoneComplete]);
+
   const weeklyData = useMemo(() => {
     const today = todayString();
     const labels: string[] = [];
@@ -75,19 +88,45 @@ export default function GoalDetailScreen() {
     return { earned, earnedAt };
   }, [earnedBadges, goalId]);
 
-  const relevantBadges = BADGE_DEFINITIONS.filter(b => b.category === 'streak' || b.category === 'logs');
+  const earnedBadgeCount = useMemo(() =>
+    earnedBadges.filter(b => b.goalId === goalId).length,
+    [earnedBadges, goalId]
+  );
+
+  const relevantBadges = BADGE_DEFINITIONS.filter(b => b.category === 'streak' || b.category === 'logs' || b.category === 'cycle');
 
   const handleDelete = useCallback(() => {
     Alert.alert('Delete Goal', 'This will permanently delete this goal and all its logs. This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          await deleteGoal(goalId);
-          navigation.goBack();
-        }
-      }
+      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteGoal(goalId); navigation.goBack(); } },
     ]);
   }, [goalId, deleteGoal, navigation]);
+
+  const handleDeleteLog = useCallback((logId: string) => {
+    Alert.alert('Delete Log', 'Remove this log entry?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => removeLog(logId) },
+    ]);
+  }, [removeLog]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await shareViewAsImage(shareCardRef);
+    } catch (e) {
+      Alert.alert('Share failed', 'Could not share at this time.');
+    }
+  }, []);
+
+  const handleMilestoneRestart = useCallback(async (newTarget: number) => {
+    setMilestoneModalVisible(false);
+    await resetMilestoneLogs(goalId);
+    await updateGoal(goalId, {
+      targetCount: newTarget,
+      completedAt: undefined,
+      cycleCount: (goal?.cycleCount ?? 0) + 1,
+    });
+    await loadLogs();
+  }, [goalId, goal, resetMilestoneLogs, updateGoal, loadLogs]);
 
   if (!goal) return null;
 
@@ -95,8 +134,21 @@ export default function GoalDetailScreen() {
     ? Math.min(goalLogs.length / goal.targetCount * 100, 100)
     : null;
 
+  const chartConfig = makeChartConfig(goal.color, Colors.bg1);
+
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Hidden ShareCard for image capture */}
+      <View style={styles.offscreen}>
+        <ShareCard
+          ref={shareCardRef}
+          goal={goal}
+          streakInfo={streakInfo}
+          stats={playerStats}
+          earnedBadgeCount={earnedBadgeCount}
+        />
+      </View>
+
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Goal header */}
@@ -108,22 +160,32 @@ export default function GoalDetailScreen() {
             <View style={styles.heroText}>
               <Text style={styles.goalName}>{goal.name}</Text>
               {goal.description ? <Text style={styles.goalDesc}>{goal.description}</Text> : null}
-              <View style={[styles.typeBadge, { backgroundColor: goal.color + '22' }]}>
-                <Text style={[styles.typeText, { color: goal.color }]}>
-                  {goal.type === 'habit' ? 'Daily Habit' : 'Milestone'}
-                </Text>
+              <View style={styles.tagRow}>
+                <View style={[styles.typeBadge, { backgroundColor: goal.color + '22' }]}>
+                  <Text style={[styles.typeText, { color: goal.color }]}>
+                    {goal.type === 'habit' ? 'Daily Habit' : 'Milestone'}
+                  </Text>
+                </View>
+                <View style={[styles.typeBadge, { backgroundColor: Colors.bg3 }]}>
+                  <Ionicons name={require('../utils/categoryXP').CATEGORY_ICONS[goal.category] as any} size={10} color={Colors.textSecondary} />
+                  <Text style={styles.categoryText}>{goal.category}</Text>
+                </View>
               </View>
             </View>
-            <TouchableOpacity onPress={() => navigation.navigate('AddGoal', { goalId })}>
-              <Ionicons name="create-outline" size={22} color={Colors.textSecondary} />
-            </TouchableOpacity>
+            <View style={styles.heroActions}>
+              <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
+                <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('AddGoal', { goalId })} style={styles.headerBtn}>
+                <Ionicons name="create-outline" size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Milestone progress */}
           {progressPercent !== null && (
             <View style={styles.milestoneSection}>
               <View style={styles.milestoneHeader}>
-                <Text style={styles.milestoneLabel}>Progress</Text>
+                <Text style={styles.milestoneLabel}>Progress{goal.cycleCount > 0 ? ` · Cycle ${goal.cycleCount + 1}` : ''}</Text>
                 <Text style={styles.milestoneValue}>{goalLogs.length} / {goal.targetCount} {goal.unit ?? ''}</Text>
               </View>
               <View style={styles.milestoneTrack}>
@@ -135,7 +197,7 @@ export default function GoalDetailScreen() {
           <XPBar stats={playerStats} />
         </View>
 
-        {/* Stats row */}
+        {/* Stats */}
         <View style={styles.statRow}>
           {[
             { label: 'Streak', value: `${streakInfo.currentStreak}d` },
@@ -150,7 +212,6 @@ export default function GoalDetailScreen() {
           ))}
         </View>
 
-        {/* Grace day indicator */}
         {grace.graceDayUsed && (
           <View style={styles.graceCard}>
             <Ionicons name="shield-checkmark" size={16} color={Colors.warning} />
@@ -165,7 +226,7 @@ export default function GoalDetailScreen() {
             data={weeklyData}
             width={W - Spacing.md * 2}
             height={160}
-            chartConfig={{ ...chartConfig, color: (o = 1) => goal.color + Math.round(o * 255).toString(16).padStart(2,'0') }}
+            chartConfig={chartConfig}
             style={styles.chart}
             fromZero
             showValuesOnTopOfBars
@@ -193,19 +254,28 @@ export default function GoalDetailScreen() {
           ))}
         </View>
 
-        {/* Recent logs */}
+        {/* Log history — swipe to delete */}
         <Text style={styles.sectionLabel}>Recent Logs</Text>
-        {goalLogs.length === 0 ? (
-          <Text style={styles.noLogs}>No logs yet — start logging today!</Text>
-        ) : (
-          [...goalLogs].reverse().slice(0, 20).map(log => (
-            <View key={log.id} style={styles.logRow}>
-              <Text style={styles.logDate}>{formatShortDate(log.logDate)}</Text>
-              <Text style={styles.logXP}>+{log.xpAwarded} XP</Text>
-              {log.note ? <Text style={styles.logNote}>{log.note}</Text> : null}
-            </View>
+        {goalLogs.length === 0
+          ? <Text style={styles.noLogs}>No logs yet — start logging today!</Text>
+          : [...goalLogs].reverse().slice(0, 30).map(log => (
+            <Swipeable
+              key={log.id}
+              renderRightActions={() => (
+                <TouchableOpacity style={styles.deleteAction} onPress={() => handleDeleteLog(log.id)}>
+                  <Ionicons name="trash" size={18} color="#fff" />
+                </TouchableOpacity>
+              )}
+            >
+              <View style={styles.logRow}>
+                <Text style={styles.logDate}>{formatShortDate(log.logDate)}</Text>
+                <Text style={styles.logXP}>+{log.xpAwarded + log.bonusXp} XP</Text>
+                {log.bonusXp > 0 && <Text style={styles.logBonus}>+{log.bonusXp} bonus</Text>}
+                {log.note ? <Text style={styles.logNote} numberOfLines={1}>{log.note}</Text> : null}
+              </View>
+            </Swipeable>
           ))
-        )}
+        }
 
         {/* Danger zone */}
         <View style={styles.dangerZone}>
@@ -220,12 +290,24 @@ export default function GoalDetailScreen() {
         </View>
 
       </ScrollView>
+
+      <MilestoneCompleteModal
+        visible={milestoneModalVisible}
+        goalName={goal.name}
+        goalColor={goal.color}
+        totalLogs={goalLogs.length}
+        currentTarget={goal.targetCount ?? 10}
+        cycleCount={goal.cycleCount}
+        onRestart={handleMilestoneRestart}
+        onArchive={() => { setMilestoneModalVisible(false); archiveGoal(goalId); navigation.goBack(); }}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg0 },
+  offscreen: { position: 'absolute', top: -9999, left: -9999 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   heroCard: { backgroundColor: Colors.bg1, borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
@@ -233,8 +315,12 @@ const styles = StyleSheet.create({
   heroText: { flex: 1, gap: 4 },
   goalName: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },
   goalDesc: { color: Colors.textSecondary, fontSize: FontSize.sm },
-  typeBadge: { alignSelf: 'flex-start', borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  tagRow: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
+  typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-start', borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   typeText: { fontSize: FontSize.xs, fontWeight: '700' },
+  categoryText: { color: Colors.textSecondary, fontSize: FontSize.xs, textTransform: 'capitalize' },
+  heroActions: { flexDirection: 'row', gap: Spacing.xs },
+  headerBtn: { padding: 4 },
   milestoneSection: { gap: Spacing.xs },
   milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   milestoneLabel: { color: Colors.textSecondary, fontSize: FontSize.sm },
@@ -252,10 +338,12 @@ const styles = StyleSheet.create({
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   noLogs: { color: Colors.textDisabled, fontStyle: 'italic' },
-  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.xs, borderBottomWidth: 1, borderBottomColor: Colors.bg3 },
+  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.bg3, backgroundColor: Colors.bg0 },
   logDate: { color: Colors.textSecondary, fontSize: FontSize.sm, width: 70 },
   logXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
+  logBonus: { color: Colors.success, fontSize: FontSize.xs },
   logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, flex: 1 },
+  deleteAction: { backgroundColor: Colors.danger, justifyContent: 'center', alignItems: 'center', width: 64, borderRadius: Radius.sm, marginVertical: 1 },
   dangerZone: { gap: Spacing.sm, marginTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Colors.bg3, paddingTop: Spacing.lg },
   archiveBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warning + '55' },
   archiveBtnText: { color: Colors.warning, fontSize: FontSize.md },

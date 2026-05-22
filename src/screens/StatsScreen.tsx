@@ -3,14 +3,18 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
+import { sumXP } from '../utils/xpUtils';
+import { getCategoryStats, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
 import { todayString, addDays } from '../utils/dateUtils';
+import type { GoalCategory } from '../types';
 
 const W = Dimensions.get('window').width - Spacing.md * 2;
 
@@ -25,19 +29,36 @@ const chartConfig = {
   decimalPlaces: 0,
 };
 
+type FilterMode = 'all' | 'goal' | 'category';
+
 export default function StatsScreen() {
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
-  const [selectedGoalId, setSelectedGoalId] = useState<string | 'all'>('all');
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [selectedGoalId, setSelectedGoalId] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<GoalCategory>('other');
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
+  const categoryStats = useMemo(() => getCategoryStats(goals, logs), [goals, logs]);
+  const activeCategories = useMemo(
+    () => Object.keys(categoryStats) as GoalCategory[],
+    [categoryStats]
+  );
 
   const filteredLogs = useMemo(() => {
-    if (selectedGoalId === 'all') return logs;
-    return logs.filter(l => l.goalId === selectedGoalId);
-  }, [logs, selectedGoalId]);
+    if (filterMode === 'goal' && selectedGoalId) {
+      return logs.filter(l => l.goalId === selectedGoalId);
+    }
+    if (filterMode === 'category') {
+      const catGoalIds = new Set(
+        activeGoals.filter(g => g.category === selectedCategory).map(g => g.id)
+      );
+      return logs.filter(l => catGoalIds.has(l.goalId));
+    }
+    return logs;
+  }, [logs, filterMode, selectedGoalId, selectedCategory, activeGoals]);
 
-  const totalXP = useMemo(() => logs.reduce((s, l) => s + l.xpAwarded, 0), [logs]);
+  const totalXP = useMemo(() => sumXP(logs), [logs]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
 
   // Weekly summary — last 8 weeks
@@ -63,7 +84,7 @@ export default function StatsScreen() {
     let cumXP = 0;
     for (let i = 29; i >= 0; i--) {
       const d = addDays(today, -i);
-      const dayXP = filteredLogs.filter(l => l.logDate === d).reduce((s, l) => s + l.xpAwarded, 0);
+      const dayXP = filteredLogs.filter(l => l.logDate === d).reduce((s, l) => s + l.xpAwarded + l.bonusXp, 0);
       cumXP += dayXP;
       if (i % 6 === 0) labels.push(d.slice(5));
       else labels.push('');
@@ -74,8 +95,22 @@ export default function StatsScreen() {
 
   const totalLogs = filteredLogs.length;
 
-  const selectedGoal = selectedGoalId !== 'all' ? goals.find(g => g.id === selectedGoalId) : undefined;
+  const selectedGoal = filterMode === 'goal' ? goals.find(g => g.id === selectedGoalId) : undefined;
   const heatColor = selectedGoal?.color ?? Colors.accent;
+
+  const selectGoal = (id: string) => {
+    setSelectedGoalId(id);
+    setFilterMode('goal');
+  };
+
+  const selectCategory = (cat: GoalCategory) => {
+    setSelectedCategory(cat);
+    setFilterMode('category');
+  };
+
+  const selectAll = () => {
+    setFilterMode('all');
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -97,24 +132,62 @@ export default function StatsScreen() {
           ))}
         </View>
 
-        {/* Goal filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-          <TouchableOpacity
-            style={[styles.filterBtn, selectedGoalId === 'all' && styles.filterBtnActive]}
-            onPress={() => setSelectedGoalId('all')}
-          >
-            <Text style={[styles.filterText, selectedGoalId === 'all' && styles.filterTextActive]}>All</Text>
-          </TouchableOpacity>
-          {activeGoals.map(g => (
+        {/* Filter tabs */}
+        <View style={styles.filterSection}>
+          <Text style={styles.sectionLabel}>Filter by Goal</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
             <TouchableOpacity
-              key={g.id}
-              style={[styles.filterBtn, selectedGoalId === g.id && { backgroundColor: g.color + '33', borderColor: g.color }]}
-              onPress={() => setSelectedGoalId(g.id)}
+              style={[styles.filterBtn, filterMode === 'all' && styles.filterBtnActive]}
+              onPress={selectAll}
             >
-              <Text style={[styles.filterText, selectedGoalId === g.id && { color: g.color }]}>{g.name}</Text>
+              <Text style={[styles.filterText, filterMode === 'all' && styles.filterTextActive]}>All</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+            {activeGoals.map(g => (
+              <TouchableOpacity
+                key={g.id}
+                style={[
+                  styles.filterBtn,
+                  filterMode === 'goal' && selectedGoalId === g.id && { backgroundColor: g.color + '33', borderColor: g.color },
+                ]}
+                onPress={() => selectGoal(g.id)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  filterMode === 'goal' && selectedGoalId === g.id && { color: g.color },
+                ]}>{g.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {activeCategories.length > 0 && (
+            <>
+              <Text style={[styles.sectionLabel, { marginTop: Spacing.sm }]}>Filter by Category</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+                {activeCategories.map(cat => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[
+                      styles.filterBtn,
+                      styles.categoryFilterBtn,
+                      filterMode === 'category' && selectedCategory === cat && styles.categoryFilterBtnActive,
+                    ]}
+                    onPress={() => selectCategory(cat)}
+                  >
+                    <Ionicons
+                      name={CATEGORY_ICONS[cat] as any}
+                      size={13}
+                      color={filterMode === 'category' && selectedCategory === cat ? Colors.accentBright : Colors.textSecondary}
+                    />
+                    <Text style={[
+                      styles.filterText,
+                      filterMode === 'category' && selectedCategory === cat && styles.filterTextActive,
+                    ]}>{CATEGORY_LABELS[cat]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          )}
+        </View>
 
         {/* Weekly logs bar chart */}
         <Text style={styles.sectionLabel}>Weekly Activity</Text>
@@ -158,26 +231,34 @@ export default function StatsScreen() {
 
         {/* Per-goal streaks */}
         <Text style={styles.sectionLabel}>Current Streaks</Text>
-        {activeGoals.map(goal => {
-          const goalLogs = logs.filter(l => l.goalId === goal.id);
-          const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
-          const { currentStreak, longestStreak } = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
-          return (
-            <View key={goal.id} style={[styles.streakCard, { borderLeftColor: goal.color }]}>
-              <Text style={styles.streakGoalName}>{goal.name}</Text>
-              <View style={styles.streakNums}>
-                <View style={styles.streakNum}>
-                  <Text style={[styles.streakValue, { color: goal.color }]}>{currentStreak}</Text>
-                  <Text style={styles.streakLabel}>current</Text>
-                </View>
-                <View style={styles.streakNum}>
-                  <Text style={styles.streakValue}>{longestStreak}</Text>
-                  <Text style={styles.streakLabel}>best</Text>
+        {activeGoals
+          .filter(goal =>
+            filterMode === 'category'
+              ? goal.category === selectedCategory
+              : filterMode === 'goal'
+              ? goal.id === selectedGoalId
+              : true
+          )
+          .map(goal => {
+            const goalLogs = logs.filter(l => l.goalId === goal.id);
+            const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+            const { currentStreak, longestStreak } = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
+            return (
+              <View key={goal.id} style={[styles.streakCard, { borderLeftColor: goal.color }]}>
+                <Text style={styles.streakGoalName}>{goal.name}</Text>
+                <View style={styles.streakNums}>
+                  <View style={styles.streakNum}>
+                    <Text style={[styles.streakValue, { color: goal.color }]}>{currentStreak}</Text>
+                    <Text style={styles.streakLabel}>current</Text>
+                  </View>
+                  <View style={styles.streakNum}>
+                    <Text style={styles.streakValue}>{longestStreak}</Text>
+                    <Text style={styles.streakLabel}>best</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -191,9 +272,12 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
   statValue: { color: Colors.accentBright, fontSize: FontSize.xl, fontWeight: '700' },
   statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  filterSection: { gap: Spacing.xs },
   filterRow: { flexGrow: 0 },
   filterBtn: { borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border, marginRight: Spacing.xs },
   filterBtnActive: { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
+  categoryFilterBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  categoryFilterBtnActive: { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
   filterText: { color: Colors.textSecondary, fontSize: FontSize.sm },
   filterTextActive: { color: Colors.accentBright },
   sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },

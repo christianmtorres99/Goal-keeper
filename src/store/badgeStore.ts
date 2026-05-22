@@ -15,6 +15,7 @@ interface BadgeStore {
     currentStreak: number;
     totalLogs: number;
     playerLevel: number;
+    cycleCount?: number;
     isPerfectWeek?: boolean;
     isPerfectMonth?: boolean;
     isComeback?: boolean;
@@ -27,36 +28,44 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
   earnedBadges: [],
 
   loadBadges: async () => {
-    const db = await getDb();
-    const rows = await db.getAllAsync<{
-      id: string; badge_id: string; goal_id: string | null; earned_at: string;
-    }>('SELECT * FROM earned_badges ORDER BY earned_at ASC');
-    set({ earnedBadges: rows.map(r => ({ id: r.id, badgeId: r.badge_id, goalId: r.goal_id, earnedAt: r.earned_at })) });
+    try {
+      const db = await getDb();
+      const rows = await db.getAllAsync<any>('SELECT * FROM earned_badges ORDER BY earned_at ASC');
+      set({ earnedBadges: rows.map((r: any) => ({ id: r.id, badgeId: r.badge_id, goalId: r.goal_id, earnedAt: r.earned_at })) });
+    } catch (e) {
+      console.error('loadBadges failed:', e);
+      throw e;
+    }
   },
 
   checkAndAward: async (params) => {
-    const { earnedBadges } = get();
-    const newBadgeDefs = checkBadges({ ...params, earnedBadges });
-    if (newBadgeDefs.length === 0) return [];
+    try {
+      const { earnedBadges } = get();
+      const newBadgeDefs = checkBadges({ ...params, earnedBadges });
+      if (newBadgeDefs.length === 0) return [];
 
-    const db = await getDb();
-    const now = new Date().toISOString();
-    const newEarned: EarnedBadge[] = newBadgeDefs.map(def => ({
-      id: uuid(),
-      badgeId: def.id,
-      goalId: def.category === 'level' || def.category === 'consistency' ? null : params.goalId,
-      earnedAt: now,
-    }));
+      const db = await getDb();
+      const now = new Date().toISOString();
+      const newEarned: EarnedBadge[] = newBadgeDefs.map(def => ({
+        id: uuid(),
+        badgeId: def.id,
+        goalId: def.category === 'level' || def.category === 'consistency' ? null : params.goalId,
+        earnedAt: now,
+      }));
 
-    for (const badge of newEarned) {
-      await db.runAsync(
-        'INSERT OR IGNORE INTO earned_badges (id, badge_id, goal_id, earned_at) VALUES (?,?,?,?)',
-        [badge.id, badge.badgeId, badge.goalId, badge.earnedAt]
-      );
+      for (const badge of newEarned) {
+        await db.runAsync(
+          'INSERT OR IGNORE INTO earned_badges (id, badge_id, goal_id, earned_at) VALUES (?,?,?,?)',
+          [badge.id, badge.badgeId, badge.goalId, badge.earnedAt]
+        );
+      }
+
+      set(s => ({ earnedBadges: [...s.earnedBadges, ...newEarned] }));
+      return newBadgeDefs;
+    } catch (e) {
+      console.error('checkAndAward failed:', e);
+      throw e;
     }
-
-    set(s => ({ earnedBadges: [...s.earnedBadges, ...newEarned] }));
-    return newBadgeDefs;
   },
 
   getBadgesForGoal: (goalId) => get().earnedBadges.filter(b => b.goalId === goalId || b.goalId === null),
