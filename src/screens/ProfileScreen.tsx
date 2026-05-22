@@ -206,7 +206,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {/* Off-screen share card */}
       <ProfileShareCard
         ref={shareCardRef}

@@ -87,6 +87,7 @@ export default function AppNavigator() {
           headerTintColor: Colors.textPrimary,
           headerTitleStyle: { fontWeight: '700' },
           contentStyle: { backgroundColor: Colors.bg0 },
+          animation: 'fade',
         }}
       >
         <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />

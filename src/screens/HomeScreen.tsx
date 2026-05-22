@@ -173,7 +173,7 @@ export default function HomeScreen() {
   }, [logs, graceStates, navigation, handleLogPress]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <DraggableFlatList
         data={activeGoals}
         keyExtractor={g => g.id}
