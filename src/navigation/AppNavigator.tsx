@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,12 +39,13 @@ function TabNavigator() {
           backgroundColor: Colors.bg1,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          paddingTop: 8,
+          paddingTop: 6,
+          paddingBottom: 14,
           elevation: 0,
         },
         tabBarActiveTintColor: Colors.accentBright,
         tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarLabelStyle: { fontSize: 11, marginBottom: 4 },
+        tabBarLabelStyle: { fontSize: 11 },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, string> = {
             Home: focused ? 'home' : 'home-outline',
@@ -64,9 +65,22 @@ function TabNavigator() {
   );
 }
 
+const NAV_THEME = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#A855F7',
+    background: '#080B12',
+    card: '#080B12',
+    text: '#F1F5F9',
+    border: '#2D3555',
+    notification: '#A855F7',
+  },
+};
+
 export default function AppNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={NAV_THEME}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: Colors.bg1 },

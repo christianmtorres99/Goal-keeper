@@ -163,8 +163,8 @@ export default function HomeScreen() {
           onLog={() => handleLogPress(goal.id)}
           isDragging={isActive}
           dragHandle={
-            <TouchableOpacity onLongPress={drag} delayLongPress={200} hitSlop={8}>
-              <Ionicons name="reorder-two" size={20} color={Colors.textDisabled} />
+            <TouchableOpacity onPressIn={drag} hitSlop={12} style={{ padding: 4 }}>
+              <Ionicons name="reorder-two" size={22} color={Colors.textSecondary} />
             </TouchableOpacity>
           }
         />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Switch, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +28,11 @@ const COLORS = [
 ];
 
 const CATEGORIES: GoalCategory[] = ['creative', 'physical', 'learning', 'wellness', 'other'];
+
+const SCREEN_W = Dimensions.get('window').width;
+const ICON_COLS = 6;
+const ICON_GAP = Spacing.sm;
+const ICON_BTN_SIZE = Math.floor((SCREEN_W - Spacing.md * 2 - ICON_GAP * (ICON_COLS - 1)) / ICON_COLS);
 
 export default function AddGoalScreen() {
   const navigation = useNavigation();
@@ -227,8 +232,8 @@ const styles = StyleSheet.create({
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   colorSwatch: { width: 36, height: 36, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.15 }] },
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  iconBtn: { width: 48, height: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: ICON_GAP },
+  iconBtn: { width: ICON_BTN_SIZE, height: ICON_BTN_SIZE, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
   saveBtn: { backgroundColor: Colors.accent, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md },
   saveBtnText: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
 });
