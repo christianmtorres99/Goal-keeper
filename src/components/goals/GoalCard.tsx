@@ -19,9 +19,10 @@ interface Props {
   onLog: () => void;
   isDragging?: boolean;
   dragHandle?: React.ReactNode;
+  isDailyDouble?: boolean;
 }
 
-export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle }: Props) {
+export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble }: Props) {
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
   const loggedToday = isAlreadyLoggedToday(logs);
@@ -59,6 +60,11 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
             <Text style={styles.name} numberOfLines={1}>{goal.name}</Text>
           </View>
           <View style={styles.topRight}>
+            {isDailyDouble && (
+              <View style={styles.doubleBadge}>
+                <Text style={styles.doubleText}>2× ⭐</Text>
+              </View>
+            )}
             {graceUsed && !isAtRisk && (
               <View style={styles.graceBadge}>
                 <Ionicons name="shield-checkmark" size={11} color={Colors.warning} />
@@ -167,4 +173,6 @@ const styles = StyleSheet.create({
   logBtnText: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
   logBtnTextDone: { color: Colors.success },
   dragHandle: { marginLeft: Spacing.xs },
+  doubleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: '#F59E0B44' },
+  doubleText: { color: '#F59E0B', fontSize: 10, fontWeight: '800' },
 });

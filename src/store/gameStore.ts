@@ -55,18 +55,18 @@ interface GameStore {
 }
 
 const DEFAULT_STATE = {
-  loginStreak: 0,
-  lastLoginDate: null,
-  pendingLoginXP: 0,
-  xpStreak: 0,
-  lastXpDate: null,
-  hotStreakDays: 0,
-  lastPerfectDate: null,
-  dailyDoubleGoalId: null,
-  dailyDoubleDate: null,
+  loginStreak: 0 as number,
+  lastLoginDate: null as string | null,
+  pendingLoginXP: 0 as number,
+  xpStreak: 0 as number,
+  lastXpDate: null as string | null,
+  hotStreakDays: 0 as number,
+  lastPerfectDate: null as string | null,
+  dailyDoubleGoalId: null as string | null,
+  dailyDoubleDate: null as string | null,
   rebuildGoals: {} as Record<string, string>,
-  personalRecords: { bestWeekXP: 0, bestMonthXP: 0, longestStreak: 0, mostLogsInDay: 0 },
-  prestigeLevel: 0,
+  personalRecords: { bestWeekXP: 0, bestMonthXP: 0, longestStreak: 0, mostLogsInDay: 0 } as PersonalRecords,
+  prestigeLevel: 0 as number,
 };
 
 async function persist(partial: Record<string, unknown>) {

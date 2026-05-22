@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,11 +13,14 @@ import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import type { LogEvent } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
+import { useGameStore } from '../store/gameStore';
+import { useQuestStore } from '../store/questStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import { todayString, getWeekStart } from '../utils/dateUtils';
 import { getTimeGreeting, getUndoToastMessage } from '../utils/motivationUtils';
+import { HOT_STREAK_MIN_DAYS } from '../constants/xp';
 import type { Goal } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { BadgeDefinition } from '../types';
@@ -30,10 +33,11 @@ import LogNoteModal from '../components/common/LogNoteModal';
 import UndoToast from '../components/common/UndoToast';
 import WeeklyReviewScreen from './WeeklyReviewScreen';
 import LevelLadderModal from '../components/common/LevelLadderModal';
+import LevelUpModal from '../components/common/LevelUpModal';
+import DailyQuestsCard from '../components/common/DailyQuestsCard';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
-
 const TAB_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
@@ -41,26 +45,24 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const goals = useGoalStore(s => s.goals);
   const { reorderGoals, loadGoals } = useGoalStore();
-  const { logs, graceStates, addLog, removeLog, loadLogs } = useLogStore();
-  const { earnedBadges, checkAndAward, loadBadges } = useBadgeStore();
+  const { logs, graceStates, addLog, removeLog, loadLogs, addBonusXP } = useLogStore();
+  const { checkAndAward, loadBadges } = useBadgeStore();
+  const dailyDoubleGoalId = useGameStore(s => s.dailyDoubleGoalId);
+  const quests = useQuestStore(s => s.quests);
 
   const [pendingBadges, setPendingBadges] = useState<BadgeDefinition[]>([]);
   const [pendingBonusXP, setPendingBonusXP] = useState(0);
   const [pendingEvents, setPendingEvents] = useState<LogEvent[]>([]);
+  const [pendingLevelUp, setPendingLevelUp] = useState<{ oldLevel: number; newLevel: number } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Log note modal
   const [logModalGoalId, setLogModalGoalId] = useState<string | null>(null);
 
-  // Undo toast
   const [undoVisible, setUndoVisible] = useState(false);
   const [undoLogId, setUndoLogId] = useState<string | null>(null);
   const [undoMessage, setUndoMessage] = useState('');
 
-  // Weekly review
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
-
-  // Level ladder modal
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
@@ -74,11 +76,56 @@ export default function HomeScreen() {
     return new Set(logs.filter(l => l.logDate === today).map(l => l.goalId));
   }, [logs]);
 
-  // Check if weekly review should auto-show (Sunday)
+  const questsEarned = useMemo(
+    () => quests.filter(q => q.completed).reduce((s, q) => s + q.xpReward, 0),
+    [quests],
+  );
+  const questsAvailable = useMemo(
+    () => quests.reduce((s, q) => s + q.xpReward, 0),
+    [quests],
+  );
+
+  const prevLevelRef = useRef<number>(-1);
+
+  // Detect level-up on XP change
   useEffect(() => {
-    const checkWeeklyReview = async () => {
-      const day = new Date().getDay();
-      if (day !== 0) return; // Only Sunday
+    if (prevLevelRef.current === -1) {
+      prevLevelRef.current = playerStats.level;
+      return;
+    }
+    if (playerStats.level > prevLevelRef.current) {
+      setPendingLevelUp({ oldLevel: prevLevelRef.current, newLevel: playerStats.level });
+    }
+    prevLevelRef.current = playerStats.level;
+  }, [playerStats.level]);
+
+  // On mount: claim login bonus, refresh daily double, generate quests
+  useEffect(() => {
+    const init = async () => {
+      const gs = useGameStore.getState();
+      const loginXP = gs.checkAndClaimLoginBonus();
+      if (loginXP > 0) {
+        await gs.markLoginClaimed();
+        setPendingBonusXP(loginXP);
+        setPendingEvents([]);
+        setPendingBadges([]);
+      }
+
+      const activeIds = useGoalStore.getState().goals.filter(g => !g.isArchived);
+      await gs.refreshDailyDouble(activeIds.map(g => g.id));
+
+      await useQuestStore.getState().loadOrGenerate(
+        activeIds.map(g => g.id),
+        activeIds.map(g => g.name),
+      );
+    };
+    init();
+  }, []);
+
+  // Auto-show weekly review on Sundays
+  useEffect(() => {
+    const check = async () => {
+      if (new Date().getDay() !== 0) return;
       const lastShown = await AsyncStorage.getItem(WEEKLY_REVIEW_KEY);
       const thisWeek = getWeekStart(todayString());
       if (lastShown !== thisWeek) {
@@ -86,7 +133,7 @@ export default function HomeScreen() {
         await AsyncStorage.setItem(WEEKLY_REVIEW_KEY, thisWeek);
       }
     };
-    checkWeeklyReview();
+    check();
   }, []);
 
   const onRefresh = useCallback(async () => {
@@ -95,7 +142,7 @@ export default function HomeScreen() {
     await loadLogs();
     await loadBadges();
     setRefreshing(false);
-  }, []);
+  }, [loadGoals, loadLogs, loadBadges]);
 
   const handleLogPress = useCallback((goalId: string) => {
     setLogModalGoalId(goalId);
@@ -110,16 +157,77 @@ export default function HomeScreen() {
     const result = await addLog(goalId, note, undefined, goals.find(g => g.id === goalId)?.allowMultiplePerDay);
     if (!result) return;
 
-    // Undo toast — event-specific message
     const goalName = goals.find(g => g.id === goalId)?.name ?? '';
-    setUndoLogId(result.log.id);
-    setUndoMessage(getUndoToastMessage(goalName, result.log.xpAwarded + result.bonusXP, result.events));
-    setUndoVisible(true);
+    const extraEvents: LogEvent[] = [...result.events];
+    let extraXP = 0;
+    const gs = useGameStore.getState();
+    const qs = useQuestStore.getState();
 
+    // Streak rebuild bonus (1.5× = +50% for 7 days after a broken streak)
+    if (result.events.includes('comeback')) {
+      await gs.startRebuild(goalId);
+    }
+    if (gs.isInRebuild(goalId)) {
+      const rebuildBonus = Math.round(result.log.xpAwarded * 0.5);
+      if (rebuildBonus > 0) {
+        await addBonusXP(result.log.id, rebuildBonus);
+        extraXP += rebuildBonus;
+        if (!extraEvents.includes('streakRebuild')) extraEvents.push('streakRebuild');
+      }
+    }
+
+    // Daily double bonus (2× = +100% of base XP)
+    if (gs.dailyDoubleGoalId === goalId) {
+      const ddBonus = result.log.xpAwarded;
+      if (ddBonus > 0) {
+        await addBonusXP(result.log.id, ddBonus);
+        extraXP += ddBonus;
+        if (!extraEvents.includes('dailyDouble')) extraEvents.push('dailyDouble');
+      }
+    }
+
+    // Hot streak bonus: if streak was already active from prior days, +50% per log
+    const today = todayString();
+    const hotStreakWasActive = gs.hotStreakDays >= HOT_STREAK_MIN_DAYS && gs.lastPerfectDate !== today;
+    const todayLoggedAfter = new Set([...logs.filter(l => l.logDate === today).map(l => l.goalId), goalId]);
+    const allGoalsLoggedToday = activeGoals.length > 0 && activeGoals.every(g => todayLoggedAfter.has(g.id));
+    await gs.checkHotStreak(allGoalsLoggedToday);
+    if (hotStreakWasActive) {
+      const hotBonus = Math.round(result.log.xpAwarded * 0.5);
+      if (hotBonus > 0) {
+        await addBonusXP(result.log.id, hotBonus);
+        extraXP += hotBonus;
+        if (!extraEvents.includes('hotStreak')) extraEvents.push('hotStreak');
+      }
+    }
+
+    // Update XP streak
+    await gs.onXpEarned();
+
+    // Quest progress
+    const hour = new Date().getHours();
+    qs.markProgress('log_any', goalId);
+    if (note?.trim()) qs.markProgress('use_note');
+    if (hour < 10) qs.markProgress('early_log');
+
+    // Complete newly satisfied quests and award XP
+    const freshQuests = useQuestStore.getState().quests;
+    let questXP = 0;
+    for (const quest of freshQuests) {
+      if (!quest.completed && quest.progress >= quest.target) {
+        const reward = qs.complete(quest.id);
+        if (reward) questXP += reward.xp;
+      }
+    }
+    if (questXP > 0) {
+      await addBonusXP(result.log.id, questXP);
+      extraXP += questXP;
+    }
+
+    // Badge check
     const goalLogs = logs.filter(l => l.goalId === goalId);
     const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
     const streakInfo = computeStreakWithGrace([...goalLogs, result.log], grace.graceDayUsed, grace.graceDayRefillDate);
-
     const newBadges = await checkAndAward({
       goalId,
       currentStreak: streakInfo.currentStreak,
@@ -131,12 +239,18 @@ export default function HomeScreen() {
       isNewBest: result.events.includes('newBest'),
     });
 
-    if (newBadges.length > 0 || result.bonusXP > 0) {
+    // Undo toast with final XP total
+    const totalDisplayXP = result.log.xpAwarded + result.bonusXP + extraXP;
+    setUndoLogId(result.log.id);
+    setUndoMessage(getUndoToastMessage(goalName, totalDisplayXP, extraEvents));
+    setUndoVisible(true);
+
+    if (newBadges.length > 0 || result.bonusXP > 0 || extraXP > 0) {
       setPendingBadges(newBadges);
-      setPendingBonusXP(result.bonusXP);
-      setPendingEvents(result.events);
+      setPendingBonusXP(result.bonusXP + extraXP);
+      setPendingEvents(extraEvents);
     }
-  }, [logModalGoalId, logs, graceStates, playerStats, addLog, checkAndAward, goals]);
+  }, [logModalGoalId, logs, graceStates, playerStats, addLog, addBonusXP, checkAndAward, goals, activeGoals]);
 
   const handleUndo = useCallback(async () => {
     if (undoLogId) {
@@ -149,7 +263,7 @@ export default function HomeScreen() {
     reorderGoals(data.map(g => g.id));
   }, [reorderGoals]);
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
   const greeting = allDone ? 'All done today! 🔥' : getTimeGreeting();
 
@@ -176,6 +290,7 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('GoalDetail', { goalId: goal.id })}
           onLog={() => handleLogPress(goal.id)}
           isDragging={isActive}
+          isDailyDouble={goal.id === dailyDoubleGoalId}
           dragHandle={
             <TouchableOpacity onPressIn={drag} hitSlop={12} style={{ padding: 4 }}>
               <Ionicons name="reorder-two" size={22} color={Colors.textSecondary} />
@@ -184,7 +299,7 @@ export default function HomeScreen() {
         />
       </ScaleDecorator>
     );
-  }, [logs, graceStates, navigation, handleLogPress]);
+  }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -197,11 +312,10 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
         ListHeaderComponent={
           <View style={styles.headerSection}>
-            {/* Header */}
             <View style={styles.header}>
               <View>
                 <Text style={styles.greeting}>{greeting}</Text>
-                <Text style={styles.date}>{today}</Text>
+                <Text style={styles.date}>{todayLabel}</Text>
               </View>
               <View style={styles.headerActions}>
                 <TouchableOpacity style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
@@ -218,11 +332,18 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Global XP */}
             <TouchableOpacity style={styles.xpCard} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
               <XPBar stats={playerStats} />
               <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
             </TouchableOpacity>
+
+            {quests.length > 0 && (
+              <DailyQuestsCard
+                quests={quests}
+                totalEarned={questsEarned}
+                totalAvailable={questsAvailable}
+              />
+            )}
 
             <Text style={[styles.sectionLabel, allDone && styles.sectionLabelDone]}>
               {allDone
@@ -237,7 +358,6 @@ export default function HomeScreen() {
         ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
       />
 
-      {/* Modals & toasts */}
       {logModalGoal && logModalStreakInfo && (
         <LogNoteModal
           visible={!!logModalGoalId}
@@ -263,6 +383,13 @@ export default function HomeScreen() {
         events={pendingEvents}
         visible={pendingBadges.length > 0 || pendingBonusXP > 0}
         onClose={() => { setPendingBadges([]); setPendingBonusXP(0); setPendingEvents([]); }}
+      />
+
+      <LevelUpModal
+        visible={!!pendingLevelUp}
+        oldLevel={pendingLevelUp?.oldLevel ?? 0}
+        newLevel={pendingLevelUp?.newLevel ?? 1}
+        onClose={() => setPendingLevelUp(null)}
       />
 
       <Modal visible={showWeeklyReview} animationType="slide" onRequestClose={() => setShowWeeklyReview(false)}>

@@ -9,8 +9,9 @@ import { useGoalStore } from '../store/goalStore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
 import { requestNotificationPermissions, scheduleGoalReminder, cancelGoalReminder } from '../utils/notifications';
 import { formatTime12h } from '../utils/dateUtils';
-import type { GoalCategory } from '../types';
+import type { GoalCategory, GoalDifficulty } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import { DIFFICULTY_MULTIPLIERS } from '../constants/xp';
 
 type Route = RouteProp<RootStackParamList, 'AddGoal'>;
 
@@ -76,6 +77,7 @@ export default function AddGoalScreen() {
   const [selectedIcon, setSelectedIcon] = useState(existing?.icon ?? 'flag');
   const [selectedColor, setSelectedColor] = useState(existing?.color ?? COLORS[0]);
   const [category, setCategory] = useState<GoalCategory>(existing?.category ?? 'other');
+  const [difficulty, setDifficulty] = useState<GoalDifficulty>(existing?.difficulty ?? 'medium');
   const [reminderEnabled, setReminderEnabled] = useState(!!existing?.notificationTime);
   const [allowMultiple, setAllowMultiple] = useState(existing?.allowMultiplePerDay ?? false);
 
@@ -136,7 +138,7 @@ export default function AddGoalScreen() {
       notificationTime: reminderEnabled && notificationId ? reminderTime24 : undefined,
       notificationId: notificationId ?? undefined,
       allowMultiplePerDay: !isMilestone ? allowMultiple : false,
-      difficulty: 'medium' as const,
+      difficulty,
     };
 
     if (editingId) {
@@ -222,6 +224,28 @@ export default function AddGoalScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        <Text style={styles.label}>Difficulty</Text>
+        <Text style={styles.sublabel}>Harder goals earn more XP per log</Text>
+        <View style={styles.difficultyRow}>
+          {(['easy', 'medium', 'hard', 'extreme'] as GoalDifficulty[]).map(d => {
+            const mult = DIFFICULTY_MULTIPLIERS[d];
+            const labels = { easy: 'Easy', medium: 'Medium', hard: 'Hard', extreme: 'Extreme' };
+            const icons = { easy: 'leaf-outline', medium: 'flash-outline', hard: 'flame-outline', extreme: 'rocket-outline' };
+            const sel = difficulty === d;
+            return (
+              <TouchableOpacity
+                key={d}
+                style={[styles.diffBtn, sel && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+                onPress={() => setDifficulty(d)}
+              >
+                <Ionicons name={icons[d] as any} size={16} color={sel ? selectedColor : Colors.textSecondary} />
+                <Text style={[styles.diffLabel, sel && { color: selectedColor }]}>{labels[d]}</Text>
+                <Text style={[styles.diffMult, sel && { color: selectedColor }]}>{mult}×</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         <Text style={styles.label}>Color</Text>
         <View style={styles.colorRow}>
@@ -318,4 +342,8 @@ const styles = StyleSheet.create({
   timeColon: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', marginBottom: 8 },
   ampmBtn: { backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   ampmText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+  difficultyRow: { flexDirection: 'row', gap: Spacing.sm },
+  diffBtn: { flex: 1, alignItems: 'center', gap: 3, borderRadius: Radius.md, padding: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
+  diffLabel: { color: Colors.textSecondary, fontSize: 11, fontWeight: '700' },
+  diffMult: { color: Colors.textDisabled, fontSize: 10, fontWeight: '600' },
 });
