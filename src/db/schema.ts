@@ -52,6 +52,11 @@ export const CREATE_GRACE_DAYS = `
   )
 `;
 
+export const MIGRATIONS_V3 = [
+  `ALTER TABLE goals ADD COLUMN allow_multiple_per_day INTEGER DEFAULT 0`,
+  `DROP INDEX IF EXISTS idx_logs_goal_date`,
+];
+
 // Run these as ALTER TABLE in a try/catch — safe to call on existing DBs
 export const MIGRATIONS_V2 = [
   `ALTER TABLE goals ADD COLUMN sort_order INTEGER DEFAULT 0`,

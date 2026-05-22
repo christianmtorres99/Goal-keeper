@@ -21,7 +21,7 @@ interface LogStore {
   logs: Log[];
   graceStates: Record<string, GraceState>;
   loadLogs: () => Promise<void>;
-  addLog: (goalId: string, note?: string, logDate?: string) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
+  addLog: (goalId: string, note?: string, logDate?: string, allowMultiple?: boolean) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
   removeLog: (logId: string) => Promise<void>;
   getLogsForGoal: (goalId: string) => Log[];
   getLogsForDate: (date: string) => Log[];
@@ -63,7 +63,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     }
   },
 
-  addLog: async (goalId, note, logDate?) => {
+  addLog: async (goalId, note, logDate?, allowMultiple?) => {
     try {
       const { logs, graceStates } = get();
       const goalLogs = logs.filter(l => l.goalId === goalId);
@@ -71,8 +71,8 @@ export const useLogStore = create<LogStore>((set, get) => ({
       const dateToLog = logDate ?? today;
       const isPastDay = dateToLog !== today;
 
-      // Block duplicate logs on the same date
-      if (goalLogs.some(l => l.logDate === dateToLog)) return null;
+      // Block duplicate logs on the same date (unless allowMultiple is true)
+      if (!allowMultiple && goalLogs.some(l => l.logDate === dateToLog)) return null;
 
       const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
       const prevStreak = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);

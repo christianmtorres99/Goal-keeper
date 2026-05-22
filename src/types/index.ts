@@ -18,6 +18,7 @@ export interface Goal {
   notificationId?: string;
   completedAt?: string;
   cycleCount: number;
+  allowMultiplePerDay?: boolean;
 }
 
 export interface Log {
