@@ -148,11 +148,13 @@ export const useLogStore = create<LogStore>((set, get) => ({
         bonusXP += BONUS_XP.perfectWeek;
       }
 
-      // Perfect month: every day from the 1st to today has a log
+      // Perfect month: every day from the 1st to today has at least one log (unique dates)
       const monthStart = `${today.slice(0, 7)}-01`;
       const daysInRange = daysBetween(monthStart, today) + 1;
-      const logsThisMonth = updatedGoalLogs.filter(l => l.logDate >= monthStart && l.logDate <= today).length;
-      if (logsThisMonth >= daysInRange && daysInRange > 1) {
+      const uniqueDaysLogged = new Set(
+        updatedGoalLogs.filter(l => l.logDate >= monthStart && l.logDate <= today).map(l => l.logDate)
+      ).size;
+      if (uniqueDaysLogged >= daysInRange && daysInRange > 1) {
         events.push('perfectMonth');
         bonusXP += BONUS_XP.perfectMonth;
       }

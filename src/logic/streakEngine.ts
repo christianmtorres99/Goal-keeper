@@ -51,48 +51,59 @@ export function computeStreakWithGrace(
     return { currentStreak: 0, longestStreak: 0, lastLogDate: null, graceDayUsed: false, graceDayRefillDate: null };
   }
 
+  // Refill grace day if its refill date has passed (before using it)
+  let newGraceDayUsed = graceDayUsed;
+  let newGraceDayRefillDate = graceDayRefillDate;
   const today = todayString();
+  if (newGraceDayUsed && newGraceDayRefillDate && today >= newGraceDayRefillDate) {
+    newGraceDayUsed = false;
+    newGraceDayRefillDate = null;
+  }
+
   const dates = [...new Set(logs.map(l => l.logDate))].sort();
   const lastDate = dates[dates.length - 1];
-  const gapFromLast = daysBetween(lastDate, today);
 
   let tempStreak = 1;
   let longestStreak = 0;
+  let graceConsumedInLoop = false;
 
   for (let i = 1; i < dates.length; i++) {
     const gap = daysBetween(dates[i - 1], dates[i]);
     if (gap === 1) {
       tempStreak++;
+    } else if (gap === 2 && !newGraceDayUsed && !graceConsumedInLoop && tempStreak >= GRACE_DAY_MIN_STREAK) {
+      // Grace day bridges a single missed day mid-streak
+      graceConsumedInLoop = true;
+      tempStreak++;
     } else {
       longestStreak = Math.max(longestStreak, tempStreak);
       tempStreak = 1;
+      graceConsumedInLoop = false;
     }
   }
   longestStreak = Math.max(longestStreak, tempStreak);
 
+  const gapFromLast = daysBetween(lastDate, today);
   let currentStreak = 0;
-  let newGraceDayUsed = graceDayUsed;
-  let newGraceDayRefillDate = graceDayRefillDate;
 
   if (gapFromLast === 0 || gapFromLast === 1) {
     currentStreak = tempStreak;
+    if (graceConsumedInLoop) {
+      newGraceDayUsed = true;
+      newGraceDayRefillDate = addDays(today, GRACE_DAY_REFILL_DAYS);
+    }
   } else if (
     gapFromLast === 2 &&
     tempStreak >= GRACE_DAY_MIN_STREAK &&
-    !graceDayUsed
+    !newGraceDayUsed &&
+    !graceConsumedInLoop
   ) {
-    // Apply grace day: treat the missed day as if it was logged
+    // Grace day bridges the gap between last log and today
     currentStreak = tempStreak;
     newGraceDayUsed = true;
     newGraceDayRefillDate = addDays(today, GRACE_DAY_REFILL_DAYS);
   } else {
     currentStreak = 0;
-  }
-
-  // Refill grace day if refill date has passed
-  if (newGraceDayUsed && newGraceDayRefillDate && today >= newGraceDayRefillDate) {
-    newGraceDayUsed = false;
-    newGraceDayRefillDate = null;
   }
 
   return {

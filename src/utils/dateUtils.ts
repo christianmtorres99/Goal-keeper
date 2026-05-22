@@ -25,9 +25,11 @@ export function formatDate(d: Date): string {
 }
 
 export function daysBetween(a: string, b: string): number {
-  const da = dateFromString(a);
-  const db = dateFromString(b);
-  return Math.round((db.getTime() - da.getTime()) / 86400000);
+  const [ay, am, ad] = a.split('-').map(Number);
+  const [by, bm, bd] = b.split('-').map(Number);
+  const msA = Date.UTC(ay, am - 1, ad);
+  const msB = Date.UTC(by, bm - 1, bd);
+  return Math.round((msB - msA) / 86400000);
 }
 
 export function getMonthDays(year: number, month: number): string[] {

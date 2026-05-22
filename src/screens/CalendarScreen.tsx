@@ -7,7 +7,8 @@ import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
 import { sumXP } from '../utils/xpUtils';
-import { getMonthDays, getMonthName, todayString, dateFromString, formatDisplayDate } from '../utils/dateUtils';
+import { getMonthDays, getMonthName, todayString, dateFromString, formatDisplayDate, daysBetween } from '../utils/dateUtils';
+import EmptyState from '../components/common/EmptyState';
 
 const DOW_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DOW_LONG  = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -117,9 +118,7 @@ export default function CalendarScreen() {
     if (sortedDates.length < 2) return null;
     let max = 0;
     for (let i = 1; i < sortedDates.length; i++) {
-      const d1 = dateFromString(sortedDates[i - 1]);
-      const d2 = dateFromString(sortedDates[i]);
-      const gap = Math.round((d2.getTime() - d1.getTime()) / 86400000) - 1;
+      const gap = daysBetween(sortedDates[i - 1], sortedDates[i]) - 1;
       if (gap > max) max = gap;
     }
     return max > 0 ? max : null;
@@ -155,6 +154,23 @@ export default function CalendarScreen() {
     () => selectedDay ? monthLogs.filter(l => l.logDate === selectedDay) : [],
     [selectedDay, monthLogs]
   );
+
+  if (activeGoals.length === 0 && monthLogs.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
+            <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.monthTitle}>{getMonthName(month)} {year}</Text>
+          <TouchableOpacity onPress={nextMonth} style={styles.arrow}>
+            <Ionicons name="chevron-forward" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+        <EmptyState icon="calendar-outline" title="Nothing logged yet" subtitle="Start logging your goals to see them here" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>

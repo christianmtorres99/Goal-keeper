@@ -13,6 +13,7 @@ import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP } from '../utils/xpUtils';
 import { getCategoryStats, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
+import EmptyState from '../components/common/EmptyState';
 import { todayString, addDays } from '../utils/dateUtils';
 import type { GoalCategory } from '../types';
 
@@ -111,6 +112,15 @@ export default function StatsScreen() {
   const selectAll = () => {
     setFilterMode('all');
   };
+
+  if (activeGoals.length === 0) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        <Text style={[styles.title, { padding: Spacing.md }]}>Stats</Text>
+        <EmptyState icon="bar-chart-outline" title="No stats yet" subtitle="Add a goal and start logging to see your stats" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>

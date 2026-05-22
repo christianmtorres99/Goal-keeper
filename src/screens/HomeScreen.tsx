@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, Modal, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,8 +32,11 @@ import LevelLadderModal from '../components/common/LevelLadderModal';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
 
+const TAB_BAR_HEIGHT = 56;
+
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const goals = useGoalStore(s => s.goals);
   const { reorderGoals, loadGoals } = useGoalStore();
   const { logs, graceStates, addLog, removeLog, loadLogs } = useLogStore();
@@ -242,6 +245,7 @@ export default function HomeScreen() {
         message={undoMessage}
         onUndo={handleUndo}
         onDismiss={() => setUndoVisible(false)}
+        bottomOffset={TAB_BAR_HEIGHT + Math.max(insets.bottom, 8) + 8}
       />
 
       <BadgeModal

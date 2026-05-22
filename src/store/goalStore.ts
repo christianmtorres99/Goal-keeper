@@ -188,9 +188,11 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
   reorderGoals: async (orderedIds) => {
     try {
       const db = await getDb();
-      for (let i = 0; i < orderedIds.length; i++) {
-        await db.runAsync('UPDATE goals SET sort_order=? WHERE id=?', [i, orderedIds[i]]);
-      }
+      await db.withTransactionAsync(async () => {
+        for (let i = 0; i < orderedIds.length; i++) {
+          await db.runAsync('UPDATE goals SET sort_order=? WHERE id=?', [i, orderedIds[i]]);
+        }
+      });
       set(s => {
         const orderMap = Object.fromEntries(orderedIds.map((id, i) => [id, i]));
         return { goals: [...s.goals].sort((a, b) => (orderMap[a.id] ?? 0) - (orderMap[b.id] ?? 0)).map((g, i) => ({ ...g, sortOrder: i })) };

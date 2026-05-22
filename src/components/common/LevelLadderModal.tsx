@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
   title: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center' },
   subtitle: { color: Colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center', marginBottom: Spacing.md },
-  listWrap: { height: 340, position: 'relative' },
+  listWrap: { height: Math.floor(Dimensions.get('window').height * 0.45), position: 'relative' },
   scroll: { flex: 1 },
   scrollContent: { gap: Spacing.xs, paddingBottom: Spacing.xl },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1, borderColor: Colors.border },

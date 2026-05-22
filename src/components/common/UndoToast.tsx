@@ -8,9 +8,10 @@ interface Props {
   onUndo: () => void;
   onDismiss: () => void;
   durationMs?: number;
+  bottomOffset?: number;
 }
 
-export default function UndoToast({ visible, message, onUndo, onDismiss, durationMs = 8000 }: Props) {
+export default function UndoToast({ visible, message, onUndo, onDismiss, durationMs = 8000, bottomOffset = 80 }: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -28,7 +29,7 @@ export default function UndoToast({ visible, message, onUndo, onDismiss, duratio
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.toast, { opacity }]}>
+    <Animated.View style={[styles.toast, { opacity, bottom: bottomOffset }]}>
       <Text style={styles.message}>{message}</Text>
       <TouchableOpacity onPress={() => { onUndo(); onDismiss(); }} style={styles.undoBtn}>
         <Text style={styles.undoText}>Undo</Text>
@@ -40,7 +41,6 @@ export default function UndoToast({ visible, message, onUndo, onDismiss, duratio
 const styles = StyleSheet.create({
   toast: {
     position: 'absolute',
-    bottom: 80,
     left: Spacing.md,
     right: Spacing.md,
     backgroundColor: Colors.bg2,

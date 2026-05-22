@@ -8,6 +8,7 @@ import { sumXP } from '../../utils/xpUtils';
 import XPBar from '../common/XPBar';
 import { isAlreadyLoggedToday } from '../../logic/streakEngine';
 import StreakFlame from '../common/StreakFlame';
+import { useLogStore } from '../../store/logStore';
 
 interface Props {
   goal: Goal;
@@ -25,7 +26,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const loggedToday = isAlreadyLoggedToday(logs);
   const multiplier = getStreakMultiplier(streakInfo.currentStreak);
   const hour = new Date().getHours();
-  const isAtRisk = !loggedToday && hour >= 12;
+  const isAtRisk = goal.type === 'habit' && !loggedToday && hour >= 12;
+  const graceState = useLogStore(s => s.graceStates[goal.id]);
+  const graceUsed = graceState?.graceDayUsed ?? false;
 
   return (
     <Pressable
@@ -42,6 +45,12 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
             <Text style={styles.name} numberOfLines={1}>{goal.name}</Text>
           </View>
           <View style={styles.topRight}>
+            {graceUsed && !isAtRisk && (
+              <View style={styles.graceBadge}>
+                <Ionicons name="shield-checkmark" size={11} color={Colors.warning} />
+                <Text style={styles.graceBadgeText}>Grace</Text>
+              </View>
+            )}
             {isAtRisk && (
               <View style={styles.atRiskBadge}>
                 <Ionicons name="warning" size={11} color={Colors.warning} />
@@ -109,6 +118,8 @@ const styles = StyleSheet.create({
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2 },
   atRiskText: { color: Colors.warning, fontSize: 10, fontWeight: '700' },
+  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '18', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2 },
+  graceBadgeText: { color: Colors.warning, fontSize: 10, fontWeight: '600' },
   streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.bg3, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   streakText: { color: Colors.warning, fontSize: FontSize.sm, fontWeight: '700' },
   streakTextInactive: { color: Colors.textDisabled },
@@ -116,7 +127,7 @@ const styles = StyleSheet.create({
   multiplier: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '700', backgroundColor: Colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
   milestoneText: { color: Colors.textSecondary, fontSize: FontSize.sm },
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  logBtnDone: { backgroundColor: Colors.bg3 },
+  logBtnDone: { backgroundColor: Colors.success + '22', borderWidth: 1, borderColor: Colors.success + '55' },
   logBtnText: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
   logBtnTextDone: { color: Colors.success },
   dragHandle: { marginLeft: Spacing.xs },

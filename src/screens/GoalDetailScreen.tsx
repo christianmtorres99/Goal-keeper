@@ -118,6 +118,21 @@ export default function GoalDetailScreen() {
 
   const relevantBadges = BADGE_DEFINITIONS.filter(b => b.category === 'streak' || b.category === 'logs' || b.category === 'cycle');
 
+  // Next badge progress per category
+  const nextBadgeProgress = useMemo(() => {
+    const streakBadges = BADGE_DEFINITIONS.filter(b => b.category === 'streak').sort((a, b) => a.threshold - b.threshold);
+    const logsBadges = BADGE_DEFINITIONS.filter(b => b.category === 'logs').sort((a, b) => a.threshold - b.threshold);
+    const earned = new Set(earnedBadges.filter(b => b.goalId === goalId).map(b => b.badgeId));
+
+    const nextStreak = streakBadges.find(b => !earned.has(b.id));
+    const nextLogs = logsBadges.find(b => !earned.has(b.id));
+
+    return {
+      streak: nextStreak ? { badge: nextStreak, current: streakInfo.currentStreak, pct: Math.min(streakInfo.currentStreak / nextStreak.threshold, 1) } : null,
+      logs: nextLogs ? { badge: nextLogs, current: goalLogs.length, pct: Math.min(goalLogs.length / nextLogs.threshold, 1) } : null,
+    };
+  }, [earnedBadges, goalId, streakInfo.currentStreak, goalLogs.length]);
+
   const handleDelete = useCallback(() => {
     Alert.alert('Delete Goal', 'This will permanently delete this goal and all its logs. This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
@@ -293,8 +308,40 @@ export default function GoalDetailScreen() {
           />
         </View>
 
-        {/* Badges */}
+        {/* Badge progress */}
         <Text style={styles.sectionLabel}>Badges</Text>
+        {(nextBadgeProgress.streak || nextBadgeProgress.logs) && (
+          <View style={styles.badgeProgressCard}>
+            {nextBadgeProgress.streak && (
+              <View style={styles.badgeProgressRow}>
+                <Ionicons name={nextBadgeProgress.streak.badge.icon as any} size={16} color={goal.color} />
+                <View style={styles.badgeProgressInfo}>
+                  <View style={styles.badgeProgressHeader}>
+                    <Text style={styles.badgeProgressLabel}>{nextBadgeProgress.streak.badge.label}</Text>
+                    <Text style={styles.badgeProgressValue}>{nextBadgeProgress.streak.current}/{nextBadgeProgress.streak.badge.threshold}d</Text>
+                  </View>
+                  <View style={styles.badgeProgressTrack}>
+                    <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.streak.pct * 100}%`, backgroundColor: goal.color }]} />
+                  </View>
+                </View>
+              </View>
+            )}
+            {nextBadgeProgress.logs && (
+              <View style={styles.badgeProgressRow}>
+                <Ionicons name={nextBadgeProgress.logs.badge.icon as any} size={16} color={Colors.accentBright} />
+                <View style={styles.badgeProgressInfo}>
+                  <View style={styles.badgeProgressHeader}>
+                    <Text style={styles.badgeProgressLabel}>{nextBadgeProgress.logs.badge.label}</Text>
+                    <Text style={styles.badgeProgressValue}>{nextBadgeProgress.logs.current}/{nextBadgeProgress.logs.badge.threshold} logs</Text>
+                  </View>
+                  <View style={styles.badgeProgressTrack}>
+                    <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.logs.pct * 100}%`, backgroundColor: Colors.accentBright }]} />
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
         <View style={styles.badgeGrid}>
           {relevantBadges.map(badge => (
             <BadgeItem
@@ -442,6 +489,14 @@ const styles = StyleSheet.create({
   sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   chartCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
+  badgeProgressCard: { backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  badgeProgressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  badgeProgressInfo: { flex: 1, gap: 4 },
+  badgeProgressHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+  badgeProgressLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
+  badgeProgressValue: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  badgeProgressTrack: { height: 6, backgroundColor: Colors.bg3, borderRadius: Radius.full, overflow: 'hidden' },
+  badgeProgressFill: { height: '100%', borderRadius: Radius.full },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pastDayBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, backgroundColor: Colors.accentDim + '55', borderWidth: 1, borderColor: Colors.accentBright + '44' },
