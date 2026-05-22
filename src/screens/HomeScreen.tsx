@@ -27,6 +27,7 @@ import BadgeModal from '../components/common/BadgeModal';
 import LogNoteModal from '../components/common/LogNoteModal';
 import UndoToast from '../components/common/UndoToast';
 import WeeklyReviewScreen from './WeeklyReviewScreen';
+import LevelLadderModal from '../components/common/LevelLadderModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
@@ -52,6 +53,9 @@ export default function HomeScreen() {
 
   // Weekly review
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
+
+  // Level ladder modal
+  const [levelLadderVisible, setLevelLadderVisible] = useState(false);
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
   const hasArchived = useMemo(() => goals.some(g => g.isArchived), [goals]);
@@ -97,7 +101,7 @@ export default function HomeScreen() {
     if (!goalId) return;
 
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const result = await addLog(goalId, note);
+    const result = await addLog(goalId, note, undefined, goals.find(g => g.id === goalId)?.allowMultiplePerDay);
     if (!result) return;
 
     // Undo toast
@@ -205,10 +209,10 @@ export default function HomeScreen() {
             </View>
 
             {/* Global XP */}
-            <View style={styles.xpCard}>
+            <TouchableOpacity style={styles.xpCard} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
               <XPBar stats={playerStats} />
               <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
-            </View>
+            </TouchableOpacity>
 
             <Text style={styles.sectionLabel}>
               Today — {todayLogged.size}/{activeGoals.length} logged
@@ -250,6 +254,12 @@ export default function HomeScreen() {
       <Modal visible={showWeeklyReview} animationType="slide" onRequestClose={() => setShowWeeklyReview(false)}>
         <WeeklyReviewScreen onClose={() => setShowWeeklyReview(false)} />
       </Modal>
+
+      <LevelLadderModal
+        visible={levelLadderVisible}
+        currentLevel={playerStats.level}
+        onClose={() => setLevelLadderVisible(false)}
+      />
     </SafeAreaView>
   );
 }

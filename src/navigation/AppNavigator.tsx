@@ -3,6 +3,7 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/theme';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -31,6 +32,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -40,7 +42,7 @@ function TabNavigator() {
           borderTopColor: Colors.border,
           borderTopWidth: 1,
           paddingTop: 6,
-          paddingBottom: 14,
+          paddingBottom: Math.max(insets.bottom, 10),
           elevation: 0,
         },
         tabBarActiveTintColor: Colors.accentBright,

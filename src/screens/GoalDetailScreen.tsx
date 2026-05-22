@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { BarChart } from 'react-native-chart-kit';
+import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
@@ -14,11 +14,11 @@ import { useBadgeStore } from '../store/badgeStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
-import { makeChartConfig } from '../utils/colorUtils';
+import { makeChartConfig, hexToRgba } from '../utils/colorUtils';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
 import type { RootStackParamList } from '../navigation/AppNavigator';
-import { todayString, addDays, formatShortDate, formatCompactDate } from '../utils/dateUtils';
+import { todayString, addDays, formatShortDate, formatCompactDate, dateFromString } from '../utils/dateUtils';
 
 import XPBar from '../components/common/XPBar';
 import BadgeItem from '../components/common/BadgeItem';
@@ -75,17 +75,34 @@ export default function GoalDetailScreen() {
 
   const weeklyData = useMemo(() => {
     const today = todayString();
-    const labels: string[] = [];
-    const data: number[] = [];
-    for (let w = 7; w >= 0; w--) {
-      const weekEnd = addDays(today, -w * 7);
-      const weekStart = addDays(weekEnd, -6);
-      const count = goalLogs.filter(l => l.logDate >= weekStart && l.logDate <= weekEnd).length;
-      labels.push(`W${8 - w}`);
-      data.push(count);
-    }
+    const d = dateFromString(today);
+    const dow = (d.getDay() + 6) % 7; // Mon=0, Sun=6
+    const weekStart = addDays(today, -dow);
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const data = Array.from({ length: 7 }, (_, i) => {
+      const date = addDays(weekStart, i);
+      return goalLogs.some(l => l.logDate === date) ? 1 : 0;
+    });
     return { labels, datasets: [{ data }] };
   }, [goalLogs]);
+
+  const xpGrowthData = useMemo(() => {
+    const today = todayString();
+    const DAYS = 30;
+    const labels: string[] = [];
+    const data: number[] = [];
+    let cumXP = 0;
+    // Sort logs oldest first for cumulative sum
+    const sortedLogs = [...goalLogs].sort((a, b) => a.logDate.localeCompare(b.logDate));
+    for (let i = DAYS - 1; i >= 0; i--) {
+      const date = addDays(today, -i);
+      const dayXP = sortedLogs.filter(l => l.logDate === date).reduce((s, l) => s + l.xpAwarded + l.bonusXp, 0);
+      cumXP += dayXP;
+      labels.push(i % 10 === 0 ? formatShortDate(date).split(' ')[1] : '');
+      data.push(cumXP);
+    }
+    return { labels, datasets: [{ data, color: (opacity = 1) => hexToRgba(goal?.color ?? '#7B5EA7', opacity), strokeWidth: 2 }] };
+  }, [goalLogs, goal?.color]);
 
   const earnedGoalBadges = useMemo(() => {
     const earned = new Set(earnedBadges.filter(b => b.goalId === goalId || b.goalId === null).map(b => b.badgeId));
@@ -238,7 +255,7 @@ export default function GoalDetailScreen() {
         )}
 
         {/* Weekly chart */}
-        <Text style={styles.sectionLabel}>Weekly Activity</Text>
+        <Text style={styles.sectionLabel}>This Week</Text>
         <View style={styles.chartCard}>
           <BarChart
             data={weeklyData}
@@ -257,6 +274,23 @@ export default function GoalDetailScreen() {
         <Text style={styles.sectionLabel}>Activity Map</Text>
         <View style={styles.chartCard}>
           <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
+        </View>
+
+        {/* XP Growth */}
+        <Text style={styles.sectionLabel}>XP Growth (30 days)</Text>
+        <View style={styles.chartCard}>
+          <LineChart
+            data={xpGrowthData}
+            width={W - Spacing.md * 2}
+            height={140}
+            chartConfig={chartConfig}
+            style={styles.chart}
+            withDots={false}
+            withInnerLines={false}
+            bezier
+            yAxisLabel=""
+            yAxisSuffix=" XP"
+          />
         </View>
 
         {/* Badges */}

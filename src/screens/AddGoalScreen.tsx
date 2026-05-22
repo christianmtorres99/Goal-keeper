@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Switch, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -15,20 +15,48 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 type Route = RouteProp<RootStackParamList, 'AddGoal'>;
 
 const ICONS = [
-  'musical-notes', 'fitness', 'book', 'code-slash', 'brush', 'barbell',
-  'camera', 'bicycle', 'leaf', 'heart', 'star', 'trophy', 'flame',
-  'flash', 'rocket', 'planet', 'diamond', 'shield', 'flag', 'medal',
-  'mic', 'headset', 'game-controller', 'cafe', 'restaurant',
-  'walk', 'bed', 'water', 'sunny', 'moon',
+  // Music & Creative
+  'musical-notes', 'musical-note', 'mic', 'headset', 'radio', 'brush', 'color-palette', 'pencil', 'camera', 'film', 'tv', 'image',
+  // Fitness & Health
+  'fitness', 'barbell', 'bicycle', 'walk', 'bed', 'heart', 'pulse', 'body', 'bandage', 'medical',
+  // Nature & Mindfulness
+  'leaf', 'flower', 'sunny', 'moon', 'water', 'snow', 'planet', 'earth', 'cloudy', 'thunderstorm',
+  // Tech & Learning
+  'book', 'library', 'school', 'code-slash', 'laptop', 'bulb', 'desktop', 'calculator',
+  // Food & Lifestyle
+  'cafe', 'restaurant', 'beer-outline', 'wine', 'nutrition', 'fast-food',
+  // Social & People
+  'people', 'person', 'happy', 'chatbubble',
+  // Achievement & Status
+  'star', 'trophy', 'flame', 'flash', 'rocket', 'diamond', 'shield', 'flag', 'medal', 'ribbon', 'crown',
+  // Work & Finance
+  'briefcase', 'cash', 'card', 'stats-chart', 'pie-chart', 'construct', 'hammer',
+  // Travel & Transport
+  'airplane', 'car', 'map', 'compass', 'navigate',
+  // Games & Misc
+  'game-controller', 'dice', 'glasses', 'watch', 'alarm',
 ];
 
 const COLORS = [
-  '#7B5EA7', '#3B82F6', '#10B981', '#F59E0B',
-  '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899',
+  // Purples
+  '#7B5EA7', '#8B5CF6', '#A78BFA', '#6D28D9',
+  // Blues
+  '#3B82F6', '#06B6D4', '#0EA5E9', '#1D4ED8',
+  // Greens
+  '#10B981', '#22C55E', '#84CC16', '#16A34A',
+  // Warm
+  '#F59E0B', '#F97316', '#EF4444', '#DC2626',
+  // Pinks & Rose
+  '#EC4899', '#F43F5E', '#DB2777', '#BE185D',
 ];
 
 const CATEGORIES: GoalCategory[] = ['creative', 'physical', 'learning', 'wellness', 'other'];
 
+// Parse 24h time string into 12h components
+const parseTime24 = (t: string) => {
+  const [h, m] = t.split(':').map(Number);
+  return { hour: h % 12 || 12, minute: m, isPM: h >= 12 };
+};
 
 export default function AddGoalScreen() {
   const { width: winW } = useWindowDimensions();
@@ -49,7 +77,20 @@ export default function AddGoalScreen() {
   const [selectedColor, setSelectedColor] = useState(existing?.color ?? COLORS[0]);
   const [category, setCategory] = useState<GoalCategory>(existing?.category ?? 'other');
   const [reminderEnabled, setReminderEnabled] = useState(!!existing?.notificationTime);
-  const [reminderTime, setReminderTime] = useState(existing?.notificationTime ?? '09:00');
+  const [allowMultiple, setAllowMultiple] = useState(existing?.allowMultiplePerDay ?? false);
+
+  // 12hr time picker state
+  const initTime = parseTime24(existing?.notificationTime ?? '09:00');
+  const [rHour, setRHour] = useState(initTime.hour);
+  const [rMinute, setRMinute] = useState(initTime.minute);
+  const [rIsPM, setRIsPM] = useState(initTime.isPM);
+
+  // Convert 12hr state back to 24hr string
+  const reminderTime24 = useMemo(() => {
+    let h = rHour % 12;
+    if (rIsPM) h += 12;
+    return `${String(h).padStart(2, '0')}:${String(rMinute).padStart(2, '0')}`;
+  }, [rHour, rMinute, rIsPM]);
 
   useEffect(() => {
     navigation.setOptions({ title: editingId ? 'Edit Goal' : 'New Goal' });
@@ -69,12 +110,15 @@ export default function AddGoalScreen() {
 
     if (reminderEnabled) {
       const granted = await requestNotificationPermissions();
-      if (!granted) {
-        Alert.alert('Permission denied', 'Enable notifications in Settings to use reminders.');
-        return;
+      if (granted) {
+        if (notificationId) await cancelGoalReminder(notificationId).catch(() => {});
+        try {
+          notificationId = await scheduleGoalReminder('temp', reminderTime24, name.trim());
+        } catch {}
+      } else {
+        notificationId = undefined;
+        // Don't return - still save goal without notification
       }
-      if (notificationId) await cancelGoalReminder(notificationId).catch(() => {});
-      notificationId = await scheduleGoalReminder('temp', reminderTime, name.trim());
     } else if (notificationId) {
       await cancelGoalReminder(notificationId).catch(() => {});
       notificationId = undefined;
@@ -89,8 +133,9 @@ export default function AddGoalScreen() {
       category,
       targetCount: isMilestone ? parseInt(targetCount) : undefined,
       unit: isMilestone ? unit.trim() || undefined : undefined,
-      notificationTime: reminderEnabled ? reminderTime : undefined,
-      notificationId,
+      notificationTime: reminderEnabled && notificationId ? reminderTime24 : undefined,
+      notificationId: notificationId ?? undefined,
+      allowMultiplePerDay: !isMilestone ? allowMultiple : false,
     };
 
     if (editingId) {
@@ -100,7 +145,7 @@ export default function AddGoalScreen() {
       // Fix: update notification with real goal id
       if (notificationId && reminderEnabled) {
         await cancelGoalReminder(notificationId).catch(() => {});
-        const realId = await scheduleGoalReminder(newGoal.id, reminderTime, name.trim());
+        const realId = await scheduleGoalReminder(newGoal.id, reminderTime24, name.trim());
         await updateGoal(newGoal.id, { notificationId: realId });
       }
     }
@@ -153,6 +198,16 @@ export default function AddGoalScreen() {
           </View>
         )}
 
+        {!isMilestone && (
+          <View style={styles.row}>
+            <View style={styles.flex1}>
+              <Text style={styles.label}>Multiple Logs Per Day</Text>
+              <Text style={styles.sublabel}>Allow logging this goal more than once daily</Text>
+            </View>
+            <Switch value={allowMultiple} onValueChange={setAllowMultiple} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
+          </View>
+        )}
+
         <Text style={styles.label}>Category</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
           {CATEGORIES.map(cat => (
@@ -190,23 +245,38 @@ export default function AddGoalScreen() {
         <View style={styles.row}>
           <View style={styles.flex1}>
             <Text style={styles.label}>Daily Reminder</Text>
-            <Text style={styles.sublabel}>{reminderEnabled ? `Notify at ${formatTime12h(reminderTime)}` : 'No reminder'}</Text>
+            <Text style={styles.sublabel}>{reminderEnabled ? `Notify at ${formatTime12h(reminderTime24)}` : 'No reminder'}</Text>
           </View>
           <Switch value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
         </View>
 
         {reminderEnabled && (
-          <View>
-            <Text style={styles.label}>Reminder Time (HH:MM)</Text>
-            <TextInput
-              style={styles.input}
-              value={reminderTime}
-              onChangeText={t => setReminderTime(t)}
-              placeholder="09:00"
-              placeholderTextColor={Colors.textDisabled}
-              keyboardType="numbers-and-punctuation"
-              maxLength={5}
-            />
+          <View style={styles.timePickerRow}>
+            {/* Hour */}
+            <View style={styles.timeUnit}>
+              <TouchableOpacity onPress={() => setRHour(h => h === 12 ? 1 : h + 1)} style={styles.timeArrow}>
+                <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+              <Text style={styles.timeDigit}>{String(rHour).padStart(2, '0')}</Text>
+              <TouchableOpacity onPress={() => setRHour(h => h === 1 ? 12 : h - 1)} style={styles.timeArrow}>
+                <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.timeColon}>:</Text>
+            {/* Minute */}
+            <View style={styles.timeUnit}>
+              <TouchableOpacity onPress={() => setRMinute(m => (m + 5) % 60)} style={styles.timeArrow}>
+                <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+              <Text style={styles.timeDigit}>{String(rMinute).padStart(2, '0')}</Text>
+              <TouchableOpacity onPress={() => setRMinute(m => (m - 5 + 60) % 60)} style={styles.timeArrow}>
+                <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            {/* AM/PM */}
+            <TouchableOpacity style={styles.ampmBtn} onPress={() => setRIsPM(p => !p)}>
+              <Text style={styles.ampmText}>{rIsPM ? 'PM' : 'AM'}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -239,4 +309,12 @@ const styles = StyleSheet.create({
   iconBtn: { borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
   saveBtn: { backgroundColor: Colors.accent, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md },
   saveBtnText: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+  // 12hr time picker
+  timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  timeUnit: { alignItems: 'center', gap: 4 },
+  timeArrow: { padding: 4 },
+  timeDigit: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', minWidth: 42, textAlign: 'center' },
+  timeColon: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', marginBottom: 8 },
+  ampmBtn: { backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  ampmText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
 });

@@ -7,6 +7,7 @@ import { getPlayerStats, getStreakMultiplier } from '../../logic/xpEngine';
 import { sumXP } from '../../utils/xpUtils';
 import XPBar from '../common/XPBar';
 import { isAlreadyLoggedToday } from '../../logic/streakEngine';
+import StreakFlame from '../common/StreakFlame';
 
 interface Props {
   goal: Goal;
@@ -35,7 +36,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
       <View style={styles.body}>
         <View style={styles.topRow}>
           <View style={styles.iconName}>
-            <Ionicons name={goal.icon as any} size={22} color={goal.color} />
+            <StreakFlame streak={streakInfo.currentStreak} size={34}>
+              <Ionicons name={goal.icon as any} size={22} color={goal.color} />
+            </StreakFlame>
             <Text style={styles.name} numberOfLines={1}>{goal.name}</Text>
           </View>
           <View style={styles.topRight}>
@@ -67,17 +70,17 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           )}
           <View style={{ flex: 1 }} />
           <TouchableOpacity
-            style={[styles.logBtn, loggedToday && styles.logBtnDone]}
+            style={[styles.logBtn, loggedToday && !goal.allowMultiplePerDay && styles.logBtnDone]}
             onPress={onLog}
-            disabled={loggedToday}
+            disabled={loggedToday && !goal.allowMultiplePerDay}
           >
             <Ionicons
-              name={loggedToday ? 'checkmark' : 'add'}
+              name={loggedToday && !goal.allowMultiplePerDay ? 'checkmark' : 'add'}
               size={18}
-              color={loggedToday ? Colors.success : Colors.textPrimary}
+              color={loggedToday && !goal.allowMultiplePerDay ? Colors.success : Colors.textPrimary}
             />
-            <Text style={[styles.logBtnText, loggedToday && styles.logBtnTextDone]}>
-              {loggedToday ? 'Done' : 'Log'}
+            <Text style={[styles.logBtnText, loggedToday && !goal.allowMultiplePerDay && styles.logBtnTextDone]}>
+              {goal.allowMultiplePerDay ? 'Log+' : loggedToday ? 'Done' : 'Log'}
             </Text>
           </TouchableOpacity>
           {dragHandle && <View style={styles.dragHandle}>{dragHandle}</View>}

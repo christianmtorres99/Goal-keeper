@@ -25,7 +25,7 @@ export default function CalendarScreen() {
   const { getLogsForMonth, logs: allLogs } = useLogStore();
   const goals = useGoalStore(s => s.goals);
 
-  const monthLogs = useMemo(() => getLogsForMonth(year, month), [year, month, getLogsForMonth]);
+  const monthLogs = useMemo(() => getLogsForMonth(year, month), [year, month, allLogs]);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
 
   const goalMap = useMemo(() => {

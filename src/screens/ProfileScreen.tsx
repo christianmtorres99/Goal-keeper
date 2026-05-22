@@ -18,6 +18,7 @@ import { BADGE_DEFINITIONS } from '../constants/badges';
 import BadgeItem from '../components/common/BadgeItem';
 import XPBar from '../components/common/XPBar';
 import ProfileShareCard, { getLevelTier } from '../components/common/ProfileShareCard';
+import StreakFlame from '../components/common/StreakFlame';
 import type { SelectedFeature } from '../components/common/ProfileShareCard';
 import type { GoalCategory } from '../types';
 
@@ -32,14 +33,10 @@ const BADGE_SIZE = Math.floor(
 );
 
 const SHARE_BG_COLORS = [
-  '#1A0A2E',  // deep purple
-  '#0D1B2A',  // midnight navy
-  '#0D2818',  // forest dark
-  '#2E0D0D',  // dark crimson
-  '#0D2A2A',  // dark teal
-  '#1A1A1A',  // charcoal
-  '#1A1430',  // indigo night
-  '#2A1A0D',  // dark amber
+  '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D',
+  '#0D2A2A', '#1A1A1A', '#1A1430', '#2A1A0D',
+  '#16213E', '#1B1B2F', '#0F3460', '#2C1654',
+  '#1A0A14', '#0A1A14', '#1A1400', '#0A0A1A',
 ];
 
 export default function ProfileScreen() {
@@ -78,6 +75,22 @@ export default function ProfileScreen() {
 
   const categoryStats = useMemo(() => getCategoryStats(goals, logs), [goals, logs]);
   const activeCategories = useMemo(() => Object.keys(categoryStats) as GoalCategory[], [categoryStats]);
+
+  const categoryMaxStreak = useMemo(() => {
+    const result: Record<string, number> = {};
+    activeCategories.forEach(cat => {
+      const catGoals = goals.filter(g => !g.isArchived && g.category === cat);
+      let max = 0;
+      catGoals.forEach(g => {
+        const gl = logs.filter(l => l.goalId === g.id);
+        const grace = graceStates[g.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+        const { currentStreak } = computeStreakWithGrace(gl, grace.graceDayUsed, grace.graceDayRefillDate);
+        if (currentStreak > max) max = currentStreak;
+      });
+      result[cat] = max;
+    });
+    return result;
+  }, [activeCategories, goals, logs, graceStates]);
 
   // Load prefs
   useEffect(() => {
@@ -221,15 +234,16 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero card */}
-        <LinearGradient colors={[Colors.accentDim, Colors.bg1]} style={styles.heroCard}>
+        <LinearGradient colors={[tier.color + '55', Colors.bg1]} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={[styles.heroIconWrap, { borderColor: tier.color + '55', backgroundColor: tier.color + '22' }]}>
-              <Ionicons name={tier.icon as any} size={36} color={tier.color} />
+            <View style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}>
+              <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, gap: 4 }}>
               <Text style={styles.heroLevel}>Level {playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
-              <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP</Text>
+              <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP total</Text>
+              <Text style={styles.heroNext}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
             </View>
             <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
               <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
@@ -327,7 +341,9 @@ export default function ProfileScreen() {
                   <View key={cat} style={styles.skillCard}>
                     <View style={styles.skillHeader}>
                       <View style={styles.skillIconWrap}>
-                        <Ionicons name={CATEGORY_ICONS[cat] as any} size={18} color={Colors.accentBright} />
+                        <StreakFlame streak={categoryMaxStreak[cat] ?? 0} size={36}>
+                          <Ionicons name={CATEGORY_ICONS[cat] as any} size={18} color={Colors.accentBright} />
+                        </StreakFlame>
                       </View>
                       <View style={styles.skillInfo}>
                         <Text style={styles.skillName}>{CATEGORY_LABELS[cat]}</Text>
@@ -383,10 +399,11 @@ const styles = StyleSheet.create({
 
   heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1, borderColor: Colors.accentDim },
   heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  heroIconWrap: { width: 64, height: 64, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  heroLevel: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '800' },
-  heroTierTitle: { fontSize: FontSize.sm, fontWeight: '600', marginBottom: 2 },
-  heroXP: { color: Colors.accentBright, fontSize: FontSize.sm },
+  heroIconWrap: { width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  heroLevel: { color: Colors.textPrimary, fontSize: FontSize.xxl + 4, fontWeight: '800' },
+  heroTierTitle: { fontSize: FontSize.md, fontWeight: '700' },
+  heroXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
+  heroNext: { color: Colors.textSecondary, fontSize: FontSize.xs },
   shareBtn: { padding: Spacing.xs },
 
   customizeCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
