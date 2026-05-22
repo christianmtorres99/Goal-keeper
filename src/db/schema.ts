@@ -15,7 +15,9 @@ export const CREATE_GOALS = `
     notification_time TEXT,
     notification_id TEXT,
     completed_at TEXT,
-    cycle_count INTEGER DEFAULT 0
+    cycle_count INTEGER DEFAULT 0,
+    allow_multiple_per_day INTEGER DEFAULT 0,
+    difficulty TEXT DEFAULT 'medium'
   )
 `;
 

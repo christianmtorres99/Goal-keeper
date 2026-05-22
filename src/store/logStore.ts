@@ -80,19 +80,17 @@ export const useLogStore = create<LogStore>((set, get) => ({
       const prevStreak = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
       const isFirst = goalLogs.length === 0;
 
+      const goalData = useGoalStore.getState().goals.find(g => g.id === goalId);
+      const diffMult = DIFFICULTY_MULTIPLIERS[goalData?.difficulty ?? 'medium'] ?? 1.0;
+
       // For past-day logs, award base XP only (no retroactive streak bonuses)
       let xpAwarded: number;
       if (isPastDay) {
         xpAwarded = 15;
       } else {
         const newStreak = prevStreak.currentStreak + 1;
-        xpAwarded = calculateXPForLog(newStreak);
+        xpAwarded = Math.round(calculateXPForLog(newStreak) * diffMult);
       }
-
-      // Apply difficulty multiplier
-      const goalData = useGoalStore.getState().goals.find(g => g.id === goalId);
-      const diffMult = DIFFICULTY_MULTIPLIERS[goalData?.difficulty ?? 'medium'] ?? 1.0;
-      xpAwarded = Math.round(xpAwarded * diffMult);
 
       // Lucky drop: 15% chance to double xpAwarded (only for today's logs)
       const events: LogEvent[] = [];
@@ -170,7 +168,8 @@ export const useLogStore = create<LogStore>((set, get) => ({
         bonusXP += BONUS_XP.newPersonalBest;
       }
 
-      if (newGrace.currentStreak > 0 && newGrace.currentStreak % 7 === 0) {
+      const graceConsumedThisLog = !grace.graceDayUsed && newGrace.graceDayUsed;
+      if (newGrace.currentStreak > 0 && newGrace.currentStreak % 7 === 0 && !graceConsumedThisLog) {
         events.push('perfectWeek');
         bonusXP += BONUS_XP.perfectWeek;
       }

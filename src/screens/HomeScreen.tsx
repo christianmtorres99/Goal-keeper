@@ -103,12 +103,8 @@ export default function HomeScreen() {
   useEffect(() => {
     const init = async () => {
       const gs = useGameStore.getState();
-      const loginXP = gs.checkAndClaimLoginBonus();
-      if (loginXP > 0) {
+      if (gs.checkAndClaimLoginBonus() > 0) {
         await gs.markLoginClaimed();
-        setPendingBonusXP(loginXP);
-        setPendingEvents([]);
-        setPendingBadges([]);
       }
 
       const activeIds = useGoalStore.getState().goals.filter(g => !g.isArchived);
@@ -176,6 +172,14 @@ export default function HomeScreen() {
       }
     }
 
+    // Apply deferred login bonus to first log of the day
+    const loginXP = gs.pendingLoginXP;
+    if (loginXP > 0) {
+      await addBonusXP(result.log.id, loginXP);
+      extraXP += loginXP;
+      await useGameStore.getState().clearPendingLoginXP();
+    }
+
     // Daily double bonus (2× = +100% of base XP)
     if (gs.dailyDoubleGoalId === goalId) {
       const ddBonus = result.log.xpAwarded;
@@ -209,6 +213,10 @@ export default function HomeScreen() {
     qs.markProgress('log_any', goalId);
     if (note?.trim()) qs.markProgress('use_note');
     if (hour < 10) qs.markProgress('early_log');
+
+    // Update log_all quest with the real unique goal count for today
+    const uniqueGoalsToday = todayLoggedAfter.size;
+    qs.markAllGoals(uniqueGoalsToday);
 
     // Complete newly satisfied quests and award XP
     const freshQuests = useQuestStore.getState().quests;

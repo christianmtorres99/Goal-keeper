@@ -66,19 +66,21 @@ export function computeStreakWithGrace(
   let tempStreak = 1;
   let longestStreak = 0;
   let graceConsumedInLoop = false;
+  let graceConsumedAny = false; // never reset on break — prevents double-grace across segments
 
   for (let i = 1; i < dates.length; i++) {
     const gap = daysBetween(dates[i - 1], dates[i]);
     if (gap === 1) {
       tempStreak++;
-    } else if (gap === 2 && !newGraceDayUsed && !graceConsumedInLoop && tempStreak >= GRACE_DAY_MIN_STREAK) {
-      // Grace day bridges a single missed day mid-streak
+    } else if (gap === 2 && !newGraceDayUsed && !graceConsumedAny && tempStreak >= GRACE_DAY_MIN_STREAK) {
       graceConsumedInLoop = true;
+      graceConsumedAny = true;
       tempStreak++;
     } else {
       longestStreak = Math.max(longestStreak, tempStreak);
       tempStreak = 1;
       graceConsumedInLoop = false;
+      // graceConsumedAny intentionally NOT reset
     }
   }
   longestStreak = Math.max(longestStreak, tempStreak);
@@ -88,7 +90,7 @@ export function computeStreakWithGrace(
 
   if (gapFromLast === 0 || gapFromLast === 1) {
     currentStreak = tempStreak;
-    if (graceConsumedInLoop) {
+    if (graceConsumedAny) {
       newGraceDayUsed = true;
       newGraceDayRefillDate = addDays(today, GRACE_DAY_REFILL_DAYS);
     }
@@ -96,14 +98,18 @@ export function computeStreakWithGrace(
     gapFromLast === 2 &&
     tempStreak >= GRACE_DAY_MIN_STREAK &&
     !newGraceDayUsed &&
-    !graceConsumedInLoop
+    !graceConsumedAny
   ) {
-    // Grace day bridges the gap between last log and today
     currentStreak = tempStreak;
     newGraceDayUsed = true;
     newGraceDayRefillDate = addDays(today, GRACE_DAY_REFILL_DAYS);
   } else {
     currentStreak = 0;
+    if (graceConsumedAny) {
+      // Grace was used in a broken segment; still commit it so it can't fire again
+      newGraceDayUsed = true;
+      newGraceDayRefillDate = addDays(today, GRACE_DAY_REFILL_DAYS);
+    }
   }
 
   return {

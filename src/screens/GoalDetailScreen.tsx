@@ -42,7 +42,7 @@ export default function GoalDetailScreen() {
   const goal = useGoalStore(s => s.goals.find(g => g.id === goalId));
   const { archiveGoal, deleteGoal, updateGoal, resetMilestoneLogs } = useGoalStore();
   const { logs, graceStates, removeLog, loadLogs, addLog } = useLogStore();
-  const { earnedBadges } = useBadgeStore();
+  const { earnedBadges, checkAndAward } = useBadgeStore();
 
   const shareCardRef = useRef<View>(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
@@ -175,8 +175,19 @@ export default function GoalDetailScreen() {
     const date = pendingPastDate;
     setPendingPastDate(null);
     if (!date || !goalId) return;
-    await addLog(goalId, note, date);
-  }, [pendingPastDate, goalId, addLog]);
+    const result = await addLog(goalId, note, date);
+    if (!result) return;
+    await checkAndAward({
+      goalId,
+      currentStreak: streakInfo.currentStreak,
+      totalLogs: goalLogs.length + 1,
+      playerLevel: playerStats.level,
+      isPerfectWeek: false,
+      isPerfectMonth: false,
+      isComeback: false,
+      isNewBest: false,
+    });
+  }, [pendingPastDate, goalId, addLog, checkAndAward, streakInfo, goalLogs, playerStats]);
 
   if (!goal) return null;
 

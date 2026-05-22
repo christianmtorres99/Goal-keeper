@@ -11,6 +11,7 @@ interface QuestStore {
 
   loadOrGenerate: (activeGoalIds: string[], activeGoalNames: string[]) => Promise<void>;
   markProgress: (type: Quest['type'], goalId?: string) => void; // updates progress
+  markAllGoals: (uniqueCount: number) => void;
   complete: (questId: string) => { xp: number } | null; // returns XP if newly completed
   getTotalAvailableXP: () => number;
   getTotalEarnedXP: () => number;
@@ -95,13 +96,25 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
         if (q.type === 'log_specific' && goalId && q.goalId === goalId) matches = true;
         // log_any matches any log event
         if (q.type === 'log_any' && (type === 'log_any' || type === 'log_specific' || type === 'log_count' || type === 'log_all')) matches = true;
-        // log_all and log_count also respond to any log
-        if ((q.type === 'log_count' || q.type === 'log_all') && (type === 'log_any' || type === 'log_specific' || type === 'log_count')) matches = true;
+        // log_count increments on any log; log_all is handled separately via markAllGoals
+        if (q.type === 'log_count' && (type === 'log_any' || type === 'log_specific' || type === 'log_count')) matches = true;
         if (!matches) return q;
         const newProgress = Math.min(q.progress + 1, q.target);
         return { ...q, progress: newProgress };
       });
       // Save async
+      const today = todayString();
+      AsyncStorage.setItem(KEY, JSON.stringify({ date: today, quests: updated })).catch(() => {});
+      return { quests: updated };
+    });
+  },
+
+  markAllGoals: (uniqueCount: number) => {
+    set(s => {
+      const updated = s.quests.map(q => {
+        if (q.completed || q.type !== 'log_all') return q;
+        return { ...q, progress: Math.min(uniqueCount, q.target) };
+      });
       const today = todayString();
       AsyncStorage.setItem(KEY, JSON.stringify({ date: today, quests: updated })).catch(() => {});
       return { quests: updated };

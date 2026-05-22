@@ -43,6 +43,7 @@ interface GameStore {
   load: () => Promise<void>;
   checkAndClaimLoginBonus: () => number; // returns XP to award (0 if already claimed)
   markLoginClaimed: () => Promise<void>;
+  clearPendingLoginXP: () => Promise<void>;
   onXpEarned: () => Promise<void>; // call after any log; updates xpStreak
   checkHotStreak: (allGoalsLoggedToday: boolean) => Promise<boolean>; // returns true if hot streak active
   refreshDailyDouble: (goalIds: string[]) => Promise<string | null>;
@@ -107,6 +108,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     await persist({ loginStreak: newStreak, lastLoginDate: today, pendingLoginXP: xp });
   },
 
+  clearPendingLoginXP: async () => {
+    set({ pendingLoginXP: 0 });
+    await persist({ pendingLoginXP: 0 });
+  },
+
   onXpEarned: async () => {
     const { lastXpDate, xpStreak } = get();
     const today = todayString();
@@ -135,7 +141,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   refreshDailyDouble: async (goalIds: string[]) => {
     const { dailyDoubleDate, dailyDoubleGoalId } = get();
     const today = todayString();
-    if (dailyDoubleDate === today && dailyDoubleGoalId) return dailyDoubleGoalId;
+    if (dailyDoubleDate === today && dailyDoubleGoalId && goalIds.includes(dailyDoubleGoalId)) return dailyDoubleGoalId;
     if (goalIds.length === 0) return null;
     // Pick based on date seed so it's consistent throughout the day
     const seed = parseInt(today.replace(/-/g, ''), 10);
