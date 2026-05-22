@@ -17,7 +17,8 @@ interface Props {
 const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function WeeklyReviewScreen({ onClose }: Props) {
-  const goals = useGoalStore(s => s.goals.filter(g => !g.isArchived));
+  const allGoals = useGoalStore(s => s.goals);
+  const goals = useMemo(() => allGoals.filter(g => !g.isArchived), [allGoals]);
   const { logs, graceStates } = useLogStore();
   const { earnedBadges } = useBadgeStore();
 
