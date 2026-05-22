@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '../../constants/theme';
+import { formatCompactDate } from '../../utils/dateUtils';
 import type { BadgeDefinition } from '../../types';
 
 interface Props {
@@ -34,7 +35,7 @@ export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props)
         {badge.label}
       </Text>
       {earned && earnedAt ? (
-        <Text style={[s.sub, { fontSize: labelSz - 1 }]}>{earnedAt.slice(0, 10)}</Text>
+        <Text style={[s.sub, { fontSize: labelSz - 1 }]}>{formatCompactDate(earnedAt)}</Text>
       ) : (
         <Text style={[s.sub, { fontSize: labelSz - 1 }]} numberOfLines={2}>{badge.description}</Text>
       )}

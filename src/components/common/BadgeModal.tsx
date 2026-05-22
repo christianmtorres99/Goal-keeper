@@ -54,6 +54,6 @@ const styles = StyleSheet.create({
   badgeDesc: { color: Colors.textSecondary, fontSize: FontSize.sm },
   bonusRow: { backgroundColor: Colors.accentDim, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
   bonusXP: { color: Colors.accentBright, fontSize: FontSize.lg, fontWeight: '700' },
-  button: { backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, marginTop: Spacing.sm },
-  buttonText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+  button: { backgroundColor: Colors.success, borderRadius: Radius.md, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, marginTop: Spacing.sm },
+  buttonText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
 });

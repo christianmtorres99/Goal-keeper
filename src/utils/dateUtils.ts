@@ -57,6 +57,20 @@ export function isToday(dateStr: string): boolean {
   return dateStr === todayString();
 }
 
+// "2026-05-22" → "5-22-26"
+export function formatCompactDate(dateStr: string): string {
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+  return `${m}-${d}-${String(y).slice(-2)}`;
+}
+
+// "09:00" → "9:00 AM",  "13:30" → "1:30 PM"
+export function formatTime12h(time: string): string {
+  const [h, min] = time.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(min).padStart(2, '0')} ${period}`;
+}
+
 export function getWeekStart(dateStr: string): string {
   const d = dateFromString(dateStr);
   const day = d.getDay();

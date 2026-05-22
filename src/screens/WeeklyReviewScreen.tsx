@@ -5,7 +5,7 @@ import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
-import { todayString, addDays } from '../utils/dateUtils';
+import { todayString, addDays, formatCompactDate } from '../utils/dateUtils';
 import { sumXP } from '../utils/xpUtils';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { BADGE_DEFINITIONS } from '../constants/badges';
@@ -73,7 +73,7 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
           <Ionicons name="close" size={24} color={Colors.textSecondary} />
         </TouchableOpacity>
       </View>
-      <Text style={styles.dateRange}>{weekStart} → {today}</Text>
+      <Text style={styles.dateRange}>{formatCompactDate(weekStart)} → {formatCompactDate(today)}</Text>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* XP this week */}

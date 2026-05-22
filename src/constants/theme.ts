@@ -1,22 +1,25 @@
 export const Colors = {
-  bg0: '#0A0A0F',
-  bg1: '#13131A',
-  bg2: '#1C1C27',
-  bg3: '#252535',
-  border: '#2E2E45',
+  // Backgrounds — subtle navy tint instead of flat grey-black
+  bg0: '#080B12',
+  bg1: '#0F1320',
+  bg2: '#161B2E',
+  bg3: '#1F2540',
+  border: '#2D3555',
 
-  accent: '#7B5EA7',
-  accentBright: '#9B7FD4',
-  accentDim: '#3B1E6E',
-  accentGlow: 'rgba(123, 94, 167, 0.25)',
+  // Purple accent — more saturated and vivid
+  accent: '#7C3AED',
+  accentBright: '#A855F7',
+  accentDim: '#3B0764',
+  accentGlow: 'rgba(124, 58, 237, 0.25)',
 
-  success: '#4ADE80',
-  warning: '#FBBF24',
-  danger: '#F87171',
-  info: '#60A5FA',
+  // Semantic — kept punchy for contrast on dark navy
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  info: '#38BDF8',
 
   goalColors: [
-    '#7B5EA7',
+    '#7C3AED',
     '#3B82F6',
     '#10B981',
     '#F59E0B',
@@ -26,11 +29,12 @@ export const Colors = {
     '#EC4899',
   ],
 
-  textPrimary: '#F0F0FF',
-  textSecondary: '#9090A8',
-  textDisabled: '#44445A',
+  // Text — slate-tinted for warmth on navy backgrounds
+  textPrimary: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  textDisabled: '#475569',
 
-  xpGradient: ['#7B5EA7', '#9B7FD4'] as const,
+  xpGradient: ['#7C3AED', '#A855F7'] as const,
 };
 
 export const Spacing = {

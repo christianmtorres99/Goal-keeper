@@ -8,6 +8,7 @@ import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
 import { requestNotificationPermissions, scheduleGoalReminder, cancelGoalReminder } from '../utils/notifications';
+import { formatTime12h } from '../utils/dateUtils';
 import type { GoalCategory } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -181,7 +182,7 @@ export default function AddGoalScreen() {
         <View style={styles.row}>
           <View style={styles.flex1}>
             <Text style={styles.label}>Daily Reminder</Text>
-            <Text style={styles.sublabel}>{reminderEnabled ? `Notify at ${reminderTime}` : 'No reminder'}</Text>
+            <Text style={styles.sublabel}>{reminderEnabled ? `Notify at ${formatTime12h(reminderTime)}` : 'No reminder'}</Text>
           </View>
           <Switch value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
         </View>
