@@ -11,13 +11,14 @@ interface Props {
   currentStreak: number;
   onConfirm: (note?: string) => void;
   onCancel: () => void;
+  pastDate?: string; // when set, shows a "past day" badge instead of streak preview
 }
 
-export default function LogNoteModal({ visible, goalName, goalColor, currentStreak, onConfirm, onCancel }: Props) {
+export default function LogNoteModal({ visible, goalName, goalColor, currentStreak, onConfirm, onCancel, pastDate }: Props) {
   const [note, setNote] = useState('');
   const nextStreak = currentStreak + 1;
-  const xpPreview = calculateXPForLog(nextStreak);
-  const multiplier = getStreakMultiplier(nextStreak);
+  const xpPreview = calculateXPForLog(pastDate ? 1 : nextStreak);
+  const multiplier = getStreakMultiplier(pastDate ? 1 : nextStreak);
 
   const handleConfirm = () => {
     onConfirm(note.trim() || undefined);
@@ -40,16 +41,29 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
             <Text style={styles.goalName}>{goalName}</Text>
           </View>
 
-          <View style={styles.preview}>
-            <View style={styles.previewItem}>
-              <Ionicons name="flame" size={16} color={Colors.warning} />
-              <Text style={styles.previewValue}>{nextStreak}d streak</Text>
+          {pastDate ? (
+            <View style={styles.preview}>
+              <View style={styles.previewItem}>
+                <Ionicons name="calendar-outline" size={16} color={Colors.accentBright} />
+                <Text style={styles.previewValue}>Past day — {pastDate}</Text>
+              </View>
+              <View style={styles.previewItem}>
+                <Ionicons name="flash" size={16} color={Colors.accentBright} />
+                <Text style={styles.previewValue}>+15 XP</Text>
+              </View>
             </View>
-            <View style={styles.previewItem}>
-              <Ionicons name="flash" size={16} color={Colors.accentBright} />
-              <Text style={styles.previewValue}>+{xpPreview} XP{multiplier > 1 ? ` (${multiplier}×)` : ''}</Text>
+          ) : (
+            <View style={styles.preview}>
+              <View style={styles.previewItem}>
+                <Ionicons name="flame" size={16} color={Colors.warning} />
+                <Text style={styles.previewValue}>{nextStreak}d streak</Text>
+              </View>
+              <View style={styles.previewItem}>
+                <Ionicons name="flash" size={16} color={Colors.accentBright} />
+                <Text style={styles.previewValue}>+{xpPreview} XP{multiplier > 1 ? ` (${multiplier}×)` : ''}</Text>
+              </View>
             </View>
-          </View>
+          )}
 
           <Text style={styles.label}>Add a note (optional)</Text>
           <TextInput

@@ -21,7 +21,7 @@ interface LogStore {
   logs: Log[];
   graceStates: Record<string, GraceState>;
   loadLogs: () => Promise<void>;
-  addLog: (goalId: string, note?: string) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
+  addLog: (goalId: string, note?: string, logDate?: string) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
   removeLog: (logId: string) => Promise<void>;
   getLogsForGoal: (goalId: string) => Log[];
   getLogsForDate: (date: string) => Log[];
@@ -63,30 +63,34 @@ export const useLogStore = create<LogStore>((set, get) => ({
     }
   },
 
-  addLog: async (goalId, note) => {
+  addLog: async (goalId, note, logDate?) => {
     try {
       const { logs, graceStates } = get();
       const goalLogs = logs.filter(l => l.goalId === goalId);
+      const today = todayString();
+      const dateToLog = logDate ?? today;
+      const isPastDay = dateToLog !== today;
 
-      if (isAlreadyLoggedToday(goalLogs)) return null;
+      // Block duplicate logs on the same date
+      if (goalLogs.some(l => l.logDate === dateToLog)) return null;
 
       const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
       const prevStreak = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
       const isFirst = goalLogs.length === 0;
 
-      // gap > 1 means streak was broken; comeback = they're logging again after a break
-      const wasGap = prevStreak.lastLogDate
-        ? daysBetween(prevStreak.lastLogDate, todayString()) > 1
-        : false;
-
-      const newStreak = prevStreak.currentStreak + 1;
-      const xpAwarded = calculateXPForLog(newStreak);
-      const today = todayString();
+      // For past-day logs, award base XP only (no retroactive streak bonuses)
+      let xpAwarded: number;
+      if (isPastDay) {
+        xpAwarded = 15;
+      } else {
+        const newStreak = prevStreak.currentStreak + 1;
+        xpAwarded = calculateXPForLog(newStreak);
+      }
 
       const log: Log = {
         id: uuid(),
         goalId,
-        logDate: today,
+        logDate: dateToLog,
         note,
         createdAt: new Date().toISOString(),
         xpAwarded,
@@ -98,6 +102,12 @@ export const useLogStore = create<LogStore>((set, get) => ({
         'INSERT INTO logs (id, goal_id, log_date, note, created_at, xp_awarded, bonus_xp) VALUES (?,?,?,?,?,?,?)',
         [log.id, log.goalId, log.logDate, log.note ?? null, log.createdAt, log.xpAwarded, 0]
       );
+
+      // For past-day logs: skip grace day update and bonus event detection
+      if (isPastDay) {
+        set(s => ({ logs: [...s.logs, log] }));
+        return { log, bonusXP: 0, events: [] };
+      }
 
       // Recompute streak with the new log included
       const updatedGoalLogs = [...goalLogs, log];
@@ -111,6 +121,11 @@ export const useLogStore = create<LogStore>((set, get) => ({
       // --- Detect bonus events ---
       const events: LogEvent[] = [];
       let bonusXP = 0;
+
+      // gap > 1 means streak was broken; comeback = they're logging again after a break
+      const wasGap = prevStreak.lastLogDate
+        ? daysBetween(prevStreak.lastLogDate, today) > 1
+        : false;
 
       if (isFirst) {
         events.push('firstLog');

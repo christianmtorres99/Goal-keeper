@@ -265,7 +265,7 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1, backgroundColor: Colors.bg1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
   statRow: { flexDirection: 'row', gap: Spacing.sm },

@@ -255,7 +255,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1, backgroundColor: Colors.bg1 },
   content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
   headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

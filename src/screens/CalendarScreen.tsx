@@ -362,7 +362,7 @@ function StatCard({ icon, iconColor, label, value, sub }: {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1, backgroundColor: Colors.bg1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   arrow: { padding: Spacing.sm },
   monthTitle: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },

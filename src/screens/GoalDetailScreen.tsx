@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,18 +18,21 @@ import { makeChartConfig } from '../utils/colorUtils';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
 import type { RootStackParamList } from '../navigation/AppNavigator';
-import { todayString, addDays, formatShortDate } from '../utils/dateUtils';
+import { todayString, addDays, formatShortDate, formatCompactDate } from '../utils/dateUtils';
 
 import XPBar from '../components/common/XPBar';
 import BadgeItem from '../components/common/BadgeItem';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
 import MilestoneCompleteModal from '../components/common/MilestoneCompleteModal';
 import ShareCard from '../components/common/ShareCard';
+import LogNoteModal from '../components/common/LogNoteModal';
 
 type Route = RouteProp<RootStackParamList, 'GoalDetail'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const W = Dimensions.get('window').width - Spacing.md * 2;
+const BADGE_COLS = 4;
+const BADGE_SIZE = Math.floor((W - Spacing.md * (BADGE_COLS - 1)) / BADGE_COLS);
 
 export default function GoalDetailScreen() {
   const navigation = useNavigation<Nav>();
@@ -38,11 +41,15 @@ export default function GoalDetailScreen() {
 
   const goal = useGoalStore(s => s.goals.find(g => g.id === goalId));
   const { archiveGoal, deleteGoal, updateGoal, resetMilestoneLogs } = useGoalStore();
-  const { logs, graceStates, removeLog, loadLogs } = useLogStore();
+  const { logs, graceStates, removeLog, loadLogs, addLog } = useLogStore();
   const { earnedBadges } = useBadgeStore();
 
   const shareCardRef = useRef<View>(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
+
+  // Past-day logging
+  const [pastPickerVisible, setPastPickerVisible] = useState(false);
+  const [pendingPastDate, setPendingPastDate] = useState<string | null>(null);
 
   const goalLogs = useMemo(() => logs.filter(l => l.goalId === goalId), [logs, goalId]);
   const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
@@ -126,6 +133,18 @@ export default function GoalDetailScreen() {
     });
     await loadLogs();
   }, [goalId, goal, resetMilestoneLogs, updateGoal, loadLogs]);
+
+  const pastDays = useMemo(() => {
+    const today = todayString();
+    return Array.from({ length: 30 }, (_, i) => addDays(today, -(i + 1))).reverse();
+  }, []);
+
+  const handlePastDayConfirm = useCallback(async (note?: string) => {
+    const date = pendingPastDate;
+    setPendingPastDate(null);
+    if (!date || !goalId) return;
+    await addLog(goalId, note, date);
+  }, [pendingPastDate, goalId, addLog]);
 
   if (!goal) return null;
 
@@ -249,12 +268,19 @@ export default function GoalDetailScreen() {
               badge={badge}
               earned={earnedGoalBadges.earned.has(badge.id)}
               earnedAt={earnedGoalBadges.earnedAt[badge.id]}
+              size={BADGE_SIZE}
             />
           ))}
         </View>
 
-        {/* Log history — swipe to delete */}
-        <Text style={styles.sectionLabel}>Recent Logs</Text>
+        {/* Log history */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>Recent Logs</Text>
+          <TouchableOpacity style={styles.pastDayBtn} onPress={() => setPastPickerVisible(true)}>
+            <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
+            <Text style={styles.pastDayBtnText}>Log past day</Text>
+          </TouchableOpacity>
+        </View>
         {goalLogs.length === 0
           ? <Text style={styles.noLogs}>No logs yet — start logging today!</Text>
           : [...goalLogs].reverse().slice(0, 30).map(log => (
@@ -294,12 +320,65 @@ export default function GoalDetailScreen() {
         onRestart={handleMilestoneRestart}
         onArchive={() => { setMilestoneModalVisible(false); archiveGoal(goalId); navigation.goBack(); }}
       />
+
+      {/* Past-day picker modal */}
+      <Modal visible={pastPickerVisible} transparent animationType="fade" onRequestClose={() => setPastPickerVisible(false)}>
+        <View style={styles.pickerOverlay}>
+          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={() => setPastPickerVisible(false)} />
+          <View style={styles.pickerSheet}>
+            <View style={styles.pickerHandle} />
+            <Text style={styles.pickerTitle}>Log a Past Day</Text>
+            <Text style={styles.pickerSubtitle}>Tap a day you forgot to log</Text>
+            <FlatList
+              data={pastDays}
+              keyExtractor={d => d}
+              numColumns={7}
+              scrollEnabled={false}
+              renderItem={({ item: dateStr }) => {
+                const logged = goalLogs.some(l => l.logDate === dateStr);
+                const [, , dd] = dateStr.split('-');
+                return (
+                  <TouchableOpacity
+                    style={[styles.dayCell, logged && { backgroundColor: goal.color + '33', borderColor: goal.color }]}
+                    onPress={() => {
+                      if (!logged) {
+                        setPastPickerVisible(false);
+                        setPendingPastDate(dateStr);
+                      }
+                    }}
+                    disabled={logged}
+                  >
+                    <Text style={[styles.dayCellNum, logged && { color: goal.color }]}>{parseInt(dd, 10)}</Text>
+                    {logged && <View style={[styles.dayCellDot, { backgroundColor: goal.color }]} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+            <TouchableOpacity style={styles.pickerCancelBtn} onPress={() => setPastPickerVisible(false)}>
+              <Text style={styles.pickerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Note modal for past-day log */}
+      {pendingPastDate && (
+        <LogNoteModal
+          visible={!!pendingPastDate}
+          goalName={goal.name}
+          goalColor={goal.color}
+          currentStreak={streakInfo.currentStreak}
+          pastDate={pendingPastDate}
+          onConfirm={handlePastDayConfirm}
+          onCancel={() => setPendingPastDate(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1, backgroundColor: Colors.bg1 },
   offscreen: { position: 'absolute', top: -9999, left: -9999 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   heroCard: { backgroundColor: Colors.bg1, borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
@@ -330,12 +409,27 @@ const styles = StyleSheet.create({
   chartCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pastDayBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, backgroundColor: Colors.accentDim + '55', borderWidth: 1, borderColor: Colors.accentBright + '44' },
+  pastDayBtnText: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '600' },
   noLogs: { color: Colors.textDisabled, fontStyle: 'italic' },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, backgroundColor: Colors.bg1, borderRadius: Radius.md, marginBottom: 4, borderWidth: 1, borderColor: Colors.border },
   logDate: { color: Colors.textSecondary, fontSize: FontSize.sm, width: 66 },
   logXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
   logBonus: { color: Colors.success, fontSize: FontSize.xs },
   logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, flex: 1 },
+  // Past-day picker styles
+  pickerOverlay: { flex: 1, justifyContent: 'flex-end' },
+  pickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.6)' },
+  pickerSheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderTopWidth: 1, borderColor: Colors.border },
+  pickerHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  pickerTitle: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+  pickerSubtitle: { color: Colors.textSecondary, fontSize: FontSize.sm, marginBottom: Spacing.sm },
+  dayCell: { flex: 1, aspectRatio: 1, margin: 3, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
+  dayCellNum: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
+  dayCellDot: { width: 5, height: 5, borderRadius: 3, marginTop: 2 },
+  pickerCancelBtn: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.sm },
+  pickerCancelText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
   dangerZone: { gap: Spacing.sm, marginTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Colors.bg3, paddingTop: Spacing.lg },
   archiveBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warning + '55' },
   archiveBtnText: { color: Colors.warning, fontSize: FontSize.md },
