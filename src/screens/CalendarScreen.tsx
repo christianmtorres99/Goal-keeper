@@ -317,7 +317,7 @@ export default function CalendarScreen() {
       </ScrollView>
 
       {/* Day detail modal */}
-      <Modal visible={!!selectedDay} transparent animationType="slide" onRequestClose={() => setSelectedDay(null)}>
+      <Modal visible={!!selectedDay} transparent animationType="fade" onRequestClose={() => setSelectedDay(null)}>
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSelectedDay(null)}>
           <View style={styles.sheet}>
             <View style={styles.sheetHandle} />

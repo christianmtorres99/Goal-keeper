@@ -39,13 +39,12 @@ function TabNavigator() {
           backgroundColor: Colors.bg1,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          paddingBottom: 14,
-          paddingTop: 6,
-          height: 74,
+          paddingTop: 8,
+          elevation: 0,
         },
         tabBarActiveTintColor: Colors.accentBright,
         tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarLabelStyle: { fontSize: 11, marginBottom: 2 },
+        tabBarLabelStyle: { fontSize: 11, marginBottom: 4 },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, string> = {
             Home: focused ? 'home' : 'home-outline',

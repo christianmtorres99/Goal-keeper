@@ -1,27 +1,38 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Colors, FontSize, Spacing } from '../../constants/theme';
-import { todayString, addDays, formatDate } from '../../utils/dateUtils';
+import { Colors } from '../../constants/theme';
+import { todayString, addDays } from '../../utils/dateUtils';
 import type { Log } from '../../types';
 
 interface Props {
   logs: Log[];
   goalColor?: string;
   days?: number;
+  containerWidth?: number;
 }
 
-const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW_LABELS = ['M','','W','','F','','S'];
+const DOW_W = 18;
+const GAP = 2;
 
-export default function HeatmapGrid({ logs, goalColor, days = 91 }: Props) {
+export default function HeatmapGrid({ logs, goalColor, days = 91, containerWidth }: Props) {
   const color = goalColor ?? Colors.accent;
+  const numCols = Math.ceil(days / 7);
 
-  const { cells, months } = useMemo(() => {
+  const cellSize = useMemo(() => {
+    if (!containerWidth) return 12;
+    const available = containerWidth - DOW_W - numCols * GAP;
+    return Math.max(8, Math.floor(available / numCols));
+  }, [containerWidth, numCols]);
+
+  const colStep = cellSize + GAP;
+
+  const { cells, monthLabels } = useMemo(() => {
     const today = todayString();
     const logCounts: Record<string, number> = {};
     logs.forEach(l => { logCounts[l.logDate] = (logCounts[l.logDate] ?? 0) + 1; });
 
-    // Start from `days` days ago, aligned to Monday
     const startDate = addDays(today, -(days - 1));
     const cells: { date: string; count: number }[] = [];
     for (let i = 0; i < days; i++) {
@@ -29,84 +40,84 @@ export default function HeatmapGrid({ logs, goalColor, days = 91 }: Props) {
       cells.push({ date: d, count: logCounts[d] ?? 0 });
     }
 
-    // Collect month label positions (week column index where month first appears)
     const monthLabels: { label: string; col: number }[] = [];
-    const startDow = new Date(startDate).getDay();
-    const padStart = (startDow + 6) % 7;
     let lastMonth = -1;
     cells.forEach((cell, i) => {
       const m = parseInt(cell.date.split('-')[1]) - 1;
-      const col = Math.floor((i + padStart) / 7);
+      const col = Math.floor(i / 7);
       if (m !== lastMonth) {
         monthLabels.push({ label: MONTHS[m], col });
         lastMonth = m;
       }
     });
 
-    return { cells, months: monthLabels };
+    return { cells, monthLabels };
   }, [logs, days]);
 
   const getOpacity = (count: number) => {
-    if (count === 0) return 0.08;
-    if (count === 1) return 0.35;
-    if (count === 2) return 0.6;
+    if (count === 0) return 1;
+    if (count === 1) return 0.4;
+    if (count === 2) return 0.65;
     return 0.9;
   };
 
-  const totalCols = Math.ceil((cells.length) / 7) + 1;
+  const totalGridW = DOW_W + numCols * colStep;
 
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View>
-        {/* Month labels */}
-        <View style={styles.monthRow}>
-          <View style={styles.dowPad} />
-          {months.map((m, i) => (
-            <View key={i} style={[styles.monthLabel, { left: m.col * 14 + 24 }]}>
-              <Text style={styles.monthText}>{m.label}</Text>
-            </View>
-          ))}
-          <View style={{ width: totalCols * 14 }} />
-        </View>
-
-        <View style={styles.gridRow}>
-          {/* Day of week labels */}
-          <View style={styles.dowCol}>
-            {DAYS.map((d, i) => (
-              <Text key={i} style={styles.dowText}>{i % 2 === 0 ? d : ''}</Text>
-            ))}
-          </View>
-
-          {/* Grid columns */}
-          {Array.from({ length: totalCols }).map((_, col) => (
-            <View key={col} style={styles.col}>
-              {Array.from({ length: 7 }).map((_, row) => {
-                const cellIdx = col * 7 + row;
-                const cell = cells[cellIdx];
-                if (!cell) return <View key={row} style={styles.cell} />;
-                return (
-                  <View
-                    key={row}
-                    style={[styles.cell, { backgroundColor: color, opacity: getOpacity(cell.count) }]}
-                  />
-                );
-              })}
-            </View>
-          ))}
-        </View>
+  const inner = (
+    <View style={{ width: containerWidth ?? totalGridW }}>
+      {/* Month labels */}
+      <View style={{ height: 14, marginBottom: 3, marginLeft: DOW_W, position: 'relative' }}>
+        {monthLabels.map((m, i) => (
+          <Text key={i} style={[s.month, { position: 'absolute', left: m.col * colStep }]}>
+            {m.label}
+          </Text>
+        ))}
+        <View style={{ width: numCols * colStep }} />
       </View>
-    </ScrollView>
+
+      {/* Grid */}
+      <View style={{ flexDirection: 'row' }}>
+        {/* DOW labels */}
+        <View style={{ width: DOW_W, gap: GAP }}>
+          {DOW_LABELS.map((d, i) => (
+            <View key={i} style={{ height: cellSize, justifyContent: 'center' }}>
+              <Text style={s.dow}>{d}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Columns */}
+        {Array.from({ length: numCols }).map((_, col) => (
+          <View key={col} style={{ gap: GAP, marginRight: GAP }}>
+            {Array.from({ length: 7 }).map((_, row) => {
+              const idx = col * 7 + row;
+              const cell = cells[idx];
+              const bg = !cell || cell.count === 0 ? Colors.bg3 : color;
+              const op = !cell || cell.count === 0 ? 1 : getOpacity(cell.count);
+              return (
+                <View
+                  key={row}
+                  style={{
+                    width: cellSize,
+                    height: cellSize,
+                    borderRadius: Math.max(2, Math.floor(cellSize * 0.18)),
+                    backgroundColor: bg,
+                    opacity: op,
+                  }}
+                />
+              );
+            })}
+          </View>
+        ))}
+      </View>
+    </View>
   );
+
+  if (containerWidth) return inner;
+  return <ScrollView horizontal showsHorizontalScrollIndicator={false}>{inner}</ScrollView>;
 }
 
-const styles = StyleSheet.create({
-  monthRow: { flexDirection: 'row', position: 'relative', height: 16, marginBottom: 2 },
-  dowPad: { width: 20 },
-  monthLabel: { position: 'absolute' },
-  monthText: { color: Colors.textSecondary, fontSize: 9 },
-  gridRow: { flexDirection: 'row' },
-  dowCol: { width: 20, gap: 2 },
-  dowText: { height: 12, fontSize: 8, color: Colors.textSecondary, lineHeight: 12 },
-  col: { gap: 2, marginRight: 2 },
-  cell: { width: 12, height: 12, borderRadius: 2, backgroundColor: Colors.bg3 },
+const s = StyleSheet.create({
+  month: { color: Colors.textSecondary, fontSize: 9 },
+  dow: { color: Colors.textSecondary, fontSize: 8 },
 });

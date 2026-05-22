@@ -223,9 +223,13 @@ export default function ProfileScreen() {
         {/* Hero card */}
         <LinearGradient colors={[Colors.accentDim, Colors.bg1]} style={styles.heroCard}>
           <View style={styles.heroHeader}>
+            <View style={[styles.heroIconWrap, { borderColor: tier.color + '55', backgroundColor: tier.color + '22' }]}>
+              <Ionicons name={tier.icon as any} size={36} color={tier.color} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroLevel}>Level {playerStats.level}</Text>
-              <Text style={styles.heroXP}>{totalXP.toLocaleString()} Total XP</Text>
+              <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
+              <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP</Text>
             </View>
             <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
               <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
@@ -244,10 +248,44 @@ export default function ProfileScreen() {
               <Text style={[styles.tierLabel, { color: tier.color }]}>{tier.title}</Text>
             </View>
             <Text style={styles.customizeTitle}>Share Card</Text>
-            <TouchableOpacity style={styles.editBtn} onPress={() => setPickerVisible(true)}>
-              <Ionicons name="pencil" size={14} color={Colors.accentBright} />
-              <Text style={styles.editBtnText}>Edit ({features.length}/3)</Text>
-            </TouchableOpacity>
+          </View>
+
+          {/* 3 feature slots */}
+          <Text style={styles.pickerSublabel}>Achievements</Text>
+          <View style={styles.featureSlots}>
+            {[0, 1, 2].map(idx => {
+              const f = features[idx];
+              if (!f) {
+                return (
+                  <TouchableOpacity key={idx} style={styles.featureSlot} onPress={() => setPickerVisible(true)}>
+                    <Ionicons name="add-circle-outline" size={24} color={Colors.textDisabled} />
+                    <Text style={styles.featureSlotEmpty}>Add</Text>
+                  </TouchableOpacity>
+                );
+              }
+              const label = f.kind === 'badge'
+                ? BADGE_DEFINITIONS.find(b => b.id === f.id)?.label
+                : activeGoals.find(g => g.id === f.id)?.name;
+              const icon = f.kind === 'badge'
+                ? BADGE_DEFINITIONS.find(b => b.id === f.id)?.icon
+                : activeGoals.find(g => g.id === f.id)?.icon;
+              const iconColor = f.kind === 'goal'
+                ? (activeGoals.find(g => g.id === f.id)?.color ?? Colors.accentBright)
+                : Colors.accentBright;
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  style={styles.featureSlotFilled}
+                  onPress={() => setAndSaveFeatures(features.filter((_, i) => i !== idx))}
+                >
+                  <View style={styles.featureSlotRemoveBadge}>
+                    <Ionicons name="close" size={9} color={Colors.textDisabled} />
+                  </View>
+                  <Ionicons name={icon as any} size={26} color={iconColor} />
+                  <Text style={styles.featureSlotLabel} numberOfLines={2}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Color picker */}
@@ -261,29 +299,6 @@ export default function ProfileScreen() {
               />
             ))}
           </View>
-
-          {/* Featured preview */}
-          {features.length > 0 && (
-            <View style={styles.featuredPreview}>
-              {features.map((f, i) => {
-                const label = f.kind === 'badge'
-                  ? BADGE_DEFINITIONS.find(b => b.id === f.id)?.label
-                  : activeGoals.find(g => g.id === f.id)?.name;
-                const icon = f.kind === 'badge'
-                  ? BADGE_DEFINITIONS.find(b => b.id === f.id)?.icon
-                  : activeGoals.find(g => g.id === f.id)?.icon;
-                const color = f.kind === 'goal'
-                  ? activeGoals.find(g => g.id === f.id)?.color
-                  : Colors.accentBright;
-                return (
-                  <View key={i} style={styles.featuredChip}>
-                    <Ionicons name={icon as any} size={13} color={color ?? Colors.accentBright} />
-                    <Text style={styles.featuredChipText} numberOfLines={1}>{label}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
         </View>
 
         {/* Stats row */}
@@ -367,9 +382,11 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xxl },
 
   heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1, borderColor: Colors.accentDim },
-  heroHeader: { flexDirection: 'row', alignItems: 'flex-start' },
-  heroLevel: { color: Colors.textPrimary, fontSize: FontSize.xxxl, fontWeight: '800' },
-  heroXP: { color: Colors.accentBright, fontSize: FontSize.md },
+  heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  heroIconWrap: { width: 64, height: 64, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  heroLevel: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '800' },
+  heroTierTitle: { fontSize: FontSize.sm, fontWeight: '600', marginBottom: 2 },
+  heroXP: { color: Colors.accentBright, fontSize: FontSize.sm },
   shareBtn: { padding: Spacing.xs },
 
   customizeCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
@@ -377,15 +394,16 @@ const styles = StyleSheet.create({
   tierPreview: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tierLabel: { fontSize: FontSize.xs, fontWeight: '700' },
   customizeTitle: { flex: 1, color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 4 },
-  editBtnText: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '700' },
   pickerSublabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  featureSlots: { flexDirection: 'row', gap: Spacing.sm },
+  featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.bg3, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
+  featureSlotFilled: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.accentDim, backgroundColor: Colors.accentDim, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
+  featureSlotLabel: { color: Colors.textPrimary, fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
+  featureSlotEmpty: { color: Colors.textDisabled, fontSize: FontSize.xs },
+  featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, backgroundColor: Colors.bg3, borderRadius: 7, padding: 2 },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   colorSwatch: { width: 28, height: 28, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] },
-  featuredPreview: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
-  featuredChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.bg2, borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderWidth: 1, borderColor: Colors.border },
-  featuredChipText: { color: Colors.textSecondary, fontSize: FontSize.xs, maxWidth: 80 },
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },

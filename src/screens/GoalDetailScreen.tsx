@@ -5,7 +5,6 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
-import { Swipeable } from 'react-native-gesture-handler';
 import { Dimensions } from 'react-native';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
@@ -238,7 +237,7 @@ export default function GoalDetailScreen() {
         {/* Heatmap */}
         <Text style={styles.sectionLabel}>Activity Map</Text>
         <View style={styles.chartCard}>
-          <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} />
+          <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
         {/* Badges */}
@@ -259,21 +258,15 @@ export default function GoalDetailScreen() {
         {goalLogs.length === 0
           ? <Text style={styles.noLogs}>No logs yet — start logging today!</Text>
           : [...goalLogs].reverse().slice(0, 30).map(log => (
-            <Swipeable
-              key={log.id}
-              renderRightActions={() => (
-                <TouchableOpacity style={styles.deleteAction} onPress={() => handleDeleteLog(log.id)}>
-                  <Ionicons name="trash" size={18} color="#fff" />
-                </TouchableOpacity>
-              )}
-            >
-              <View style={styles.logRow}>
-                <Text style={styles.logDate}>{formatShortDate(log.logDate)}</Text>
-                <Text style={styles.logXP}>+{log.xpAwarded + log.bonusXp} XP</Text>
-                {log.bonusXp > 0 && <Text style={styles.logBonus}>+{log.bonusXp} bonus</Text>}
-                {log.note ? <Text style={styles.logNote} numberOfLines={1}>{log.note}</Text> : null}
-              </View>
-            </Swipeable>
+            <View key={log.id} style={styles.logRow}>
+              <Text style={styles.logDate}>{formatShortDate(log.logDate)}</Text>
+              <Text style={styles.logXP}>+{log.xpAwarded + log.bonusXp} XP</Text>
+              {log.bonusXp > 0 && <Text style={styles.logBonus}>+{log.bonusXp} bonus</Text>}
+              {log.note ? <Text style={styles.logNote} numberOfLines={1}>{log.note}</Text> : null}
+              <TouchableOpacity onPress={() => handleDeleteLog(log.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Ionicons name="trash-outline" size={14} color={Colors.textDisabled} />
+              </TouchableOpacity>
+            </View>
           ))
         }
 
@@ -338,12 +331,11 @@ const styles = StyleSheet.create({
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   noLogs: { color: Colors.textDisabled, fontStyle: 'italic' },
-  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.bg3, backgroundColor: Colors.bg0 },
-  logDate: { color: Colors.textSecondary, fontSize: FontSize.sm, width: 70 },
+  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, backgroundColor: Colors.bg1, borderRadius: Radius.md, marginBottom: 4, borderWidth: 1, borderColor: Colors.border },
+  logDate: { color: Colors.textSecondary, fontSize: FontSize.sm, width: 66 },
   logXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
   logBonus: { color: Colors.success, fontSize: FontSize.xs },
   logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, flex: 1 },
-  deleteAction: { backgroundColor: Colors.danger, justifyContent: 'center', alignItems: 'center', width: 64, borderRadius: Radius.sm, marginVertical: 1 },
   dangerZone: { gap: Spacing.sm, marginTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Colors.bg3, paddingTop: Spacing.lg },
   archiveBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warning + '55' },
   archiveBtnText: { color: Colors.warning, fontSize: FontSize.md },

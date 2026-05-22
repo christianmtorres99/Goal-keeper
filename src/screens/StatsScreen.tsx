@@ -226,7 +226,7 @@ export default function StatsScreen() {
         {/* Heatmap */}
         <Text style={styles.sectionLabel}>Activity Heatmap (90 days)</Text>
         <View style={styles.chartCard}>
-          <HeatmapGrid logs={filteredLogs} goalColor={heatColor} days={91} />
+          <HeatmapGrid logs={filteredLogs} goalColor={heatColor} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
         {/* Per-goal streaks */}
