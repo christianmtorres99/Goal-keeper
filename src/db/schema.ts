@@ -57,6 +57,10 @@ export const MIGRATIONS_V3 = [
   `DROP INDEX IF EXISTS idx_logs_goal_date`,
 ];
 
+export const MIGRATIONS_V4 = [
+  `ALTER TABLE goals ADD COLUMN difficulty TEXT DEFAULT 'medium'`,
+];
+
 // Run these as ALTER TABLE in a try/catch — safe to call on existing DBs
 export const MIGRATIONS_V2 = [
   `ALTER TABLE goals ADD COLUMN sort_order INTEGER DEFAULT 0`,

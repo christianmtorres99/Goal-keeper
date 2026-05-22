@@ -136,6 +136,7 @@ export default function AddGoalScreen() {
       notificationTime: reminderEnabled && notificationId ? reminderTime24 : undefined,
       notificationId: notificationId ?? undefined,
       allowMultiplePerDay: !isMilestone ? allowMultiple : false,
+      difficulty: 'medium' as const,
     };
 
     if (editingId) {

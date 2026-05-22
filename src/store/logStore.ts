@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { getDb } from '../db/client';
-import type { Log } from '../types';
+import type { Log, LogEvent } from '../types';
 import { todayString, daysBetween } from '../utils/dateUtils';
 import { calculateXPForLog } from '../logic/xpEngine';
 import { computeStreakWithGrace, isAlreadyLoggedToday } from '../logic/streakEngine';
-import { BONUS_XP } from '../constants/xp';
+import { BONUS_XP, DIFFICULTY_MULTIPLIERS, LUCKY_DROP_CHANCE } from '../constants/xp';
+import { useGoalStore } from './goalStore';
 
 function uuid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -15,7 +16,7 @@ interface GraceState {
   graceDayRefillDate: string | null;
 }
 
-export type LogEvent = 'firstLog' | 'perfectWeek' | 'perfectMonth' | 'comeback' | 'newBest';
+export type { LogEvent } from '../types';
 
 interface LogStore {
   logs: Log[];
@@ -26,6 +27,7 @@ interface LogStore {
   getLogsForGoal: (goalId: string) => Log[];
   getLogsForDate: (date: string) => Log[];
   getLogsForMonth: (year: number, month: number) => Log[];
+  addBonusXP: (logId: string, amount: number) => Promise<void>;
 }
 
 export const useLogStore = create<LogStore>((set, get) => ({
@@ -87,6 +89,22 @@ export const useLogStore = create<LogStore>((set, get) => ({
         xpAwarded = calculateXPForLog(newStreak);
       }
 
+      // Apply difficulty multiplier
+      const goalData = useGoalStore.getState().goals.find(g => g.id === goalId);
+      const diffMult = DIFFICULTY_MULTIPLIERS[goalData?.difficulty ?? 'medium'] ?? 1.0;
+      xpAwarded = Math.round(xpAwarded * diffMult);
+
+      // Lucky drop: 15% chance to double xpAwarded (only for today's logs)
+      const events: LogEvent[] = [];
+      let bonusXP = 0;
+      if (!isPastDay) {
+        const isLucky = Math.random() < LUCKY_DROP_CHANCE;
+        if (isLucky) {
+          xpAwarded = Math.round(xpAwarded * 2);
+          events.push('luckyDrop');
+        }
+      }
+
       const log: Log = {
         id: uuid(),
         goalId,
@@ -119,8 +137,17 @@ export const useLogStore = create<LogStore>((set, get) => ({
       );
 
       // --- Detect bonus events ---
-      const events: LogEvent[] = [];
-      let bonusXP = 0;
+      // (events and bonusXP already initialized above)
+
+      // Time bonus: earlyBird before 9am, nightOwl after 10pm
+      const hour = new Date().getHours();
+      if (hour < 9) {
+        bonusXP += BONUS_XP.earlyBird;
+        events.push('earlyBird');
+      } else if (hour >= 22) {
+        bonusXP += BONUS_XP.nightOwl;
+        events.push('nightOwl');
+      }
 
       // gap > 1 means streak was broken; comeback = they're logging again after a break
       const wasGap = prevStreak.lastLogDate
@@ -198,5 +225,17 @@ export const useLogStore = create<LogStore>((set, get) => ({
   getLogsForMonth: (year, month) => {
     const prefix = `${year}-${String(month).padStart(2, '0')}`;
     return get().logs.filter(l => l.logDate.startsWith(prefix));
+  },
+
+  addBonusXP: async (logId: string, amount: number) => {
+    try {
+      const db = await getDb();
+      await db.runAsync('UPDATE logs SET bonus_xp = bonus_xp + ? WHERE id = ?', [amount, logId]);
+      set(s => ({
+        logs: s.logs.map(l => l.id === logId ? { ...l, bonusXp: l.bonusXp + amount } : l),
+      }));
+    } catch (e) {
+      console.error('addBonusXP failed:', e);
+    }
   },
 }));

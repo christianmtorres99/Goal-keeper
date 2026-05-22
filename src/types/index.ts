@@ -1,5 +1,6 @@
 export type GoalType = 'habit' | 'milestone';
 export type GoalCategory = 'creative' | 'physical' | 'learning' | 'wellness' | 'other';
+export type GoalDifficulty = 'easy' | 'medium' | 'hard' | 'extreme';
 
 export interface Goal {
   id: string;
@@ -19,6 +20,7 @@ export interface Goal {
   completedAt?: string;
   cycleCount: number;
   allowMultiplePerDay?: boolean;
+  difficulty: GoalDifficulty;
 }
 
 export interface Log {
@@ -75,4 +77,22 @@ export type LogEvent =
   | 'perfectWeek'
   | 'perfectMonth'
   | 'comeback'
-  | 'newBest';
+  | 'newBest'
+  | 'luckyDrop'
+  | 'earlyBird'
+  | 'nightOwl'
+  | 'hotStreak'
+  | 'dailyDouble'
+  | 'streakRebuild';
+
+export interface Quest {
+  id: string;
+  type: 'log_any' | 'log_all' | 'use_note' | 'early_log' | 'log_specific' | 'log_count';
+  description: string;
+  xpReward: number;
+  progress: number;
+  target: number;
+  completed: boolean;
+  goalId?: string; // if quest targets a specific goal
+  goalName?: string;
+}

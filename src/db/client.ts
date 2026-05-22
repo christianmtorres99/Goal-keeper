@@ -7,6 +7,7 @@ import {
   CREATE_LOGS_UNIQUE_INDEX,
   MIGRATIONS_V2,
   MIGRATIONS_V3,
+  MIGRATIONS_V4,
 } from './schema';
 
 let _db: SQLite.SQLiteDatabase | null = null;
@@ -42,6 +43,15 @@ export async function runMigrations(): Promise<void> {
       await db.execAsync(sql);
     } catch {
       // Safe to ignore — column already exists or index already dropped
+    }
+  }
+
+  // V4 migrations — difficulty column
+  for (const sql of MIGRATIONS_V4) {
+    try {
+      await db.execAsync(sql);
+    } catch {
+      // Safe to ignore — column already exists
     }
   }
 }
