@@ -1,49 +1,53 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { Colors, Radius, Spacing } from '../../constants/theme';
 import type { BadgeDefinition } from '../../types';
 
 interface Props {
   badge: BadgeDefinition;
   earned: boolean;
   earnedAt?: string;
+  size?: number; // outer cell width — defaults to 90
 }
 
-export default function BadgeItem({ badge, earned, earnedAt }: Props) {
+export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props) {
+  const iconWrap = Math.floor(size * 0.76);
+  const iconSz   = Math.floor(iconWrap * 0.50);
+  const labelSz  = size < 80 ? 9 : 10;
+
   return (
-    <View style={[styles.container, !earned && styles.locked]}>
-      <View style={[styles.iconWrap, { backgroundColor: earned ? Colors.accentDim : Colors.bg3 }]}>
+    <View style={[s.container, { width: size }, !earned && s.locked]}>
+      <View style={[s.iconWrap, { width: iconWrap, height: iconWrap, borderRadius: iconWrap * 0.22, backgroundColor: earned ? Colors.accentDim : Colors.bg3 }]}>
         <Ionicons
           name={badge.icon as any}
-          size={28}
+          size={iconSz}
           color={earned ? Colors.accentBright : Colors.textDisabled}
         />
         {!earned && (
-          <View style={styles.lockOverlay}>
-            <Ionicons name="lock-closed" size={12} color={Colors.textDisabled} />
+          <View style={s.lockOverlay}>
+            <Ionicons name="lock-closed" size={10} color={Colors.textDisabled} />
           </View>
         )}
       </View>
-      <Text style={[styles.label, !earned && styles.labelLocked]} numberOfLines={1}>
+      <Text style={[s.label, { fontSize: labelSz }, !earned && s.labelLocked]} numberOfLines={1}>
         {badge.label}
       </Text>
       {earned && earnedAt ? (
-        <Text style={styles.date}>{earnedAt.slice(0, 10)}</Text>
+        <Text style={[s.sub, { fontSize: labelSz - 1 }]}>{earnedAt.slice(0, 10)}</Text>
       ) : (
-        <Text style={styles.desc} numberOfLines={2}>{badge.description}</Text>
+        <Text style={[s.sub, { fontSize: labelSz - 1 }]} numberOfLines={2}>{badge.description}</Text>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { width: 90, alignItems: 'center', gap: Spacing.xs },
-  locked: { opacity: 0.5 },
-  iconWrap: { width: 60, height: 60, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
+const s = StyleSheet.create({
+  container:   { alignItems: 'center', gap: Spacing.xs },
+  locked:      { opacity: 0.45 },
+  iconWrap:    { alignItems: 'center', justifyContent: 'center' },
   lockOverlay: { position: 'absolute', bottom: 4, right: 4 },
-  label: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: '600', textAlign: 'center' },
+  label:       { color: Colors.textPrimary, fontWeight: '600', textAlign: 'center' },
   labelLocked: { color: Colors.textDisabled },
-  date: { color: Colors.textSecondary, fontSize: FontSize.xs - 1, textAlign: 'center' },
-  desc: { color: Colors.textDisabled, fontSize: FontSize.xs - 1, textAlign: 'center' },
+  sub:         { color: Colors.textDisabled, textAlign: 'center', lineHeight: 13 },
 });

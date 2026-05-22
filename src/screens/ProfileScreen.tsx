@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +22,14 @@ import type { SelectedFeature } from '../components/common/ProfileShareCard';
 import type { GoalCategory } from '../types';
 
 const PREFS_KEY = 'shareCardPrefs';
+
+// Badge grid — 4 columns on normal screens, 3 on very small ones
+const SCREEN_W   = Dimensions.get('window').width;
+const NUM_COLS   = SCREEN_W < 360 ? 3 : 4;
+const BADGE_GAP  = Spacing.xs;            // 4 px gap between cells
+const BADGE_SIZE = Math.floor(
+  (SCREEN_W - Spacing.md * 2 - BADGE_GAP * (NUM_COLS - 1)) / NUM_COLS
+);
 
 const SHARE_BG_COLORS = [
   '#1A0A2E',  // deep purple
@@ -143,6 +151,7 @@ export default function ProfileScreen() {
             badge={badge}
             earned={earnedSet.has(badge.id)}
             earnedAt={earnedAtMap[badge.id]}
+            size={BADGE_SIZE}
           />
         ))}
       </View>
@@ -385,7 +394,7 @@ const styles = StyleSheet.create({
 
   section: { gap: Spacing.sm },
   sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: BADGE_GAP },
 
   skillGrid: { gap: Spacing.sm },
   skillCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
