@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvo
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
 import { getStreakMultiplier, calculateXPForLog } from '../../logic/xpEngine';
+import { getMotivationalQuote } from '../../utils/motivationUtils';
 
 interface Props {
   visible: boolean;
@@ -11,7 +12,7 @@ interface Props {
   currentStreak: number;
   onConfirm: (note?: string) => void;
   onCancel: () => void;
-  pastDate?: string; // when set, shows a "past day" badge instead of streak preview
+  pastDate?: string;
 }
 
 export default function LogNoteModal({ visible, goalName, goalColor, currentStreak, onConfirm, onCancel, pastDate }: Props) {
@@ -19,6 +20,7 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
   const nextStreak = currentStreak + 1;
   const xpPreview = calculateXPForLog(pastDate ? 1 : nextStreak);
   const multiplier = getStreakMultiplier(pastDate ? 1 : nextStreak);
+  const quote = getMotivationalQuote(pastDate ? 0 : currentStreak);
 
   const handleConfirm = () => {
     onConfirm(note.trim() || undefined);
@@ -56,7 +58,9 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
             <View style={styles.preview}>
               <View style={styles.previewItem}>
                 <Ionicons name="flame" size={16} color={Colors.warning} />
-                <Text style={styles.previewValue}>{nextStreak}d streak</Text>
+                <Text style={styles.previewValue}>
+                  {nextStreak === 1 ? 'Day 1 streak!' : `${nextStreak}d streak`}
+                </Text>
               </View>
               <View style={styles.previewItem}>
                 <Ionicons name="flash" size={16} color={Colors.accentBright} />
@@ -76,6 +80,8 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
             multiline
             autoFocus
           />
+
+          <Text style={styles.quote}>"{quote}"</Text>
 
           <View style={styles.actions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
@@ -105,6 +111,7 @@ const styles = StyleSheet.create({
   previewValue: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
   label: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
   input: { backgroundColor: Colors.bg2, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, color: Colors.textPrimary, fontSize: FontSize.md, padding: Spacing.md, minHeight: 80, textAlignVertical: 'top' },
+  quote: { color: Colors.textDisabled, fontSize: FontSize.xs, fontStyle: 'italic', textAlign: 'center', paddingHorizontal: Spacing.md },
   actions: { flexDirection: 'row', gap: Spacing.md },
   cancelBtn: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
   cancelText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },

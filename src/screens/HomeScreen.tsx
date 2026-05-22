@@ -11,11 +11,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
+import type { LogEvent } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import { todayString, getWeekStart } from '../utils/dateUtils';
+import { getTimeGreeting, getUndoToastMessage } from '../utils/motivationUtils';
 import type { Goal } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { BadgeDefinition } from '../types';
@@ -44,6 +46,7 @@ export default function HomeScreen() {
 
   const [pendingBadges, setPendingBadges] = useState<BadgeDefinition[]>([]);
   const [pendingBonusXP, setPendingBonusXP] = useState(0);
+  const [pendingEvents, setPendingEvents] = useState<LogEvent[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   // Log note modal
@@ -107,9 +110,10 @@ export default function HomeScreen() {
     const result = await addLog(goalId, note, undefined, goals.find(g => g.id === goalId)?.allowMultiplePerDay);
     if (!result) return;
 
-    // Undo toast
+    // Undo toast — event-specific message
+    const goalName = goals.find(g => g.id === goalId)?.name ?? '';
     setUndoLogId(result.log.id);
-    setUndoMessage(`Logged "${goals.find(g => g.id === goalId)?.name ?? ''}" +${result.log.xpAwarded + result.bonusXP} XP`);
+    setUndoMessage(getUndoToastMessage(goalName, result.log.xpAwarded + result.bonusXP, result.events));
     setUndoVisible(true);
 
     const goalLogs = logs.filter(l => l.goalId === goalId);
@@ -130,6 +134,7 @@ export default function HomeScreen() {
     if (newBadges.length > 0 || result.bonusXP > 0) {
       setPendingBadges(newBadges);
       setPendingBonusXP(result.bonusXP);
+      setPendingEvents(result.events);
     }
   }, [logModalGoalId, logs, graceStates, playerStats, addLog, checkAndAward, goals]);
 
@@ -145,6 +150,8 @@ export default function HomeScreen() {
   }, [reorderGoals]);
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
+  const greeting = allDone ? 'All done today! 🔥' : getTimeGreeting();
 
   const logModalGoal = logModalGoalId ? goals.find(g => g.id === logModalGoalId) : null;
   const logModalStreakInfo = logModalGoalId
@@ -193,7 +200,7 @@ export default function HomeScreen() {
             {/* Header */}
             <View style={styles.header}>
               <View>
-                <Text style={styles.greeting}>Goal Keeper</Text>
+                <Text style={styles.greeting}>{greeting}</Text>
                 <Text style={styles.date}>{today}</Text>
               </View>
               <View style={styles.headerActions}>
@@ -217,8 +224,10 @@ export default function HomeScreen() {
               <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
             </TouchableOpacity>
 
-            <Text style={styles.sectionLabel}>
-              Today — {todayLogged.size}/{activeGoals.length} logged
+            <Text style={[styles.sectionLabel, allDone && styles.sectionLabelDone]}>
+              {allDone
+                ? `Perfect day — ${todayLogged.size}/${activeGoals.length} logged`
+                : `Today — ${todayLogged.size}/${activeGoals.length} logged`}
             </Text>
           </View>
         }
@@ -251,8 +260,9 @@ export default function HomeScreen() {
       <BadgeModal
         badges={pendingBadges}
         bonusXP={pendingBonusXP}
+        events={pendingEvents}
         visible={pendingBadges.length > 0 || pendingBonusXP > 0}
-        onClose={() => { setPendingBadges([]); setPendingBonusXP(0); }}
+        onClose={() => { setPendingBadges([]); setPendingBonusXP(0); setPendingEvents([]); }}
       />
 
       <Modal visible={showWeeklyReview} animationType="slide" onRequestClose={() => setShowWeeklyReview(false)}>
@@ -281,4 +291,5 @@ const styles = StyleSheet.create({
   xpCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   xpCaption: { color: Colors.textDisabled, fontSize: FontSize.xs },
   sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabelDone: { color: Colors.success },
 });
