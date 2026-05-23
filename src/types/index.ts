@@ -21,6 +21,7 @@ export interface Goal {
   cycleCount: number;
   allowMultiplePerDay?: boolean;
   difficulty: GoalDifficulty;
+  customCategoryLabel?: string;
 }
 
 export interface Log {
@@ -42,6 +43,7 @@ export interface StreakInfo {
 }
 
 export type BadgeCategory = 'streak' | 'logs' | 'level' | 'consistency' | 'cycle';
+export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
 export interface BadgeDefinition {
   id: string;
@@ -50,6 +52,7 @@ export interface BadgeDefinition {
   description: string;
   icon: string;
   threshold: number;
+  rarity: BadgeRarity;
 }
 
 export interface EarnedBadge {

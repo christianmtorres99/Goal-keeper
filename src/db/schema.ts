@@ -17,7 +17,8 @@ export const CREATE_GOALS = `
     completed_at TEXT,
     cycle_count INTEGER DEFAULT 0,
     allow_multiple_per_day INTEGER DEFAULT 0,
-    difficulty TEXT DEFAULT 'medium'
+    difficulty TEXT DEFAULT 'medium',
+    custom_category_label TEXT
   )
 `;
 
@@ -61,6 +62,10 @@ export const MIGRATIONS_V3 = [
 
 export const MIGRATIONS_V4 = [
   `ALTER TABLE goals ADD COLUMN difficulty TEXT DEFAULT 'medium'`,
+];
+
+export const MIGRATIONS_V5 = [
+  `ALTER TABLE goals ADD COLUMN custom_category_label TEXT`,
 ];
 
 // Run these as ALTER TABLE in a try/catch — safe to call on existing DBs

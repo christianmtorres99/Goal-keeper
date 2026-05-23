@@ -17,7 +17,7 @@ import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP } from '../utils/xpUtils';
 import { todayString } from '../utils/dateUtils';
-import { getCategoryStats, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
+import { getCategoryStats, getCategoryDisplayLabel, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import XPBar from '../components/common/XPBar';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
 import StreakFlame from '../components/common/StreakFlame';
@@ -44,7 +44,7 @@ export default function SkillTrackScreen({ route }: Props) {
   const { logs, graceStates } = useLogStore();
 
   const catColor = CATEGORY_COLORS[category] ?? Colors.accentBright;
-  const catLabel = CATEGORY_LABELS[category];
+  const catLabel = getCategoryDisplayLabel(goals, category);
   const catIcon = CATEGORY_ICONS[category];
 
   const catGoals = useMemo(

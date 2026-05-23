@@ -77,6 +77,7 @@ export default function AddGoalScreen() {
   const [selectedIcon, setSelectedIcon] = useState(existing?.icon ?? 'flag');
   const [selectedColor, setSelectedColor] = useState(existing?.color ?? COLORS[0]);
   const [category, setCategory] = useState<GoalCategory>(existing?.category ?? 'other');
+  const [customCategoryLabel, setCustomCategoryLabel] = useState(existing?.customCategoryLabel ?? '');
   const [difficulty, setDifficulty] = useState<GoalDifficulty>(existing?.difficulty ?? 'medium');
   const [reminderEnabled, setReminderEnabled] = useState(!!existing?.notificationTime);
   const [allowMultiple, setAllowMultiple] = useState(existing?.allowMultiplePerDay ?? false);
@@ -139,6 +140,7 @@ export default function AddGoalScreen() {
       notificationId: notificationId ?? undefined,
       allowMultiplePerDay: !isMilestone ? allowMultiple : false,
       difficulty,
+      customCategoryLabel: category === 'other' && customCategoryLabel.trim() ? customCategoryLabel.trim() : undefined,
     };
 
     if (editingId) {
@@ -224,6 +226,16 @@ export default function AddGoalScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        {category === 'other' && (
+          <TextInput
+            style={styles.input}
+            placeholder='Give it a name (e.g. "Finance", "Cooking")'
+            placeholderTextColor={Colors.textDisabled}
+            value={customCategoryLabel}
+            onChangeText={setCustomCategoryLabel}
+            maxLength={24}
+          />
+        )}
 
         <Text style={styles.label}>Difficulty</Text>
         <Text style={styles.sublabel}>Harder goals earn more XP per log</Text>

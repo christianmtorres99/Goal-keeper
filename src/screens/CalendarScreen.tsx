@@ -252,11 +252,25 @@ export default function CalendarScreen() {
           {/* 2-col stat grid */}
           <View style={styles.statGrid}>
             <StatCard
+              icon="calendar"
+              iconColor={Colors.warning}
+              label="Best Day"
+              value={mostActiveDOW ? mostActiveDOW.slice(0, 3) : '—'}
+              sub={mostActiveDOW ? 'most active' : 'log to see'}
+            />
+            <StatCard
               icon="checkmark-circle"
               iconColor={Colors.success}
               label="Perfect Days"
               value={perfectDayCount.toString()}
               sub="all goals logged"
+            />
+            <StatCard
+              icon="trophy"
+              iconColor={favoriteGoal?.color ?? Colors.textDisabled}
+              label="Top Goal"
+              value={favoriteGoal ? favoriteGoal.name : '—'}
+              sub={favoriteGoal ? `${favoriteGoal.count} log${favoriteGoal.count !== 1 ? 's' : ''}` : 'no logs yet'}
             />
             <StatCard
               icon="flash"
@@ -265,27 +279,13 @@ export default function CalendarScreen() {
               value={monthXP.toLocaleString()}
               sub="XP earned"
             />
-            <StatCard
-              icon="calendar"
-              iconColor={Colors.warning}
-              label="Best Day"
-              value={mostActiveDOW ? mostActiveDOW.slice(0, 3) : '—'}
-              sub={mostActiveDOW ? 'most active' : 'log to see'}
-            />
-            <StatCard
-              icon="trophy"
-              iconColor={favoriteGoal?.color ?? Colors.textDisabled}
-              label="Top Goal"
-              value={favoriteGoal ? favoriteGoal.name.slice(0, 8) : '—'}
-              sub={favoriteGoal ? `${favoriteGoal.count} log${favoriteGoal.count !== 1 ? 's' : ''}` : 'no logs yet'}
-            />
             {bestWeek && (
               <StatCard
                 icon="bar-chart"
                 iconColor="#06B6D4"
                 label="Best Week"
-                value={`${bestWeek.count}`}
-                sub={`logs · wk of ${bestWeek.label}`}
+                value={`${bestWeek.count} logs`}
+                sub={`wk of ${bestWeek.label}`}
               />
             )}
             {longestGap !== null && (
@@ -369,10 +369,10 @@ function StatCard({ icon, iconColor, label, value, sub }: {
 }) {
   return (
     <View style={styles.statCard}>
-      <Ionicons name={icon as any} size={18} color={iconColor} />
-      <Text style={styles.statValue}>{value}</Text>
+      <Ionicons name={icon as any} size={16} color={iconColor} />
+      <Text style={styles.statValue} numberOfLines={1}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statSub}>{sub}</Text>
+      <Text style={styles.statSub} numberOfLines={1}>{sub}</Text>
     </View>
   );
 }
@@ -410,17 +410,17 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 8, borderRadius: 4 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  statCard: { flex: 1, minWidth: '44%', backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: 3, borderWidth: 1, borderColor: Colors.border },
-  statValue: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800' },
-  statLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
-  statSub: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1, borderColor: Colors.border },
+  statValue: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
+  statLabel: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: '600' },
+  statSub: { color: Colors.textSecondary, fontSize: FontSize.xs - 1 },
 
-  insightsCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  insightsCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.sm, gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
   insightsHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  insightsTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+  insightsTitle: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
   insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
-  insightDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.warning, marginTop: 6 },
-  insightText: { flex: 1, color: Colors.textSecondary, fontSize: FontSize.sm, lineHeight: 20 },
+  insightDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.warning, marginTop: 5 },
+  insightText: { flex: 1, color: Colors.textSecondary, fontSize: FontSize.xs, lineHeight: 17 },
 
   legendCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   legendTitle: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },

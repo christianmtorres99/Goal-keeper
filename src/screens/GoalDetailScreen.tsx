@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useRef, useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -46,6 +46,18 @@ export default function GoalDetailScreen() {
 
   const shareCardRef = useRef<View>(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!goal) return;
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name={goal.icon as any} size={20} color={goal.color} />
+          <Text style={{ color: Colors.textPrimary, fontSize: 17, fontWeight: '600' }}>Details</Text>
+        </View>
+      ),
+    });
+  }, [goal, navigation]);
 
   // Past-day logging
   const [pastPickerVisible, setPastPickerVisible] = useState(false);

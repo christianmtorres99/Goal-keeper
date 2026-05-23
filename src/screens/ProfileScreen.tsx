@@ -14,7 +14,7 @@ import { useGoalStore } from '../store/goalStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP } from '../utils/xpUtils';
-import { getCategoryStats, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
+import { getCategoryStats, getCategoryDisplayLabel, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
 import BadgeItem from '../components/common/BadgeItem';
@@ -357,7 +357,7 @@ export default function ProfileScreen() {
                         </StreakFlame>
                       </View>
                       <View style={styles.skillInfo}>
-                        <Text style={styles.skillName}>{CATEGORY_LABELS[cat]}</Text>
+                        <Text style={styles.skillName}>{getCategoryDisplayLabel(goals, cat)}</Text>
                         <Text style={styles.skillGoalCount}>{cs.goalCount} goal{cs.goalCount !== 1 ? 's' : ''}</Text>
                       </View>
                       <View style={styles.skillLevelBadge}>

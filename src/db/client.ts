@@ -8,6 +8,7 @@ import {
   MIGRATIONS_V2,
   MIGRATIONS_V3,
   MIGRATIONS_V4,
+  MIGRATIONS_V5,
 } from './schema';
 
 let _db: SQLite.SQLiteDatabase | null = null;
@@ -28,30 +29,16 @@ export async function runMigrations(): Promise<void> {
   await db.execAsync(CREATE_EARNED_BADGES);
   await db.execAsync(CREATE_GRACE_DAYS);
 
-  // V2 column additions — each wrapped in try/catch so existing installs skip silently
   for (const sql of MIGRATIONS_V2) {
-    try {
-      await db.execAsync(sql);
-    } catch {
-      // Column already exists — safe to ignore
-    }
+    try { await db.execAsync(sql); } catch {}
   }
-
-  // V3 migrations — allow multiple logs per day
   for (const sql of MIGRATIONS_V3) {
-    try {
-      await db.execAsync(sql);
-    } catch {
-      // Safe to ignore — column already exists or index already dropped
-    }
+    try { await db.execAsync(sql); } catch {}
   }
-
-  // V4 migrations — difficulty column
   for (const sql of MIGRATIONS_V4) {
-    try {
-      await db.execAsync(sql);
-    } catch {
-      // Safe to ignore — column already exists
-    }
+    try { await db.execAsync(sql); } catch {}
+  }
+  for (const sql of MIGRATIONS_V5) {
+    try { await db.execAsync(sql); } catch {}
   }
 }

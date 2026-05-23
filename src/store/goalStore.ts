@@ -43,6 +43,7 @@ function rowToGoal(r: any): Goal {
     cycleCount: r.cycle_count ?? 0,
     allowMultiplePerDay: r.allow_multiple_per_day === 1,
     difficulty: (r.difficulty ?? 'medium') as GoalDifficulty,
+    customCategoryLabel: r.custom_category_label ?? undefined,
   };
 }
 
@@ -86,13 +87,14 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       };
       await db.runAsync(
         `INSERT INTO goals (id, name, description, type, color, icon, created_at, is_archived,
-          target_count, unit, sort_order, category, notification_time, notification_id, completed_at, cycle_count, allow_multiple_per_day, difficulty)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          target_count, unit, sort_order, category, notification_time, notification_id, completed_at, cycle_count, allow_multiple_per_day, difficulty, custom_category_label)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [goal.id, goal.name, goal.description, goal.type, goal.color, goal.icon,
          goal.createdAt, 0, goal.targetCount ?? null, goal.unit ?? null,
          goal.sortOrder, goal.category, goal.notificationTime ?? null,
          goal.notificationId ?? null, goal.completedAt ?? null, goal.cycleCount,
-         goal.allowMultiplePerDay ? 1 : 0, goal.difficulty ?? 'medium']
+         goal.allowMultiplePerDay ? 1 : 0, goal.difficulty ?? 'medium',
+         goal.customCategoryLabel ?? null]
       );
       set(s => ({ goals: [...s.goals, goal] }));
       return goal;
@@ -111,12 +113,13 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       await db.runAsync(
         `UPDATE goals SET name=?, description=?, type=?, color=?, icon=?, is_archived=?,
           target_count=?, unit=?, sort_order=?, category=?, notification_time=?,
-          notification_id=?, completed_at=?, cycle_count=?, allow_multiple_per_day=?, difficulty=? WHERE id=?`,
+          notification_id=?, completed_at=?, cycle_count=?, allow_multiple_per_day=?, difficulty=?, custom_category_label=? WHERE id=?`,
         [updated.name, updated.description, updated.type, updated.color, updated.icon,
          updated.isArchived ? 1 : 0, updated.targetCount ?? null, updated.unit ?? null,
          updated.sortOrder, updated.category, updated.notificationTime ?? null,
          updated.notificationId ?? null, updated.completedAt ?? null, updated.cycleCount,
-         updated.allowMultiplePerDay ? 1 : 0, updated.difficulty ?? 'medium', id]
+         updated.allowMultiplePerDay ? 1 : 0, updated.difficulty ?? 'medium',
+         updated.customCategoryLabel ?? null, id]
       );
       set(s => ({
         goals: s.goals.map(g => g.id === id ? updated : g),

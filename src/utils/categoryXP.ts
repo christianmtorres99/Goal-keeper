@@ -2,6 +2,14 @@ import type { Goal, GoalCategory, Log, PlayerStats } from '../types';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from './xpUtils';
 
+export function getCategoryDisplayLabel(goals: Goal[], category: GoalCategory): string {
+  if (category === 'other') {
+    const customLabel = goals.find(g => g.category === 'other' && g.customCategoryLabel)?.customCategoryLabel;
+    if (customLabel) return customLabel;
+  }
+  return CATEGORY_LABELS[category];
+}
+
 export const CATEGORY_LABELS: Record<GoalCategory, string> = {
   creative: 'Creative',
   physical: 'Physical',
