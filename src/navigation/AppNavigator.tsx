@@ -13,12 +13,15 @@ import ProfileScreen from '../screens/ProfileScreen';
 import GoalDetailScreen from '../screens/GoalDetailScreen';
 import AddGoalScreen from '../screens/AddGoalScreen';
 import ArchivedGoalsScreen from '../screens/ArchivedGoalsScreen';
+import SkillTrackScreen from '../screens/SkillTrackScreen';
+import type { GoalCategory } from '../types';
 
 export type RootStackParamList = {
   Tabs: undefined;
   GoalDetail: { goalId: string };
   AddGoal: { goalId?: string };
   ArchivedGoals: undefined;
+  SkillTrack: { category: GoalCategory };
 };
 
 export type TabParamList = {
@@ -96,6 +99,11 @@ export default function AppNavigator() {
         <Stack.Screen name="GoalDetail" component={GoalDetailScreen} options={{ title: '' }} />
         <Stack.Screen name="AddGoal" component={AddGoalScreen} options={{ title: 'New Goal' }} />
         <Stack.Screen name="ArchivedGoals" component={ArchivedGoalsScreen} options={{ title: 'Archived Goals' }} />
+        <Stack.Screen
+          name="SkillTrack"
+          component={SkillTrackScreen}
+          options={({ route }) => ({ title: route.params.category.charAt(0).toUpperCase() + route.params.category.slice(1) })}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

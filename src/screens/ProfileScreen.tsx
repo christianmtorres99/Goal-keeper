@@ -1,5 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +23,9 @@ import ProfileShareCard, { getLevelTier } from '../components/common/ProfileShar
 import StreakFlame from '../components/common/StreakFlame';
 import type { SelectedFeature } from '../components/common/ProfileShareCard';
 import type { GoalCategory } from '../types';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const PREFS_KEY = 'shareCardPrefs';
 
@@ -40,6 +45,7 @@ const SHARE_BG_COLORS = [
 ];
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<Nav>();
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
   const { earnedBadges } = useBadgeStore();
@@ -338,7 +344,12 @@ export default function ProfileScreen() {
               {activeCategories.map(cat => {
                 const cs = categoryStats[cat]!;
                 return (
-                  <View key={cat} style={styles.skillCard}>
+                  <TouchableOpacity
+                    key={cat}
+                    style={styles.skillCard}
+                    onPress={() => navigation.navigate('SkillTrack', { category: cat })}
+                    activeOpacity={0.75}
+                  >
                     <View style={styles.skillHeader}>
                       <View style={styles.skillIconWrap}>
                         <StreakFlame streak={categoryMaxStreak[cat] ?? 0} size={36}>
@@ -352,9 +363,10 @@ export default function ProfileScreen() {
                       <View style={styles.skillLevelBadge}>
                         <Text style={styles.skillLevel}>Lv {cs.stats.level}</Text>
                       </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
                     </View>
                     <XPBar stats={cs.stats} compact />
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
