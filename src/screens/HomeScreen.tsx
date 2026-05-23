@@ -15,6 +15,8 @@ import type { LogEvent } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { useGameStore } from '../store/gameStore';
 import { useQuestStore } from '../store/questStore';
+import { useTodoStore } from '../store/todoStore';
+import { useTodoXPStore } from '../store/todoXPStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
@@ -35,6 +37,7 @@ import WeeklyReviewScreen from './WeeklyReviewScreen';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 import LevelUpModal from '../components/common/LevelUpModal';
 import DailyQuestsCard from '../components/common/DailyQuestsCard';
+import TodoSection from '../components/todos/TodoSection';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
@@ -65,10 +68,12 @@ export default function HomeScreen() {
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
 
+  const todoXP = useTodoXPStore(s => s.totalXP);
+
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
   const hasArchived = useMemo(() => goals.some(g => g.isArchived), [goals]);
 
-  const totalXP = useMemo(() => sumXP(logs), [logs]);
+  const totalXP = useMemo(() => sumXP(logs) + todoXP, [logs, todoXP]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
 
   const todayLogged = useMemo(() => {
@@ -99,7 +104,7 @@ export default function HomeScreen() {
     prevLevelRef.current = playerStats.level;
   }, [playerStats.level]);
 
-  // On mount: claim login bonus, refresh daily double, generate quests
+  // On mount: claim login bonus, refresh daily double, generate quests, load todos
   useEffect(() => {
     const init = async () => {
       const gs = useGameStore.getState();
@@ -114,6 +119,9 @@ export default function HomeScreen() {
         activeIds.map(g => g.id),
         activeIds.map(g => g.name),
       );
+
+      await useTodoStore.getState().loadTodos();
+      await useTodoXPStore.getState().load();
     };
     init();
   }, []);
@@ -326,6 +334,9 @@ export default function HomeScreen() {
                 <Text style={styles.date}>{todayLabel}</Text>
               </View>
               <View style={styles.headerActions}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Journal')}>
+                  <Ionicons name="journal-outline" size={20} color={Colors.textSecondary} />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
                   <Ionicons name="stats-chart" size={20} color={Colors.textSecondary} />
                 </TouchableOpacity>
@@ -352,6 +363,8 @@ export default function HomeScreen() {
                 totalAvailable={questsAvailable}
               />
             )}
+
+            <TodoSection />
 
             <Text style={[styles.sectionLabel, allDone && styles.sectionLabelDone]}>
               {allDone

@@ -11,6 +11,7 @@ import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { useGoalStore } from '../store/goalStore';
+import { useTodoXPStore } from '../store/todoXPStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP } from '../utils/xpUtils';
@@ -55,9 +56,10 @@ export default function ProfileScreen() {
   const [bgColor, setBgColor] = useState(SHARE_BG_COLORS[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
 
+  const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
 
-  const totalXP = useMemo(() => sumXP(logs), [logs]);
+  const totalXP = useMemo(() => sumXP(logs) + todoXP, [logs, todoXP]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
   const tier = useMemo(() => getLevelTier(playerStats.level), [playerStats.level]);
 

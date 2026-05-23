@@ -99,3 +99,43 @@ export interface Quest {
   goalId?: string; // if quest targets a specific goal
   goalName?: string;
 }
+
+// ── Todos ─────────────────────────────────────────────────────────────────────
+export interface SubItem {
+  id: string;
+  todoId: string;
+  title: string;
+  checked: boolean;
+  sortOrder: number;
+}
+
+export interface Todo {
+  id: string;
+  title: string;
+  dueDate?: string;   // YYYY-MM-DD
+  dueTime?: string;   // HH:MM
+  completed: boolean;
+  completedAt?: string;
+  xpReward: number;
+  createdAt: string;
+  sortOrder: number;
+  subItems: SubItem[];
+}
+
+// ── Journal ───────────────────────────────────────────────────────────────────
+export interface DrawingPath {
+  d: string;
+  color: string;
+  strokeWidth: number;
+}
+
+export interface JournalEntry {
+  id: string;
+  entryDate: string;
+  mood: number;     // 1-5
+  energy: number;   // 1-5
+  textContent: string;
+  drawingData: DrawingPath[];
+  createdAt: string;
+  updatedAt: string;
+}

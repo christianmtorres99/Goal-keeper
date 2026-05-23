@@ -5,6 +5,9 @@ import {
   CREATE_GRACE_DAYS,
   CREATE_LOGS,
   CREATE_LOGS_UNIQUE_INDEX,
+  CREATE_TODOS,
+  CREATE_TODO_SUB_ITEMS,
+  CREATE_JOURNALS,
   MIGRATIONS_V2,
   MIGRATIONS_V3,
   MIGRATIONS_V4,
@@ -28,6 +31,9 @@ export async function runMigrations(): Promise<void> {
   await db.execAsync(CREATE_LOGS_UNIQUE_INDEX);
   await db.execAsync(CREATE_EARNED_BADGES);
   await db.execAsync(CREATE_GRACE_DAYS);
+  await db.execAsync(CREATE_TODOS);
+  await db.execAsync(CREATE_TODO_SUB_ITEMS);
+  await db.execAsync(CREATE_JOURNALS);
 
   for (const sql of MIGRATIONS_V2) {
     try { await db.execAsync(sql); } catch {}

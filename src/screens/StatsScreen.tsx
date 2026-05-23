@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-chart-kit';
@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
+import { useTodoXPStore } from '../store/todoXPStore';
+import { useJournalStore } from '../store/journalStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP } from '../utils/xpUtils';
@@ -35,6 +37,8 @@ type FilterMode = 'all' | 'goal' | 'category';
 export default function StatsScreen() {
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
+  const todoXP = useTodoXPStore(s => s.totalXP);
+  const { entries: journalEntries, loadEntries } = useJournalStore();
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [selectedGoalId, setSelectedGoalId] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<GoalCategory>('other');
@@ -59,8 +63,37 @@ export default function StatsScreen() {
     return logs;
   }, [logs, filterMode, selectedGoalId, selectedCategory, activeGoals]);
 
-  const totalXP = useMemo(() => sumXP(logs), [logs]);
+  const totalXP = useMemo(() => sumXP(logs) + todoXP, [logs, todoXP]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
+
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  // Mood & energy chart — last 30 days
+  const moodEnergyData = useMemo(() => {
+    const today = todayString();
+    const labels: string[] = [];
+    const moodData: number[] = [];
+    const energyData: number[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = addDays(today, -i);
+      const entry = journalEntries.find(e => e.entryDate === d);
+      labels.push(i % 7 === 0 ? d.slice(5) : '');
+      moodData.push(entry?.mood ?? 0);
+      energyData.push(entry?.energy ?? 0);
+    }
+    return {
+      labels,
+      datasets: [
+        { data: moodData, color: (opacity = 1) => `rgba(168, 85, 247, ${opacity})`, strokeWidth: 2 },
+        { data: energyData, color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, strokeWidth: 2 },
+      ],
+      legend: ['Mood', 'Energy'],
+    };
+  }, [journalEntries]);
+
+  const hasMoodData = useMemo(() => journalEntries.length > 0, [journalEntries]);
 
   // Weekly summary — last 8 weeks
   const weeklyData = useMemo(() => {
@@ -239,6 +272,42 @@ export default function StatsScreen() {
           <HeatmapGrid logs={filteredLogs} goalColor={heatColor} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
+        {/* Mood & Energy chart */}
+        <Text style={styles.sectionLabel}>Mood & Energy (30 days)</Text>
+        <View style={styles.chartCard}>
+          {hasMoodData ? (
+            <>
+              <View style={styles.moodLegend}>
+                <View style={styles.moodLegendItem}>
+                  <View style={[styles.moodLegendDot, { backgroundColor: '#A855F7' }]} />
+                  <Text style={styles.moodLegendText}>Mood</Text>
+                </View>
+                <View style={styles.moodLegendItem}>
+                  <View style={[styles.moodLegendDot, { backgroundColor: '#10B981' }]} />
+                  <Text style={styles.moodLegendText}>Energy</Text>
+                </View>
+              </View>
+              <LineChart
+                data={moodEnergyData}
+                width={W - Spacing.md * 2}
+                height={180}
+                chartConfig={{
+                  ...chartConfig,
+                  color: (opacity = 1) => `rgba(168, 85, 247, ${opacity})`,
+                }}
+                style={styles.chart}
+                bezier
+                withDots={false}
+                fromZero
+                yAxisSuffix=""
+                yAxisLabel=""
+              />
+            </>
+          ) : (
+            <Text style={styles.noData}>Start journaling to see your mood trends</Text>
+          )}
+        </View>
+
         {/* Per-goal streaks */}
         <Text style={styles.sectionLabel}>Current Streaks</Text>
         {activeGoals
@@ -300,4 +369,8 @@ const styles = StyleSheet.create({
   streakNum: { alignItems: 'center' },
   streakValue: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },
   streakLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  moodLegend: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.sm },
+  moodLegendItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  moodLegendDot: { width: 10, height: 10, borderRadius: 5 },
+  moodLegendText: { color: Colors.textSecondary, fontSize: FontSize.xs },
 });

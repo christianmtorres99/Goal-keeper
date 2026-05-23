@@ -9,6 +9,8 @@ import { useGoalStore } from './src/store/goalStore';
 import { useLogStore } from './src/store/logStore';
 import { useBadgeStore } from './src/store/badgeStore';
 import { useGameStore } from './src/store/gameStore';
+import { useTodoXPStore } from './src/store/todoXPStore';
+import { useJournalStore } from './src/store/journalStore';
 import { setupNotificationHandler } from './src/utils/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import OnboardingScreen, { ONBOARDING_KEY } from './src/screens/OnboardingScreen';
@@ -28,6 +30,8 @@ export default function App() {
         await useLogStore.getState().loadLogs();
         await useBadgeStore.getState().loadBadges();
         await useGameStore.getState().load();
+        await useTodoXPStore.getState().load();
+        await useJournalStore.getState().loadEntries();
 
         const onboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
         if (!onboarded) setShowOnboarding(true);

@@ -14,6 +14,7 @@ import GoalDetailScreen from '../screens/GoalDetailScreen';
 import AddGoalScreen from '../screens/AddGoalScreen';
 import ArchivedGoalsScreen from '../screens/ArchivedGoalsScreen';
 import SkillTrackScreen from '../screens/SkillTrackScreen';
+import JournalScreen from '../screens/JournalScreen';
 import type { GoalCategory } from '../types';
 
 export type RootStackParamList = {
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   AddGoal: { goalId?: string };
   ArchivedGoals: undefined;
   SkillTrack: { category: GoalCategory };
+  Journal: undefined;
 };
 
 export type TabParamList = {
@@ -103,6 +105,11 @@ export default function AppNavigator() {
           name="SkillTrack"
           component={SkillTrackScreen}
           options={({ route }) => ({ title: route.params.category.charAt(0).toUpperCase() + route.params.category.slice(1) })}
+        />
+        <Stack.Screen
+          name="Journal"
+          component={JournalScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
