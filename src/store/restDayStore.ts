@@ -63,7 +63,7 @@ export const useRestDayStore = create<RestDayStore>((set, get) => ({
       activeRestDate: today,
       totalActiveDays: get().totalActiveDays,
       activeDaysSinceLastBank: get().activeDaysSinceLastBank,
-      dismissCount: get().dismissCount,
+      dismissCount: 0,
     };
     set(next);
     await persist(next);
@@ -83,12 +83,13 @@ export const useRestDayStore = create<RestDayStore>((set, get) => ({
       newSince = 0;
     }
 
+    const bankingFired = newTotal > 0 && newTotal % 7 === 0;
     const next: PersistedState = {
       bankedRestDays: newBanked,
       activeRestDate: get().activeRestDate,
       totalActiveDays: newTotal,
       activeDaysSinceLastBank: newSince,
-      dismissCount: get().dismissCount,
+      dismissCount: bankingFired ? 0 : get().dismissCount,
     };
     set(next);
     await persist(next);

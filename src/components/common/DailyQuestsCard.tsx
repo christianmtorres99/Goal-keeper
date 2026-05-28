@@ -51,7 +51,7 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
   );
 }
 
-function QuestRow({ quest }: { quest: Quest }) {
+const QuestRow = React.memo(function QuestRow({ quest }: { quest: Quest }) {
   const progress = Math.min(quest.progress / quest.target, 1);
   const icon = QUEST_ICONS[quest.type] ?? 'star-outline';
 
@@ -87,7 +87,7 @@ function QuestRow({ quest }: { quest: Quest }) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

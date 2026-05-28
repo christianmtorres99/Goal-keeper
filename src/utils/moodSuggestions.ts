@@ -53,7 +53,7 @@ export function detectMoodSuggestion(entries: JournalEntry[]): MoodSuggestion | 
   if (recent.length >= 4) {
     const last4 = recent.slice(0, 4);
     const avgSum = last4.reduce((s, e) => s + e.mood + e.energy, 0) / last4.length;
-    if (avgSum < 4) {
+    if (avgSum < 5) {
       return {
         id: `mixed_fatigue_${today}`,
         trigger: 'mixed_fatigue',

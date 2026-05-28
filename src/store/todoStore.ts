@@ -57,7 +57,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         `SELECT * FROM todos
          WHERE (completed = 0 AND (due_date IS NULL OR due_date <= ?))
             OR (completed = 1 AND completed_at >= ?)
-         ORDER BY completed ASC, sort_order ASC, created_at ASC`,
+         ORDER BY completed ASC, CASE WHEN completed = 1 THEN completed_at END DESC, sort_order ASC`,
         [today, today]
       );
 
