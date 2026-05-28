@@ -45,9 +45,9 @@ const SIZE_OPTIONS: { label: string; size: number }[] = [
   { label: 'XL', size: 24 },
 ];
 
-const PAPER_BG = '#1C1A12';
-const PAPER_LINE = '#272418';
-const PAPER_MARGIN = '#4A2020';
+const PAPER_BG    = '#131210';
+const PAPER_LINE  = '#1C1A17';
+const PAPER_MARGIN = '#B01C1C';
 const PAPER_TEXT = '#E8D9C0';
 const LINE_H = FontSize.md * 1.8;
 
@@ -190,6 +190,8 @@ export default function JournalScreen() {
   const [paperHeight, setPaperHeight] = useState(300);
 
   const textInputRef = useRef<TextInput>(null);
+  const selectionRef = useRef({ start: 0, end: 0 });
+  const isToolbarPressRef = useRef(false);
 
   const isDirty = useMemo(() => {
     const originalText = initialContent.text;
@@ -272,7 +274,7 @@ export default function JournalScreen() {
   }, [text, selection]);
 
   const applyFormat = useCallback((opts: Partial<Pick<RichSpan, 'bold' | 'italic' | 'size' | 'color'>>) => {
-    const { start, end } = selection;
+    const { start, end } = selectionRef.current;
     if (start === end) return; // nothing selected
     const newSpan: RichSpan = { start, end, ...opts };
     setSpans(prev => applySpan(prev, newSpan));
@@ -380,8 +382,17 @@ export default function JournalScreen() {
                   style={styles.paperInput}
                   value={text}
                   onChangeText={handleTextChange}
-                  onSelectionChange={e => setSelection(e.nativeEvent.selection)}
-                  onBlur={() => setIsEditing(false)}
+                  onSelectionChange={e => {
+                    const sel = e.nativeEvent.selection;
+                    setSelection(sel);
+                    selectionRef.current = sel;
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      if (!isToolbarPressRef.current) setIsEditing(false);
+                      isToolbarPressRef.current = false;
+                    }, 150);
+                  }}
                   multiline
                   textAlignVertical="top"
                   autoFocus
@@ -400,13 +411,15 @@ export default function JournalScreen() {
             <View style={styles.formatToolbar}>
               <TouchableOpacity
                 style={[styles.formatBtn, activeBold && styles.formatBtnActive]}
-                onPress={() => { setActiveBold(!activeBold); applyFormat({ bold: !activeBold }); }}
+                onPressIn={() => { isToolbarPressRef.current = true; }}
+                onPress={() => { setActiveBold(!activeBold); applyFormat({ bold: !activeBold }); textInputRef.current?.focus(); }}
               >
                 <Text style={[styles.formatBtnText, activeBold && styles.formatBtnTextActive]}>B</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.formatBtn, activeItalic && styles.formatBtnActive]}
-                onPress={() => { setActiveItalic(!activeItalic); applyFormat({ italic: !activeItalic }); }}
+                onPressIn={() => { isToolbarPressRef.current = true; }}
+                onPress={() => { setActiveItalic(!activeItalic); applyFormat({ italic: !activeItalic }); textInputRef.current?.focus(); }}
               >
                 <Text style={[styles.formatBtnText, styles.italicText, activeItalic && styles.formatBtnTextActive]}>I</Text>
               </TouchableOpacity>
@@ -417,9 +430,10 @@ export default function JournalScreen() {
                 <TouchableOpacity
                   key={opt.label}
                   style={[styles.formatBtn, activeSizeIdx === idx && styles.formatBtnActive]}
-                  onPress={() => { setActiveSizeIdx(idx); applyFormat({ size: opt.size }); }}
+                  onPressIn={() => { isToolbarPressRef.current = true; }}
+                  onPress={() => { setActiveSizeIdx(idx); applyFormat({ size: opt.size }); textInputRef.current?.focus(); }}
                 >
-                  <Text style={[styles.formatBtnText, { fontSize: Math.max(opt.size * 0.7, 10) }, activeSizeIdx === idx && styles.formatBtnTextActive]}>{opt.label}</Text>
+                  <Text style={[styles.formatBtnText, activeSizeIdx === idx && styles.formatBtnTextActive]}>{opt.label}</Text>
                 </TouchableOpacity>
               ))}
 
@@ -429,7 +443,8 @@ export default function JournalScreen() {
                 <TouchableOpacity
                   key={c}
                   style={[styles.colorDot, { backgroundColor: c }, activeColor === c && styles.colorDotActive]}
-                  onPress={() => { setActiveColor(c); applyFormat({ color: c }); }}
+                  onPressIn={() => { isToolbarPressRef.current = true; }}
+                  onPress={() => { setActiveColor(c); applyFormat({ color: c }); textInputRef.current?.focus(); }}
                 />
               ))}
             </View>
@@ -602,13 +617,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  formatBtn: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs, borderRadius: Radius.sm, backgroundColor: Colors.bg2 },
+  formatBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.sm, backgroundColor: Colors.bg2 },
   formatBtnActive: { backgroundColor: Colors.accentDim },
   formatBtnText: { color: Colors.textSecondary, fontWeight: '700', fontSize: FontSize.sm },
   formatBtnTextActive: { color: Colors.accentBright },
   italicText: { fontStyle: 'italic' },
   divider: { width: 1, height: 20, backgroundColor: Colors.border, marginHorizontal: 2 },
-  colorDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'transparent' },
+  colorDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: 'transparent' },
   colorDotActive: { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] },
 
   // Draw tab

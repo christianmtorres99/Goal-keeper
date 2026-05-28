@@ -363,7 +363,7 @@ export default function HomeScreen() {
           isDragging={isActive}
           isDailyDouble={goal.id === dailyDoubleGoalId}
           dragHandle={
-            <TouchableOpacity onPressIn={drag} hitSlop={12} style={{ padding: 4 }}>
+            <TouchableOpacity onLongPress={drag} delayLongPress={250} hitSlop={12} style={{ padding: 4 }}>
               <Ionicons name="reorder-two" size={22} color={Colors.textSecondary} />
             </TouchableOpacity>
           }

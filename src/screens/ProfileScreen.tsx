@@ -262,7 +262,7 @@ export default function ProfileScreen() {
               <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP total</Text>
               <Text style={styles.heroNext}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
             </View>
-            <View style={{ gap: Spacing.sm }}>
+            <View style={{ gap: Spacing.xl }}>
               <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
                 <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
