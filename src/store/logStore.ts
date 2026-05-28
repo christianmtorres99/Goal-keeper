@@ -6,6 +6,7 @@ import { calculateXPForLog } from '../logic/xpEngine';
 import { computeStreakWithGrace, isAlreadyLoggedToday } from '../logic/streakEngine';
 import { BONUS_XP, DIFFICULTY_MULTIPLIERS, LUCKY_DROP_CHANCE } from '../constants/xp';
 import { useGoalStore } from './goalStore';
+import { useRestDayStore } from './restDayStore';
 
 function uuid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -191,6 +192,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         log.bonusXp = bonusXP;
       }
 
+      const hadAnyLogToday = get().logs.some(l => l.logDate === today);
       set(s => ({
         logs: [...s.logs, log],
         graceStates: {
@@ -198,6 +200,13 @@ export const useLogStore = create<LogStore>((set, get) => ({
           [goalId]: { graceDayUsed: newGrace.graceDayUsed, graceDayRefillDate: newGrace.graceDayRefillDate },
         },
       }));
+
+      // Increment active day count when the very first log of the day is added
+      if (!hadAnyLogToday) {
+        useRestDayStore.getState().incrementActiveDay().catch(e =>
+          console.error('incrementActiveDay failed:', e)
+        );
+      }
 
       return { log, bonusXP, events };
     } catch (e) {

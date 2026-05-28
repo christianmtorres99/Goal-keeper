@@ -17,6 +17,8 @@ import XPBar from '../common/XPBar';
 import { isAlreadyLoggedToday } from '../../logic/streakEngine';
 import StreakFlame from '../common/StreakFlame';
 import { useLogStore } from '../../store/logStore';
+import { useRestDayStore } from '../../store/restDayStore';
+import { todayString } from '../../utils/dateUtils';
 import { getNextStreakBadge, getNextLogBadge } from '../../utils/motivationUtils';
 
 const BASE_LOG_XP = 50;
@@ -98,6 +100,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const isAtRisk = goal.type === 'habit' && !loggedToday && hour >= 12;
   const graceState = useLogStore(s => s.graceStates[goal.id]);
   const graceUsed = graceState?.graceDayUsed ?? false;
+  const activeRestDate = useRestDayStore(s => s.activeRestDate);
+  const isRestDay = activeRestDate === todayString();
 
   const nextStreakBadge = goal.type === 'habit' ? getNextStreakBadge(streakInfo.currentStreak) : null;
   const nextLogBadge = getNextLogBadge(logs.length);
@@ -234,45 +238,51 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           )}
           <View style={{ flex: 1 }} />
 
-          {/* Log button with burst animation */}
-          <View style={styles.logBtnWrapper}>
-            {/* Expanding ring */}
-            <Animated.View
-              style={[styles.ring, { borderColor: goal.color }, animatedRingStyle]}
-              pointerEvents="none"
-            />
-            {/* Burst particles */}
-            {PARTICLE_ANGLES.map((angle, i) => (
-              <Particle
-                key={i}
-                ref={el => { particleRefs.current[i] = el; }}
-                angle={angle}
-                color={goal.color}
-                index={i}
+          {/* Log button with burst animation — or rest day badge */}
+          {isRestDay ? (
+            <View style={styles.restDayBadge}>
+              <Text style={styles.restDayText}>Rest Day 😌</Text>
+            </View>
+          ) : (
+            <View style={styles.logBtnWrapper}>
+              {/* Expanding ring */}
+              <Animated.View
+                style={[styles.ring, { borderColor: goal.color }, animatedRingStyle]}
+                pointerEvents="none"
               />
-            ))}
-            {/* XP float label */}
-            <Animated.Text style={[styles.xpFloat, animatedXPStyle]} pointerEvents="none">
-              {xpLabel}
-            </Animated.Text>
-            {/* Animated button wrapper */}
-            <Animated.View style={animatedButtonStyle}>
-              <TouchableOpacity
-                style={[styles.logBtn, loggedToday && !goal.allowMultiplePerDay && styles.logBtnDone]}
-                onPress={handleLog}
-                disabled={loggedToday && !goal.allowMultiplePerDay}
-              >
-                <Ionicons
-                  name={loggedToday && !goal.allowMultiplePerDay ? 'checkmark-circle' : 'add'}
-                  size={18}
-                  color={loggedToday && !goal.allowMultiplePerDay ? Colors.success : Colors.textPrimary}
+              {/* Burst particles */}
+              {PARTICLE_ANGLES.map((angle, i) => (
+                <Particle
+                  key={i}
+                  ref={el => { particleRefs.current[i] = el; }}
+                  angle={angle}
+                  color={goal.color}
+                  index={i}
                 />
-                <Text style={[styles.logBtnText, loggedToday && !goal.allowMultiplePerDay && styles.logBtnTextDone]}>
-                  {goal.allowMultiplePerDay ? 'Log+' : loggedToday ? 'Done' : 'Log'}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
+              ))}
+              {/* XP float label */}
+              <Animated.Text style={[styles.xpFloat, animatedXPStyle]} pointerEvents="none">
+                {xpLabel}
+              </Animated.Text>
+              {/* Animated button wrapper */}
+              <Animated.View style={animatedButtonStyle}>
+                <TouchableOpacity
+                  style={[styles.logBtn, loggedToday && !goal.allowMultiplePerDay && styles.logBtnDone]}
+                  onPress={handleLog}
+                  disabled={loggedToday && !goal.allowMultiplePerDay}
+                >
+                  <Ionicons
+                    name={loggedToday && !goal.allowMultiplePerDay ? 'checkmark-circle' : 'add'}
+                    size={18}
+                    color={loggedToday && !goal.allowMultiplePerDay ? Colors.success : Colors.textPrimary}
+                  />
+                  <Text style={[styles.logBtnText, loggedToday && !goal.allowMultiplePerDay && styles.logBtnTextDone]}>
+                    {goal.allowMultiplePerDay ? 'Log+' : loggedToday ? 'Done' : 'Log'}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          )}
 
           {dragHandle && <View style={styles.dragHandle}>{dragHandle}</View>}
         </View>
@@ -334,6 +344,8 @@ const styles = StyleSheet.create({
   logBtnText: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
   logBtnTextDone: { color: Colors.success },
   dragHandle: { marginLeft: Spacing.xs },
+  restDayBadge: { backgroundColor: Colors.accentDim, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
+  restDayText: { color: Colors.textSecondary, fontSize: FontSize.sm },
   doubleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: '#F59E0B44' },
   doubleText: { color: '#F59E0B', fontSize: 10, fontWeight: '800' },
 });

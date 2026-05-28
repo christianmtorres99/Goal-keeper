@@ -17,11 +17,13 @@ import { useGameStore } from '../store/gameStore';
 import { useQuestStore } from '../store/questStore';
 import { useTodoStore } from '../store/todoStore';
 import { useTodoXPStore } from '../store/todoXPStore';
+import { useRestDayStore } from '../store/restDayStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import { todayString, getWeekStart } from '../utils/dateUtils';
 import { getTimeGreeting, getUndoToastMessage } from '../utils/motivationUtils';
+import { shouldShowRestDayPrompt } from '../utils/restDayEngine';
 import { HOT_STREAK_MIN_DAYS } from '../constants/xp';
 import type { Goal } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -38,6 +40,7 @@ import LevelLadderModal from '../components/common/LevelLadderModal';
 import LevelUpModal from '../components/common/LevelUpModal';
 import DailyQuestsCard from '../components/common/DailyQuestsCard';
 import TodoSection from '../components/todos/TodoSection';
+import RestDayModal from '../components/home/RestDayModal';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
@@ -67,6 +70,11 @@ export default function HomeScreen() {
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
+
+  const restDayStore = useRestDayStore();
+  const { bankedRestDays, activeRestDate, dismissCount, loadRestDay, activateRestDay, dismissPrompt } = restDayStore;
+  const [restDayModalVisible, setRestDayModalVisible] = useState(false);
+  const restDayModalShown = useRef(false);
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
   const hasArchived = useMemo(() => goals.some(g => g.isArchived), [goals]);
@@ -120,9 +128,10 @@ export default function HomeScreen() {
 
       await useTodoStore.getState().loadTodos();
       await useTodoXPStore.getState().load();
+      await loadRestDay();
     };
     init();
-  }, []);
+  }, [loadRestDay]);
 
   // Auto-show weekly review on Sundays
   useEffect(() => {
@@ -137,6 +146,44 @@ export default function HomeScreen() {
     };
     check();
   }, []);
+
+  // Compute max streak across all active goals
+  const maxStreak = useMemo(() => {
+    return activeGoals.reduce((max, goal) => {
+      const goalLogs = logs.filter(l => l.goalId === goal.id);
+      const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+      const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
+      return Math.max(max, streakInfo.currentStreak);
+    }, 0);
+  }, [activeGoals, logs, graceStates]);
+
+  // Auto-show rest day modal once per session when conditions are met
+  useEffect(() => {
+    if (restDayModalShown.current) return;
+    const show = shouldShowRestDayPrompt({
+      currentStreak: maxStreak,
+      bankedRestDays,
+      activeRestDate,
+      dismissCount,
+    });
+    if (show) {
+      restDayModalShown.current = true;
+      setRestDayModalVisible(true);
+    }
+  }, [maxStreak, bankedRestDays, activeRestDate, dismissCount]);
+
+  const handleRestDayActivate = useCallback(async () => {
+    setRestDayModalVisible(false);
+    await activateRestDay();
+    const xp = Math.floor(Math.random() * 51) + 100; // 100–150 XP
+    setUndoMessage(`Rest Day activated! +${xp} XP — your streak is safe 😌`);
+    setUndoVisible(true);
+  }, [activateRestDay]);
+
+  const handleRestDayDismiss = useCallback(async () => {
+    setRestDayModalVisible(false);
+    await dismissPrompt();
+  }, [dismissPrompt]);
 
   const handleLogPress = useCallback((goalId: string) => {
     setLogModalGoalId(goalId);
@@ -410,6 +457,15 @@ export default function HomeScreen() {
         visible={levelLadderVisible}
         currentLevel={playerStats.level}
         onClose={() => setLevelLadderVisible(false)}
+      />
+
+      <RestDayModal
+        visible={restDayModalVisible}
+        streak={maxStreak}
+        bankedDays={bankedRestDays}
+        dismissCount={dismissCount}
+        onActivate={handleRestDayActivate}
+        onClose={handleRestDayDismiss}
       />
     </SafeAreaView>
   );
