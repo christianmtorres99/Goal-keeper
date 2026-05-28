@@ -5,6 +5,8 @@ import { useThemeStore } from '../../store/themeStore';
 import { THEMES, THEME_META, type ThemeName } from '../../constants/themes';
 import { Colors, Radius, Spacing, FontSize } from '../../constants/theme';
 
+type ColorMode = 'dark' | 'light' | 'system';
+
 // Use static Colors for the modal shell (always dark-themed base)
 // Theme color cards show their own palette as previews
 
@@ -15,7 +17,7 @@ export default function ThemePickerModal({
   visible: boolean;
   onClose: () => void;
 }) {
-  const { activeTheme, setTheme } = useThemeStore();
+  const { activeTheme, setTheme, colorMode, setColorMode } = useThemeStore();
 
   return (
     <Modal
@@ -28,6 +30,27 @@ export default function ThemePickerModal({
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>App Theme</Text>
+
+          {/* Display Mode selector */}
+          <View style={styles.modeRow}>
+            {(['dark', 'light', 'system'] as const).map((m: ColorMode) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.modeBtn, colorMode === m && styles.modeBtnActive]}
+                onPress={() => setColorMode(m)}
+              >
+                <Ionicons
+                  name={m === 'dark' ? 'moon' : m === 'light' ? 'sunny' : 'phone-portrait'}
+                  size={16}
+                  color={colorMode === m ? Colors.accent : Colors.textSecondary}
+                />
+                <Text style={[styles.modeBtnText, colorMode === m && { color: Colors.accent }]}>
+                  {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'System'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <View style={styles.grid}>
             {(Object.entries(THEME_META) as [ThemeName, { label: string; preview: string }][]).map(
               ([key, meta]) => {
@@ -140,5 +163,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 6,
     right: 6,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  modeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.bg2,
+  },
+  modeBtnActive: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.bg3,
+  },
+  modeBtnText: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    fontWeight: '600',
   },
 });

@@ -162,6 +162,66 @@ export const THEMES: Record<ThemeName, ColorPalette> = {
   },
 };
 
+// Alias for backward compatibility
+export type ThemePalette = ColorPalette;
+
+export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
+  violet: {
+    bg0: '#FFFFFF', bg1: '#F5F3FF', bg2: '#EDE9FE', bg3: '#DDD6FE', border: '#C4B5FD',
+    accent: '#7C3AED', accentBright: '#8B5CF6', accentDim: '#6D28D9',
+    accentGlow: 'rgba(124, 58, 237, 0.15)',
+    textPrimary: '#1A1A2E', textSecondary: '#4C4B6A', textDisabled: '#9E9DBF',
+    success: '#059669', warning: '#D97706', danger: '#DC2626', info: '#0284C7',
+    goalColors: ['#7C3AED', '#3B82F6', '#059669', '#D97706', '#DC2626', '#8B5CF6', '#0891B2', '#DB2777'],
+    xpGradient: ['#7C3AED', '#8B5CF6'],
+  },
+  ocean: {
+    bg0: '#FFFFFF', bg1: '#EFF6FF', bg2: '#DBEAFE', bg3: '#BFDBFE', border: '#93C5FD',
+    accent: '#2563EB', accentBright: '#3B82F6', accentDim: '#1D4ED8',
+    accentGlow: 'rgba(37, 99, 235, 0.15)',
+    textPrimary: '#0C1445', textSecondary: '#3B4D7A', textDisabled: '#7B8FBB',
+    success: '#059669', warning: '#D97706', danger: '#DC2626', info: '#0284C7',
+    goalColors: ['#2563EB', '#3B82F6', '#059669', '#D97706', '#DC2626', '#7C3AED', '#0891B2', '#DB2777'],
+    xpGradient: ['#2563EB', '#3B82F6'],
+  },
+  forest: {
+    bg0: '#FFFFFF', bg1: '#F0FDF4', bg2: '#DCFCE7', bg3: '#BBF7D0', border: '#86EFAC',
+    accent: '#16A34A', accentBright: '#22C55E', accentDim: '#15803D',
+    accentGlow: 'rgba(22, 163, 74, 0.15)',
+    textPrimary: '#052E16', textSecondary: '#166534', textDisabled: '#4ADE80',
+    success: '#059669', warning: '#D97706', danger: '#DC2626', info: '#0284C7',
+    goalColors: ['#16A34A', '#22C55E', '#2563EB', '#D97706', '#DC2626', '#7C3AED', '#0891B2', '#DB2777'],
+    xpGradient: ['#16A34A', '#22C55E'],
+  },
+  crimson: {
+    bg0: '#FFFFFF', bg1: '#FFF1F2', bg2: '#FFE4E6', bg3: '#FECDD3', border: '#FDA4AF',
+    accent: '#DC2626', accentBright: '#EF4444', accentDim: '#B91C1C',
+    accentGlow: 'rgba(220, 38, 38, 0.15)',
+    textPrimary: '#1C0507', textSecondary: '#6B1A1A', textDisabled: '#F87171',
+    success: '#059669', warning: '#D97706', danger: '#991B1B', info: '#0284C7',
+    goalColors: ['#DC2626', '#EF4444', '#2563EB', '#D97706', '#059669', '#7C3AED', '#0891B2', '#DB2777'],
+    xpGradient: ['#DC2626', '#EF4444'],
+  },
+  golden: {
+    bg0: '#FFFFFF', bg1: '#FFFBEB', bg2: '#FEF3C7', bg3: '#FDE68A', border: '#FCD34D',
+    accent: '#D97706', accentBright: '#F59E0B', accentDim: '#B45309',
+    accentGlow: 'rgba(217, 119, 6, 0.15)',
+    textPrimary: '#1C1203', textSecondary: '#78350F', textDisabled: '#FCD34D',
+    success: '#059669', warning: '#B45309', danger: '#DC2626', info: '#0284C7',
+    goalColors: ['#D97706', '#F59E0B', '#2563EB', '#DC2626', '#059669', '#7C3AED', '#0891B2', '#DB2777'],
+    xpGradient: ['#D97706', '#F59E0B'],
+  },
+  sakura: {
+    bg0: '#FFFFFF', bg1: '#FFF0F7', bg2: '#FFE4F0', bg3: '#FFC0D9', border: '#F9A8D4',
+    accent: '#DB2777', accentBright: '#EC4899', accentDim: '#BE185D',
+    accentGlow: 'rgba(219, 39, 119, 0.15)',
+    textPrimary: '#1C0610', textSecondary: '#6B1A3C', textDisabled: '#F9A8D4',
+    success: '#059669', warning: '#D97706', danger: '#DC2626', info: '#0284C7',
+    goalColors: ['#DB2777', '#EC4899', '#2563EB', '#D97706', '#059669', '#7C3AED', '#0891B2', '#DC2626'],
+    xpGradient: ['#DB2777', '#EC4899'],
+  },
+};
+
 export const THEME_META: Record<ThemeName, { label: string; preview: string }> = {
   violet:  { label: 'Violet Night', preview: '#9B7FD4' },
   ocean:   { label: 'Ocean Blue',   preview: '#3B82F6' },
