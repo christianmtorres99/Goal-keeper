@@ -24,11 +24,11 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 
   useEffect(() => {
     if (visible) {
-      flashAnim.setValue(0.4);
+      flashAnim.setValue(0.6);
       Animated.timing(flashAnim, { toValue: 0, duration: 400, useNativeDriver: true }).start();
       Animated.sequence([
         Animated.parallel([
-          Animated.spring(scaleAnim, { toValue: 1, tension: 30, friction: 4, useNativeDriver: true }),
+          Animated.spring(scaleAnim, { toValue: 1, tension: 20, friction: 3, useNativeDriver: true }),
           Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
         ]),
         Animated.loop(

@@ -22,7 +22,7 @@ import { todayString } from '../../utils/dateUtils';
 import { getNextStreakBadge, getNextLogBadge } from '../../utils/motivationUtils';
 
 const BASE_LOG_XP = 50;
-const PARTICLE_COUNT = 14;
+const PARTICLE_COUNT = 18;
 const PARTICLE_ANGLES = Array.from({ length: PARTICLE_COUNT }, (_, i) =>
   (i / PARTICLE_COUNT) * Math.PI * 2
 );
@@ -45,8 +45,8 @@ const Particle = forwardRef<ParticleRef, ParticleProps>(({ angle, color, index }
 
   useImperativeHandle(ref, () => ({
     trigger() {
-      const dx = Math.cos(angle) * 66;
-      const dy = Math.sin(angle) * 66;
+      const dx = Math.cos(angle) * 100;
+      const dy = Math.sin(angle) * 100;
       const delay = index * 20;
       tx.value = 0;
       ty.value = 0;
@@ -161,7 +161,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     // XP float upward
     xpTranslateY.value = 0;
     xpOpacity.value = 1;
-    xpTranslateY.value = withTiming(-44, { duration: 650 });
+    xpTranslateY.value = withTiming(-90, { duration: 650 });
     xpOpacity.value = withDelay(280, withTiming(0, { duration: 380 }));
     // Expanding ring
     ringScale.value = 0;
@@ -170,8 +170,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     ringOpacity.value = withTiming(0, { duration: 550 });
     // Burst ring
     burstRingScale.value = 0.5;
-    burstRingOpacity.value = 0.5;
-    burstRingScale.value = withTiming(2.0, { duration: 500 });
+    burstRingOpacity.value = 0.7;
+    burstRingScale.value = withTiming(3.0, { duration: 500 });
     burstRingOpacity.value = withTiming(0, { duration: 500 });
     // Particles
     particleRefs.current.forEach(p => p?.trigger());
@@ -360,8 +360,8 @@ const styles = StyleSheet.create({
   },
   xpFloat: {
     color: Colors.accentBright,
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '900',
   },
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   logBtnDone: { backgroundColor: Colors.success + '22', borderWidth: 1, borderColor: Colors.success + '55' },
