@@ -3,7 +3,7 @@ export const CREATE_GOALS = `
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    type TEXT NOT NULL CHECK(type IN ('habit','milestone')),
+    type TEXT NOT NULL CHECK(type IN ('habit','milestone','count')),
     color TEXT NOT NULL,
     icon TEXT NOT NULL,
     created_at TEXT NOT NULL,
@@ -66,6 +66,10 @@ export const MIGRATIONS_V4 = [
 
 export const MIGRATIONS_V5 = [
   `ALTER TABLE goals ADD COLUMN custom_category_label TEXT`,
+];
+
+export const MIGRATIONS_V6 = [
+  `ALTER TABLE logs ADD COLUMN count INTEGER DEFAULT 1`,
 ];
 
 // Run these as ALTER TABLE in a try/catch — safe to call on existing DBs

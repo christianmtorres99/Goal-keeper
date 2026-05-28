@@ -124,7 +124,7 @@ export default function OnboardingScreen({ onDone }: Props) {
       Animated.timing(fadeAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
     ]).start();
     setCurrent(idx);
-    scrollRef.current?.scrollTo({ x: idx * W, animated: false });
+    scrollRef.current?.scrollTo({ x: idx * W, animated: true });
   };
 
   const next = () => {
@@ -155,30 +155,48 @@ export default function OnboardingScreen({ onDone }: Props) {
         </TouchableOpacity>
       )}
 
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* Icon */}
-        <View style={[styles.iconWrap, { borderColor: slide.iconColor + '44', backgroundColor: slide.iconColor + '18' }]}>
-          <Ionicons name={slide.icon as any} size={56} color={slide.iconColor} />
-        </View>
-
-        {/* Text */}
-        <View style={styles.textBlock}>
-          <Text style={styles.title}>{slide.title}</Text>
-          <Text style={styles.subtitle}>{slide.subtitle}</Text>
-        </View>
-
-        {/* Bullets */}
-        <View style={styles.bullets}>
-          {slide.bullets.map((b, i) => (
-            <View key={i} style={styles.bullet}>
-              <View style={[styles.bulletIcon, { backgroundColor: slide.iconColor + '22' }]}>
-                <Ionicons name={b.icon as any} size={16} color={slide.iconColor} />
-              </View>
-              <Text style={styles.bulletText}>{b.text}</Text>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        pagingEnabled
+        scrollEnabled
+        showsHorizontalScrollIndicator={false}
+        style={styles.slideScroll}
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / W);
+          setCurrent(idx);
+        }}
+      >
+        {SLIDES.map((s, slideIdx) => (
+          <Animated.View
+            key={slideIdx}
+            style={[styles.content, { opacity: slideIdx === current ? fadeAnim : 1, width: W }]}
+          >
+            {/* Icon */}
+            <View style={[styles.iconWrap, { borderColor: s.iconColor + '44', backgroundColor: s.iconColor + '18' }]}>
+              <Ionicons name={s.icon as any} size={56} color={s.iconColor} />
             </View>
-          ))}
-        </View>
-      </Animated.View>
+
+            {/* Text */}
+            <View style={styles.textBlock}>
+              <Text style={styles.title}>{s.title}</Text>
+              <Text style={styles.subtitle}>{s.subtitle}</Text>
+            </View>
+
+            {/* Bullets */}
+            <View style={styles.bullets}>
+              {s.bullets.map((b, i) => (
+                <View key={i} style={styles.bullet}>
+                  <View style={[styles.bulletIcon, { backgroundColor: s.iconColor + '22' }]}>
+                    <Ionicons name={b.icon as any} size={16} color={s.iconColor} />
+                  </View>
+                  <Text style={styles.bulletText}>{b.text}</Text>
+                </View>
+              ))}
+            </View>
+          </Animated.View>
+        ))}
+      </ScrollView>
 
       {/* Bottom */}
       <View style={styles.bottom}>
@@ -234,6 +252,9 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
     fontWeight: '600',
+  },
+  slideScroll: {
+    flex: 1,
   },
   content: {
     flex: 1,

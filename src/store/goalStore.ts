@@ -28,7 +28,7 @@ function rowToGoal(r: any): Goal {
     id: r.id,
     name: r.name,
     description: r.description,
-    type: r.type as 'habit' | 'milestone',
+    type: r.type as 'habit' | 'milestone' | 'count',
     color: r.color,
     icon: r.icon,
     createdAt: r.created_at,

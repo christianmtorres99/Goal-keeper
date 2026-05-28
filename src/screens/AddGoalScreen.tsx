@@ -9,7 +9,7 @@ import { useGoalStore } from '../store/goalStore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
 import { requestNotificationPermissions, scheduleGoalReminder, cancelGoalReminder } from '../utils/notifications';
 import { formatTime12h } from '../utils/dateUtils';
-import type { GoalCategory, GoalDifficulty } from '../types';
+import type { GoalCategory, GoalDifficulty, GoalType } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { DIFFICULTY_MULTIPLIERS } from '../constants/xp';
 
@@ -71,7 +71,7 @@ export default function AddGoalScreen() {
 
   const [name, setName] = useState(existing?.name ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
-  const [isMilestone, setIsMilestone] = useState(existing?.type === 'milestone');
+  const [goalType, setGoalType] = useState<GoalType>(existing?.type ?? 'habit');
   const [targetCount, setTargetCount] = useState(existing?.targetCount?.toString() ?? '');
   const [unit, setUnit] = useState(existing?.unit ?? '');
   const [selectedIcon, setSelectedIcon] = useState(existing?.icon ?? 'flag');
@@ -104,7 +104,7 @@ export default function AddGoalScreen() {
       Alert.alert('Required', 'Please enter a goal name.');
       return;
     }
-    if (isMilestone && (!targetCount || parseInt(targetCount) <= 0)) {
+    if ((goalType === 'milestone' || goalType === 'count') && (!targetCount || parseInt(targetCount) <= 0)) {
       Alert.alert('Required', 'Please enter a valid target count.');
       return;
     }
@@ -127,18 +127,19 @@ export default function AddGoalScreen() {
       notificationId = undefined;
     }
 
+    const hasTarget = goalType === 'milestone' || goalType === 'count';
     const data = {
       name: name.trim(),
       description: description.trim(),
-      type: isMilestone ? 'milestone' as const : 'habit' as const,
+      type: goalType,
       color: selectedColor,
       icon: selectedIcon,
       category,
-      targetCount: isMilestone ? parseInt(targetCount) : undefined,
-      unit: isMilestone ? unit.trim() || undefined : undefined,
+      targetCount: hasTarget ? parseInt(targetCount) : undefined,
+      unit: hasTarget ? unit.trim() || undefined : undefined,
       notificationTime: reminderEnabled && notificationId ? reminderTime24 : undefined,
       notificationId: notificationId ?? undefined,
-      allowMultiplePerDay: !isMilestone ? allowMultiple : false,
+      allowMultiplePerDay: goalType === 'habit' ? allowMultiple : false,
       difficulty,
       customCategoryLabel: category === 'other' && customCategoryLabel.trim() ? customCategoryLabel.trim() : undefined,
     };
@@ -190,26 +191,35 @@ export default function AddGoalScreen() {
         <Text style={styles.label}>Type</Text>
         <View style={styles.typeRow}>
           <TouchableOpacity
-            style={[styles.typeCard, !isMilestone && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
-            onPress={() => setIsMilestone(false)}
+            style={[styles.typeCard, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            onPress={() => setGoalType('habit')}
             activeOpacity={0.7}
           >
-            <Ionicons name="repeat" size={22} color={!isMilestone ? selectedColor : Colors.textSecondary} />
-            <Text style={[styles.typeCardTitle, !isMilestone && { color: selectedColor }]}>Habit</Text>
+            <Ionicons name="repeat" size={22} color={goalType === 'habit' ? selectedColor : Colors.textSecondary} />
+            <Text style={[styles.typeCardTitle, goalType === 'habit' && { color: selectedColor }]}>Habit</Text>
             <Text style={styles.typeCardSub}>Daily check-in</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.typeCard, isMilestone && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
-            onPress={() => setIsMilestone(true)}
+            style={[styles.typeCard, goalType === 'milestone' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            onPress={() => setGoalType('milestone')}
             activeOpacity={0.7}
           >
-            <Ionicons name="trophy" size={22} color={isMilestone ? selectedColor : Colors.textSecondary} />
-            <Text style={[styles.typeCardTitle, isMilestone && { color: selectedColor }]}>Milestone</Text>
+            <Ionicons name="trophy" size={22} color={goalType === 'milestone' ? selectedColor : Colors.textSecondary} />
+            <Text style={[styles.typeCardTitle, goalType === 'milestone' && { color: selectedColor }]}>Milestone</Text>
             <Text style={styles.typeCardSub}>Reach a target</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.typeCard, goalType === 'count' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            onPress={() => setGoalType('count')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="stats-chart" size={22} color={goalType === 'count' ? selectedColor : Colors.textSecondary} />
+            <Text style={[styles.typeCardTitle, goalType === 'count' && { color: selectedColor }]}>Count</Text>
+            <Text style={styles.typeCardSub}>Daily target (steps, pages, etc.)</Text>
           </TouchableOpacity>
         </View>
 
-        {isMilestone && (
+        {(goalType === 'milestone' || goalType === 'count') && (
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={styles.label}>Target Count</Text>
@@ -222,7 +232,7 @@ export default function AddGoalScreen() {
           </View>
         )}
 
-        {!isMilestone && (
+        {goalType === 'habit' && (
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={styles.label}>Multiple Logs Per Day</Text>
