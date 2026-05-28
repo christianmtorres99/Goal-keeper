@@ -36,6 +36,7 @@ import XPBar from '../components/common/XPBar';
 import EmptyState from '../components/common/EmptyState';
 import BadgeModal from '../components/common/BadgeModal';
 import LogNoteModal from '../components/common/LogNoteModal';
+import LogCountModal from '../components/common/LogCountModal';
 import UndoToast from '../components/common/UndoToast';
 import WeeklyReviewScreen from './WeeklyReviewScreen';
 import LevelLadderModal from '../components/common/LevelLadderModal';
@@ -64,6 +65,7 @@ export default function HomeScreen() {
   const [pendingEvents, setPendingEvents] = useState<LogEvent[]>([]);
   const [pendingLevelUp, setPendingLevelUp] = useState<{ oldLevel: number; newLevel: number } | null>(null);
   const [logModalGoalId, setLogModalGoalId] = useState<string | null>(null);
+  const [countModalGoalId, setCountModalGoalId] = useState<string | null>(null);
 
   const [undoVisible, setUndoVisible] = useState(false);
   const [undoLogId, setUndoLogId] = useState<string | null>(null);
@@ -195,8 +197,13 @@ export default function HomeScreen() {
   }, [dismissPrompt]);
 
   const handleLogPress = useCallback((goalId: string) => {
-    setLogModalGoalId(goalId);
-  }, []);
+    const goal = goals.find(g => g.id === goalId);
+    if (goal?.type === 'count') {
+      setCountModalGoalId(goalId);
+    } else {
+      setLogModalGoalId(goalId);
+    }
+  }, [goals]);
 
   const handleLogConfirm = useCallback(async (note?: string) => {
     const goalId = logModalGoalId;
@@ -338,6 +345,14 @@ export default function HomeScreen() {
   const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
   const greeting = allDone ? 'All done today! 🔥' : getTimeGreeting();
 
+  const todayStr = todayString();
+  const countModalGoal = countModalGoalId ? goals.find(g => g.id === countModalGoalId) : null;
+  const todayCountTotal = countModalGoalId
+    ? logs
+        .filter(l => l.goalId === countModalGoalId && l.logDate === todayStr)
+        .reduce((sum, l) => sum + ((l as any).count ?? 1), 0)
+    : 0;
+
   const logModalGoal = logModalGoalId ? goals.find(g => g.id === logModalGoalId) : null;
   const logModalStreakInfo = logModalGoalId
     ? (() => {
@@ -373,7 +388,7 @@ export default function HomeScreen() {
   }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       <DraggableFlatList
         data={activeGoals}
         keyExtractor={g => g.id}
@@ -452,12 +467,29 @@ export default function HomeScreen() {
         />
       )}
 
+      {countModalGoal && (
+        <LogCountModal
+          visible={!!countModalGoalId}
+          goalName={countModalGoal.name}
+          goalColor={countModalGoal.color}
+          targetCount={(countModalGoal as any).targetCount ?? 1}
+          unit={(countModalGoal as any).unit ?? ''}
+          todayTotal={todayCountTotal}
+          onConfirm={async (count: number, note?: string) => {
+            if (!countModalGoalId) return;
+            setCountModalGoalId(null);
+            await addLog(countModalGoalId, note, undefined, true, count);
+          }}
+          onCancel={() => setCountModalGoalId(null)}
+        />
+      )}
+
       <UndoToast
         visible={undoVisible}
         message={undoMessage}
         onUndo={handleUndo}
         onDismiss={() => setUndoVisible(false)}
-        bottomOffset={TAB_BAR_HEIGHT + Math.max(insets.bottom, 8) + 8}
+        topOffset={insets.top + 8}
       />
 
       <BadgeModal
@@ -498,7 +530,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg1 },
+  safe: { flex: 1 },
   content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
   headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

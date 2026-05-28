@@ -191,6 +191,7 @@ export default function JournalScreen() {
 
   const textInputRef = useRef<TextInput>(null);
   const selectionRef = useRef({ start: 0, end: 0 });
+  const lastGoodSelectionRef = useRef({ start: 0, end: 0 });
   const isToolbarPressRef = useRef(false);
 
   const isDirty = useMemo(() => {
@@ -274,7 +275,7 @@ export default function JournalScreen() {
   }, [text, selection]);
 
   const applyFormat = useCallback((opts: Partial<Pick<RichSpan, 'bold' | 'italic' | 'size' | 'color'>>) => {
-    const { start, end } = selectionRef.current;
+    const { start, end } = lastGoodSelectionRef.current;
     if (start === end) return; // nothing selected
     const newSpan: RichSpan = { start, end, ...opts };
     setSpans(prev => applySpan(prev, newSpan));
@@ -386,6 +387,9 @@ export default function JournalScreen() {
                     const sel = e.nativeEvent.selection;
                     setSelection(sel);
                     selectionRef.current = sel;
+                    if (sel.start !== sel.end) {
+                      lastGoodSelectionRef.current = sel;
+                    }
                   }}
                   onBlur={() => {
                     setTimeout(() => {
@@ -578,7 +582,7 @@ const styles = StyleSheet.create({
     backgroundColor: PAPER_BG,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#2A2520',
+    borderColor: '#1E1E1E',
     minHeight: 240,
     overflow: 'hidden',
   },
@@ -603,7 +607,7 @@ const styles = StyleSheet.create({
     minHeight: 240,
   },
   richEmpty: { padding: Spacing.md, paddingLeft: Spacing.md + 44 - 8, minHeight: 240, justifyContent: 'flex-start' },
-  richPlaceholder: { color: '#554E3A', fontSize: FontSize.md },
+  richPlaceholder: { color: '#4A4A4A', fontSize: FontSize.md },
 
   // Formatting toolbar
   formatToolbar: {

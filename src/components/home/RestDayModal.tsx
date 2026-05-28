@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
 
 interface Props {
@@ -18,20 +20,43 @@ export default function RestDayModal({ visible, onClose, onActivate, streak, ban
     ? "Still going strong! Just checking — your body okay? Rest day's here if you need it."
     : `Hey! You've been doing great! You have a ${streak} day streak! However, rest is important. Take today off! You should rest as hard as you work! (Don't worry, your streak is safe 😌)`;
 
+  const translateY = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => { translateY.value = Math.max(0, e.translationY); })
+    .onEnd((e) => {
+      if (e.translationY > 100 || e.velocityY > 800) {
+        runOnJS(onClose)();
+        translateY.value = 0;
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  useEffect(() => {
+    if (!visible) translateY.value = 0;
+  }, [visible]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Rest Day Available 💤</Text>
-          <Text style={styles.body}>{bodyText}</Text>
-          <Text style={styles.bankedLabel}>{bankedDays} rest {bankedDays === 1 ? 'day' : 'days'} banked</Text>
-          <TouchableOpacity style={styles.primaryBtn} onPress={onActivate} activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Activate Rest Day</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={styles.secondaryBtnText}>Not today</Text>
-          </TouchableOpacity>
-        </View>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.card, sheetStyle]}>
+            <Text style={styles.title}>Rest Day Available 💤</Text>
+            <Text style={styles.body}>{bodyText}</Text>
+            <Text style={styles.bankedLabel}>{bankedDays} rest {bankedDays === 1 ? 'day' : 'days'} banked</Text>
+            <TouchableOpacity style={styles.primaryBtn} onPress={onActivate} activeOpacity={0.85}>
+              <Text style={styles.primaryBtnText}>Activate Rest Day</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={onClose} activeOpacity={0.7}>
+              <Text style={styles.secondaryBtnText}>Not today</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </GestureDetector>
       </View>
     </Modal>
   );

@@ -1,5 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
@@ -16,61 +18,84 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
   const TOTAL_LEVELS = 55;
   const levels = Array.from({ length: TOTAL_LEVELS }, (_, i) => i + 1);
 
+  const translateY = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => { translateY.value = Math.max(0, e.translationY); })
+    .onEnd((e) => {
+      if (e.translationY > 100 || e.velocityY > 800) {
+        runOnJS(onClose)();
+        translateY.value = 0;
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  useEffect(() => {
+    if (!visible) translateY.value = 0;
+  }, [visible]);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Level Progression</Text>
-          <Text style={styles.subtitle}>Your journey to the top</Text>
-          <View style={styles.listWrap}>
-            <ScrollView
-              style={styles.scroll}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContent}
-            >
-              {levels.map(lvl => {
-                const tier = getLevelTier(lvl);
-                const xpNeeded = xpThresholdForLevel(lvl);
-                const isCurrentLevel = lvl === currentLevel;
-                const isUnlocked = lvl <= currentLevel;
-                return (
-                  <View
-                    key={lvl}
-                    style={[
-                      styles.levelRow,
-                      isCurrentLevel && styles.levelRowCurrent,
-                      !isUnlocked && styles.levelRowLocked,
-                    ]}
-                  >
-                    <View style={[styles.levelIconWrap, { borderColor: isUnlocked ? tier.color + '66' : Colors.border, backgroundColor: isUnlocked ? tier.color + '22' : Colors.bg3 }]}>
-                      <Ionicons name={tier.icon as any} size={20} color={isUnlocked ? tier.color : Colors.textDisabled} />
-                    </View>
-                    <View style={styles.levelInfo}>
-                      <Text style={[styles.levelNum, isCurrentLevel && { color: Colors.accentBright }]}>
-                        Level {lvl}{isCurrentLevel ? ' ← You' : ''}
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.sheet, sheetStyle]}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>Level Progression</Text>
+            <Text style={styles.subtitle}>Your journey to the top</Text>
+            <View style={styles.listWrap}>
+              <ScrollView
+                style={styles.scroll}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+              >
+                {levels.map(lvl => {
+                  const tier = getLevelTier(lvl);
+                  const xpNeeded = xpThresholdForLevel(lvl);
+                  const isCurrentLevel = lvl === currentLevel;
+                  const isUnlocked = lvl <= currentLevel;
+                  return (
+                    <View
+                      key={lvl}
+                      style={[
+                        styles.levelRow,
+                        isCurrentLevel && styles.levelRowCurrent,
+                        !isUnlocked && styles.levelRowLocked,
+                      ]}
+                    >
+                      <View style={[styles.levelIconWrap, { borderColor: isUnlocked ? tier.color + '66' : Colors.border, backgroundColor: isUnlocked ? tier.color + '22' : Colors.bg3 }]}>
+                        <Ionicons name={tier.icon as any} size={20} color={isUnlocked ? tier.color : Colors.textDisabled} />
+                      </View>
+                      <View style={styles.levelInfo}>
+                        <Text style={[styles.levelNum, isCurrentLevel && { color: Colors.accentBright }]}>
+                          Level {lvl}{isCurrentLevel ? ' ← You' : ''}
+                        </Text>
+                        <Text style={[styles.tierName, isUnlocked && { color: tier.color }]}>{tier.title}</Text>
+                      </View>
+                      <Text style={[styles.xpReq, !isUnlocked && { color: Colors.textDisabled }]}>
+                        {xpNeeded.toLocaleString()} XP
                       </Text>
-                      <Text style={[styles.tierName, isUnlocked && { color: tier.color }]}>{tier.title}</Text>
                     </View>
-                    <Text style={[styles.xpReq, !isUnlocked && { color: Colors.textDisabled }]}>
-                      {xpNeeded.toLocaleString()} XP
-                    </Text>
-                  </View>
-                );
-              })}
-            </ScrollView>
-            {/* Fade overlay at bottom */}
-            <LinearGradient
-              colors={['transparent', Colors.bg1]}
-              style={styles.fadeOverlay}
-              pointerEvents="none"
-            />
-          </View>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>Close</Text>
-          </TouchableOpacity>
-        </View>
+                  );
+                })}
+              </ScrollView>
+              {/* Fade overlay at bottom */}
+              <LinearGradient
+                colors={['transparent', Colors.bg1]}
+                style={styles.fadeOverlay}
+                pointerEvents="none"
+              />
+            </View>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </GestureDetector>
       </View>
     </Modal>
   );

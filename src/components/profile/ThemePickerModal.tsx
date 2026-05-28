@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../store/themeStore';
 import { THEMES, THEME_META, type ThemeName } from '../../constants/themes';
@@ -19,6 +21,27 @@ export default function ThemePickerModal({
 }) {
   const { activeTheme, setTheme, colorMode, setColorMode } = useThemeStore();
 
+  const translateY = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => { translateY.value = Math.max(0, e.translationY); })
+    .onEnd((e) => {
+      if (e.translationY > 100 || e.velocityY > 800) {
+        runOnJS(onClose)();
+        translateY.value = 0;
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  useEffect(() => {
+    if (!visible) translateY.value = 0;
+  }, [visible]);
+
   return (
     <Modal
       visible={visible}
@@ -27,66 +50,68 @@ export default function ThemePickerModal({
       onRequestClose={onClose}
     >
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>App Theme</Text>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.sheet, sheetStyle]}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>App Theme</Text>
 
-          {/* Display Mode selector */}
-          <View style={styles.modeRow}>
-            {(['dark', 'light', 'system'] as const).map((m: ColorMode) => (
-              <TouchableOpacity
-                key={m}
-                style={[styles.modeBtn, colorMode === m && styles.modeBtnActive]}
-                onPress={() => setColorMode(m)}
-              >
-                <Ionicons
-                  name={m === 'dark' ? 'moon' : m === 'light' ? 'sunny' : 'phone-portrait'}
-                  size={16}
-                  color={colorMode === m ? Colors.accent : Colors.textSecondary}
-                />
-                <Text style={[styles.modeBtnText, colorMode === m && { color: Colors.accent }]}>
-                  {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'System'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            {/* Display Mode selector */}
+            <View style={styles.modeRow}>
+              {(['dark', 'light', 'system'] as const).map((m: ColorMode) => (
+                <TouchableOpacity
+                  key={m}
+                  style={[styles.modeBtn, colorMode === m && styles.modeBtnActive]}
+                  onPress={() => setColorMode(m)}
+                >
+                  <Ionicons
+                    name={m === 'dark' ? 'moon' : m === 'light' ? 'sunny' : 'phone-portrait'}
+                    size={16}
+                    color={colorMode === m ? Colors.accent : Colors.textSecondary}
+                  />
+                  <Text style={[styles.modeBtnText, colorMode === m && { color: Colors.accent }]}>
+                    {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'System'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          <View style={styles.grid}>
-            {(Object.entries(THEME_META) as [ThemeName, { label: string; preview: string }][]).map(
-              ([key, meta]) => {
-                const isActive = activeTheme === key;
-                const palette = THEMES[key];
-                return (
-                  <TouchableOpacity
-                    key={key}
-                    style={[
-                      styles.card,
-                      isActive && styles.cardActive,
-                      { borderColor: isActive ? meta.preview : Colors.border },
-                    ]}
-                    onPress={() => {
-                      setTheme(key);
-                      onClose();
-                    }}
-                  >
-                    <View style={[styles.preview, { backgroundColor: palette.bg1 }]}>
-                      <View style={[styles.accentDot, { backgroundColor: meta.preview }]} />
-                    </View>
-                    <Text style={styles.label}>{meta.label}</Text>
-                    {isActive && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={16}
-                        color={meta.preview}
-                        style={styles.check}
-                      />
-                    )}
-                  </TouchableOpacity>
-                );
-              },
-            )}
-          </View>
-        </View>
+            <View style={styles.grid}>
+              {(Object.entries(THEME_META) as [ThemeName, { label: string; preview: string }][]).map(
+                ([key, meta]) => {
+                  const isActive = activeTheme === key;
+                  const palette = THEMES[key];
+                  return (
+                    <TouchableOpacity
+                      key={key}
+                      style={[
+                        styles.card,
+                        isActive && styles.cardActive,
+                        { borderColor: isActive ? meta.preview : Colors.border },
+                      ]}
+                      onPress={() => {
+                        setTheme(key);
+                        onClose();
+                      }}
+                    >
+                      <View style={[styles.preview, { backgroundColor: palette.bg1 }]}>
+                        <View style={[styles.accentDot, { backgroundColor: meta.preview }]} />
+                      </View>
+                      <Text style={styles.label}>{meta.label}</Text>
+                      {isActive && (
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={16}
+                          color={meta.preview}
+                          style={styles.check}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  );
+                },
+              )}
+            </View>
+          </Animated.View>
+        </GestureDetector>
       </TouchableOpacity>
     </Modal>
   );

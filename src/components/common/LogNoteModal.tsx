@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing, OVERLAY_MID } from '../../constants/theme';
 import { getStreakMultiplier, calculateXPForLog } from '../../logic/xpEngine';
@@ -22,6 +24,41 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
   const multiplier = getStreakMultiplier(pastDate ? 1 : nextStreak);
   const quote = getMotivationalQuote(pastDate ? 0 : currentStreak);
 
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      backdropOpacity.setValue(0);
+    }
+  }, [visible]);
+
+  const translateY = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => { translateY.value = Math.max(0, e.translationY); })
+    .onEnd((e) => {
+      if (e.translationY > 100 || e.velocityY > 800) {
+        runOnJS(handleCancel)();
+        translateY.value = 0;
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  useEffect(() => {
+    if (!visible) translateY.value = 0;
+  }, [visible]);
+
   const handleConfirm = () => {
     onConfirm(note.trim() || undefined);
     setNote('');
@@ -35,64 +72,70 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleCancel} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <View style={[styles.colorDot, { backgroundColor: goalColor }]} />
-            <Text style={styles.goalName}>{goalName}</Text>
-          </View>
-
-          {pastDate ? (
-            <View style={styles.preview}>
-              <View style={styles.previewItem}>
-                <Ionicons name="calendar-outline" size={16} color={Colors.accentBright} />
-                <Text style={styles.previewValue}>Past day — {pastDate}</Text>
-              </View>
-              <View style={styles.previewItem}>
-                <Ionicons name="flash" size={16} color={Colors.accentBright} />
-                <Text style={styles.previewValue}>+15 XP</Text>
-              </View>
+        <Animated.View
+          style={[styles.backdrop, { opacity: backdropOpacity }]}
+          pointerEvents="none"
+        />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleCancel} />
+        <GestureDetector gesture={panGesture}>
+          <ReAnimated.View style={[styles.sheet, sheetStyle]}>
+            <View style={styles.handle} />
+            <View style={styles.header}>
+              <View style={[styles.colorDot, { backgroundColor: goalColor }]} />
+              <Text style={styles.goalName}>{goalName}</Text>
             </View>
-          ) : (
-            <View style={styles.preview}>
-              <View style={styles.previewItem}>
-                <Ionicons name="flame" size={16} color={Colors.warning} />
-                <Text style={styles.previewValue}>
-                  {nextStreak === 1 ? 'Day 1 streak!' : `${nextStreak}d streak`}
-                </Text>
+
+            {pastDate ? (
+              <View style={styles.preview}>
+                <View style={styles.previewItem}>
+                  <Ionicons name="calendar-outline" size={16} color={Colors.accentBright} />
+                  <Text style={styles.previewValue}>Past day — {pastDate}</Text>
+                </View>
+                <View style={styles.previewItem}>
+                  <Ionicons name="flash" size={16} color={Colors.accentBright} />
+                  <Text style={styles.previewValue}>+15 XP</Text>
+                </View>
               </View>
-              <View style={styles.previewItem}>
-                <Ionicons name="flash" size={16} color={Colors.accentBright} />
-                <Text style={styles.previewValue}>+{xpPreview} XP{multiplier > 1 ? ` (${multiplier}×)` : ''}</Text>
+            ) : (
+              <View style={styles.preview}>
+                <View style={styles.previewItem}>
+                  <Ionicons name="flame" size={16} color={Colors.warning} />
+                  <Text style={styles.previewValue}>
+                    {nextStreak === 1 ? 'Day 1 streak!' : `${nextStreak}d streak`}
+                  </Text>
+                </View>
+                <View style={styles.previewItem}>
+                  <Ionicons name="flash" size={16} color={Colors.accentBright} />
+                  <Text style={styles.previewValue}>+{xpPreview} XP{multiplier > 1 ? ` (${multiplier}×)` : ''}</Text>
+                </View>
               </View>
+            )}
+
+            <Text style={styles.label}>Add a note (optional)</Text>
+            <TextInput
+              style={styles.input}
+              value={note}
+              onChangeText={setNote}
+              placeholder="How did it go today?"
+              placeholderTextColor={Colors.textDisabled}
+              maxLength={200}
+              multiline
+              autoFocus
+            />
+
+            <Text style={styles.quote}>"{quote}"</Text>
+
+            <View style={styles.actions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: goalColor }]} onPress={handleConfirm}>
+                <Ionicons name="checkmark" size={18} color="#fff" />
+                <Text style={styles.confirmText}>Log It</Text>
+              </TouchableOpacity>
             </View>
-          )}
-
-          <Text style={styles.label}>Add a note (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={note}
-            onChangeText={setNote}
-            placeholder="How did it go today?"
-            placeholderTextColor={Colors.textDisabled}
-            maxLength={200}
-            multiline
-            autoFocus
-          />
-
-          <Text style={styles.quote}>"{quote}"</Text>
-
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: goalColor }]} onPress={handleConfirm}>
-              <Ionicons name="checkmark" size={18} color="#fff" />
-              <Text style={styles.confirmText}>Log It</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </ReAnimated.View>
+        </GestureDetector>
       </KeyboardAvoidingView>
     </Modal>
   );
