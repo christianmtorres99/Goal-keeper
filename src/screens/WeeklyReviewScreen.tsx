@@ -37,13 +37,18 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
 
   const xpDiff = thisWeekXP - lastWeekXP;
 
-  const newBadgesThisWeek = useMemo(() =>
-    earnedBadges
+  const newBadgesThisWeek = useMemo(() => {
+    const seen = new Set<string>();
+    return earnedBadges
       .filter(b => b.earnedAt.slice(0, 10) >= weekStart)
+      .filter(b => {
+        if (seen.has(b.badgeId)) return false;
+        seen.add(b.badgeId);
+        return true;
+      })
       .map(b => BADGE_DEFINITIONS.find(d => d.id === b.badgeId))
-      .filter(Boolean),
-    [earnedBadges, weekStart]
-  );
+      .filter(Boolean);
+  }, [earnedBadges, weekStart]);
 
   const topStreak = useMemo(() => {
     let best = { name: '', streak: 0 };

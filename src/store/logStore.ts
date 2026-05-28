@@ -22,6 +22,7 @@ export type { LogEvent } from '../types';
 interface LogStore {
   logs: Log[];
   graceStates: Record<string, GraceState>;
+  comebackAwardedDate: string | null;
   loadLogs: () => Promise<void>;
   addLog: (goalId: string, note?: string, logDate?: string, allowMultiple?: boolean) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
   removeLog: (logId: string) => Promise<void>;
@@ -34,6 +35,7 @@ interface LogStore {
 export const useLogStore = create<LogStore>((set, get) => ({
   logs: [],
   graceStates: {},
+  comebackAwardedDate: null,
 
   loadLogs: async () => {
     try {
@@ -158,9 +160,10 @@ export const useLogStore = create<LogStore>((set, get) => ({
         bonusXP += BONUS_XP.firstLog;
       }
 
-      if (!isFirst && wasGap) {
+      if (!isFirst && wasGap && get().comebackAwardedDate !== today) {
         events.push('comeback');
         bonusXP += BONUS_XP.comeback;
+        set(s => ({ ...s, comebackAwardedDate: today }));
       }
 
       // Bug fix: compare new streak against PREVIOUS longest streak
