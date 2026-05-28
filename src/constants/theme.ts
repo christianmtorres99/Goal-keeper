@@ -63,3 +63,6 @@ export const FontSize = {
   xxl: 28,
   xxxl: 36,
 };
+
+export const OVERLAY_DARK = 'rgba(0,0,0,0.85)';
+export const OVERLAY_MID  = 'rgba(0,0,0,0.5)';

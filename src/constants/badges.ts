@@ -1,4 +1,5 @@
 import type { BadgeDefinition } from '../types';
+import { Colors } from './theme';
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // Streak badges
@@ -58,4 +59,11 @@ export const RARITY_LABELS: Record<string, string> = {
   uncommon:  'Uncommon',
   rare:      'Rare',
   legendary: 'Legendary',
+};
+
+export const RARITY_BG: Record<string, string> = {
+  common:    Colors.bg3,
+  uncommon:  '#052E16',
+  rare:      '#1E1B4B',
+  legendary: '#431407',
 };

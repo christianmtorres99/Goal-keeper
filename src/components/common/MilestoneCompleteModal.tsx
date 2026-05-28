@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { Colors, FontSize, Radius, Spacing, OVERLAY_DARK } from '../../constants/theme';
 
 interface Props {
   visible: boolean;
@@ -72,7 +72,7 @@ export default function MilestoneCompleteModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
+  overlay: { flex: 1, backgroundColor: OVERLAY_DARK, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
   card: { backgroundColor: Colors.bg2, borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', alignItems: 'center', gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
   emoji: { fontSize: 56 },
   title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '800' },

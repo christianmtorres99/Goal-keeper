@@ -7,7 +7,6 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  cancelAnimation,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
@@ -133,6 +132,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   }));
 
   const animatedXPStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    bottom: 36,
+    alignSelf: 'center',
     opacity: xpOpacity.value,
     transform: [{ translateY: xpTranslateY.value }],
   }));
@@ -143,11 +145,6 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   }));
 
   const triggerBurstAnimation = useCallback(() => {
-    cancelAnimation(buttonScale);
-    cancelAnimation(xpOpacity);
-    cancelAnimation(xpTranslateY);
-    cancelAnimation(ringScale);
-    cancelAnimation(ringOpacity);
     // Button spring
     buttonScale.value = withSequence(
       withTiming(0.82, { duration: 80 }),
@@ -338,9 +335,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   xpFloat: {
-    position: 'absolute',
-    bottom: 36,
-    alignSelf: 'center',
     color: Colors.accentBright,
     fontSize: FontSize.xs,
     fontWeight: '800',
@@ -352,6 +346,6 @@ const styles = StyleSheet.create({
   dragHandle: { marginLeft: Spacing.xs },
   restDayBadge: { backgroundColor: Colors.accentDim, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   restDayText: { color: Colors.textSecondary, fontSize: FontSize.sm },
-  doubleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: '#F59E0B44' },
-  doubleText: { color: '#F59E0B', fontSize: 10, fontWeight: '800' },
+  doubleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: Colors.warning + '44' },
+  doubleText: { color: Colors.warning, fontSize: 10, fontWeight: '800' },
 });

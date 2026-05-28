@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { Colors, FontSize, Radius, Spacing, OVERLAY_DARK } from '../../constants/theme';
 import { getLevelTier } from './ProfileShareCard';
 
 interface Props {
@@ -18,13 +18,12 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
-  const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const tier = getLevelTier(newLevel);
 
   useEffect(() => {
     if (visible) {
-      animRef.current = Animated.sequence([
+      Animated.sequence([
         Animated.parallel([
           Animated.spring(scaleAnim, { toValue: 1, tension: 55, friction: 6, useNativeDriver: true }),
           Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -35,10 +34,8 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
             Animated.timing(glowAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
           ])
         ),
-      ]);
-      animRef.current.start();
+      ]).start();
     } else {
-      animRef.current?.stop();
       scaleAnim.setValue(0.5);
       opacityAnim.setValue(0);
       glowAnim.setValue(0);
@@ -90,7 +87,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+    backgroundColor: OVERLAY_DARK,
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,

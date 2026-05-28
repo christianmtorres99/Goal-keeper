@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '../../constants/theme';
 import { formatCompactDate } from '../../utils/dateUtils';
-import { RARITY_COLORS, RARITY_LABELS } from '../../constants/badges';
+import { RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
 import type { BadgeDefinition } from '../../types';
 
 interface Props {
@@ -19,13 +19,6 @@ export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props)
   const labelSz  = size < 80 ? 9 : 10;
   const rarityColor = RARITY_COLORS[badge.rarity] ?? Colors.textDisabled;
 
-  const rarityBg: Record<string, string> = {
-    common:    Colors.bg3,
-    uncommon:  '#052E16',
-    rare:      '#1E1B4B',
-    legendary: '#431407',
-  };
-
   return (
     <View style={[s.container, { width: size }, !earned && s.locked]}>
       {/* Rarity pip */}
@@ -37,7 +30,7 @@ export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props)
           width: iconWrap,
           height: iconWrap,
           borderRadius: iconWrap * 0.22,
-          backgroundColor: earned ? (rarityBg[badge.rarity] ?? Colors.accentDim) : Colors.bg3,
+          backgroundColor: earned ? (RARITY_BG[badge.rarity] ?? Colors.accentDim) : Colors.bg3,
           borderWidth: earned ? (badge.rarity === 'legendary' ? 2 : badge.rarity === 'rare' ? 1.5 : 1) : 0,
           borderColor: earned ? rarityColor : 'transparent',
         },
