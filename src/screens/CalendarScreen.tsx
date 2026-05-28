@@ -70,7 +70,7 @@ export default function CalendarScreen() {
   const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
   const isCurrentMonth = todayStr.startsWith(monthPrefix);
 
-  // ── Stats ──────────────────────────────────────────────────
+  // ── Stats ──────────────────────────
   const elapsedDays = useMemo(() => {
     if (!isCurrentMonth) return days.length;
     return parseInt(todayStr.split('-')[2]);
@@ -369,7 +369,7 @@ export default function CalendarScreen() {
           <ScrollView
             style={styles.sheetScroll}
             contentContainerStyle={styles.sheet}
-            scrollEnabled={selectedDayLogs.length + (selectedDayJournal ? 1 : 0) > 3}
+            scrollEnabled
           >
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetDate}>

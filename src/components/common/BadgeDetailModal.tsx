@@ -21,8 +21,8 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
-import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS } from '../../constants/badges';
+import { Colors, FontSize, Radius, Spacing, OVERLAY_DARK } from '../../constants/theme';
+import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
 import { useBadgeStore } from '../../store/badgeStore';
 import { useGoalStore } from '../../store/goalStore';
 import { formatDisplayDate } from '../../utils/dateUtils';
@@ -38,7 +38,7 @@ interface BadgeDetailModalProps {
   onClose: () => void;
 }
 
-// ── Particle count per rarity ─────────────────────────────────────────────────
+// ── Particle count per rarity ─────────────────────────────────────────────
 function particleCount(rarity: BadgeRarity): number {
   switch (rarity) {
     case 'legendary': return 12;
@@ -48,7 +48,7 @@ function particleCount(rarity: BadgeRarity): number {
   }
 }
 
-// ── Single animated particle ──────────────────────────────────────────────────
+// ── Single animated particle ────────────────────────────────────────────
 interface ParticleProps {
   index: number;
   total: number;
@@ -151,7 +151,7 @@ function Particle({ index, total, color, rarity, trigger }: ParticleProps) {
   );
 }
 
-// ── Main modal component ──────────────────────────────────────────────────────
+// ── Main modal component ─────────────────────────────────────────────
 export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalProps) {
   const earnedBadges = useBadgeStore(s => s.earnedBadges);
   const goals = useGoalStore(s => s.goals);
@@ -266,14 +266,6 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
     borderColor: rarityColor,
   }));
 
-  // Rarity background colors (same as BadgeItem)
-  const rarityBg: Record<string, string> = {
-    common:    Colors.bg3,
-    uncommon:  '#052E16',
-    rare:      '#1E1B4B',
-    legendary: '#431407',
-  };
-
   if (!def) return null;
 
   return (
@@ -284,7 +276,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: OVERLAY_DARK, alignItems: 'center', justifyContent: 'center' }}>
         <SafeAreaView style={{ width: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
           <View
             style={{
@@ -370,7 +362,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
                     width: ICON_CONTAINER_SIZE * 0.76,
                     height: ICON_CONTAINER_SIZE * 0.76,
                     borderRadius: (ICON_CONTAINER_SIZE * 0.76) * 0.22,
-                    backgroundColor: isEarned ? (rarityBg[rarity] ?? Colors.accentDim) : Colors.bg3,
+                    backgroundColor: isEarned ? (RARITY_BG[rarity] ?? Colors.accentDim) : Colors.bg3,
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderWidth: isEarned ? (rarity === 'legendary' ? 2 : rarity === 'rare' ? 1.5 : 1) : 0,

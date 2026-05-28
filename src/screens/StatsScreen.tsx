@@ -86,8 +86,8 @@ export default function StatsScreen() {
     return {
       labels,
       datasets: [
-        { data: moodData, color: (opacity = 1) => `rgba(168, 85, 247, ${opacity})`, strokeWidth: 2 },
-        { data: energyData, color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`, strokeWidth: 2 },
+        { data: moodData, color: (opacity = 1) => Colors.accent + Math.round(opacity * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
+        { data: energyData, color: (opacity = 1) => Colors.success + Math.round(opacity * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
       ],
       legend: ['Mood', 'Energy'],
     };
@@ -279,11 +279,11 @@ export default function StatsScreen() {
             <>
               <View style={styles.moodLegend}>
                 <View style={styles.moodLegendItem}>
-                  <View style={[styles.moodLegendDot, { backgroundColor: '#A855F7' }]} />
+                  <View style={[styles.moodLegendDot, { backgroundColor: Colors.accent }]} />
                   <Text style={styles.moodLegendText}>Mood</Text>
                 </View>
                 <View style={styles.moodLegendItem}>
-                  <View style={[styles.moodLegendDot, { backgroundColor: '#10B981' }]} />
+                  <View style={[styles.moodLegendDot, { backgroundColor: Colors.success }]} />
                   <Text style={styles.moodLegendText}>Energy</Text>
                 </View>
               </View>
@@ -293,7 +293,7 @@ export default function StatsScreen() {
                 height={180}
                 chartConfig={{
                   ...chartConfig,
-                  color: (opacity = 1) => `rgba(168, 85, 247, ${opacity})`,
+                  color: (opacity = 1) => Colors.accent + Math.round(opacity * 255).toString(16).padStart(2, '0'),
                 }}
                 style={styles.chart}
                 bezier
