@@ -24,9 +24,9 @@ const W = Dimensions.get('window').width - Spacing.md * 2;
 const chartConfig = {
   backgroundGradientFrom: Colors.bg1,
   backgroundGradientTo: Colors.bg1,
-  color: (opacity = 1) => `rgba(155, 127, 212, ${opacity})`,
+  color: (opacity = 1) => `rgba(168, 85, 247, ${Math.max(opacity, 0.85)})`,
   labelColor: () => Colors.textSecondary,
-  strokeWidth: 2,
+  strokeWidth: 3,
   barPercentage: 0.6,
   propsForBackgroundLines: { strokeDasharray: '', stroke: Colors.bg3 },
   decimalPlaces: 0,
@@ -145,16 +145,17 @@ export default function StatsScreen() {
     return { last30Labels, last30Mood, last30Energy, avgMood, avgEnergy, bestDay, worstDay, moodDist, journalStreak: streak };
   }, [journalEntries]);
 
-  // Weekly summary — last 8 weeks
+  // Daily activity — last 7 days
   const weeklyData = useMemo(() => {
     const today = todayString();
     const labels: string[] = [];
     const data: number[] = [];
-    for (let w = 7; w >= 0; w--) {
-      const weekEnd = addDays(today, -w * 7);
-      const weekStart = addDays(weekEnd, -6);
-      const count = filteredLogs.filter(l => l.logDate >= weekStart && l.logDate <= weekEnd).length;
-      labels.push(`W${8 - w}`);
+    const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    for (let i = 6; i >= 0; i--) {
+      const day = addDays(today, -i);
+      const count = filteredLogs.filter(l => l.logDate === day).length;
+      const d = new Date(day + 'T00:00:00');
+      labels.push(DOW[d.getDay()]);
       data.push(count);
     }
     return { labels, datasets: [{ data }] };
@@ -282,8 +283,8 @@ export default function StatsScreen() {
           )}
         </View>
 
-        {/* Weekly logs bar chart */}
-        <Text style={styles.sectionLabel}>Weekly Activity</Text>
+        {/* Daily logs bar chart */}
+        <Text style={styles.sectionLabel}>Last 7 Days</Text>
         <View style={styles.chartCard}>
           <BarChart
             data={weeklyData}
@@ -363,8 +364,8 @@ export default function StatsScreen() {
                   data={{
                     labels: moodStats.last30Labels,
                     datasets: [
-                      { data: moodStats.last30Mood, color: (op = 1) => Colors.accent + Math.round(op * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
-                      { data: moodStats.last30Energy, color: (op = 1) => Colors.success + Math.round(op * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
+                      { data: moodStats.last30Mood, color: (op = 1) => Colors.accent + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
+                      { data: moodStats.last30Energy, color: (op = 1) => Colors.success + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
                     ],
                   }}
                   width={W}

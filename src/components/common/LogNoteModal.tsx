@@ -34,7 +34,7 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleCancel} />
         <View style={styles.sheet}>
           <View style={styles.handle} />

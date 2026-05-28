@@ -42,6 +42,7 @@ interface TodoStore {
   addSubItem: (todoId: string, title: string) => Promise<void>;
   rescheduleTodo: (id: string, newDate: string) => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
+  updateTodo: (id: string, title: string) => Promise<void>;
 }
 
 export const useTodoStore = create<TodoStore>((set, get) => ({
@@ -51,6 +52,9 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
     try {
       const db = await getDb();
       const today = todayString();
+
+      // Clean up completed todos from previous days
+      await db.runAsync('DELETE FROM todos WHERE completed = 1 AND completed_at < ?', [today]);
 
       // Load: uncompleted todos (all dates up to today) + completed today
       const todoRows = await db.getAllAsync<any>(
@@ -233,6 +237,16 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       set(s => ({ todos: s.todos.filter(t => t.id !== id) }));
     } catch (e) {
       console.error('deleteTodo failed:', e);
+    }
+  },
+
+  updateTodo: async (id, title) => {
+    try {
+      const db = await getDb();
+      await db.runAsync('UPDATE todos SET title = ? WHERE id = ?', [title, id]);
+      set(s => ({ todos: s.todos.map(t => t.id === id ? { ...t, title } : t) }));
+    } catch (e) {
+      console.error('updateTodo failed:', e);
     }
   },
 }));

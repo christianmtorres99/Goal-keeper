@@ -119,8 +119,8 @@ export default function AddGoalScreen() {
           notificationId = await scheduleGoalReminder('temp', reminderTime24, name.trim());
         } catch {}
       } else {
+        Alert.alert('Notifications Disabled', 'Please enable notification permissions in your device settings to use reminders.');
         notificationId = undefined;
-        // Don't return - still save goal without notification
       }
     } else if (notificationId) {
       await cancelGoalReminder(notificationId).catch(() => {});
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   flex1: { flex: 1 },
   typeRow: { flexDirection: 'row', gap: Spacing.sm },
-  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, padding: Spacing.md, backgroundColor: Colors.bg2, borderWidth: 2, borderColor: Colors.border },
+  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 2, borderColor: Colors.border },
   typeCardTitle: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '700' },
   typeCardSub: { color: Colors.textDisabled, fontSize: FontSize.xs, textAlign: 'center' },
   categoryRow: { flexGrow: 0 },

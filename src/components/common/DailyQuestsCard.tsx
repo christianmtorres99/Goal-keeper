@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
@@ -23,6 +23,7 @@ const QUEST_ICONS: Record<Quest['type'], string> = {
 export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }: Props) {
   if (quests.length === 0) return null;
 
+  const [expanded, setExpanded] = useState(true);
   const allDone = quests.every(q => q.completed);
 
   return (
@@ -32,19 +33,24 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
           <Ionicons name="list-outline" size={16} color={Colors.accentBright} />
           <Text style={styles.headerTitle}>Daily Quests</Text>
         </View>
-        <Text style={styles.headerXP}>
-          {totalEarned}/{totalAvailable} XP
-        </Text>
+        <View style={styles.headerRight}>
+          <Text style={styles.headerXP}>
+            {totalEarned}/{totalAvailable} XP
+          </Text>
+          <TouchableOpacity onPress={() => setExpanded(e => !e)} hitSlop={8}>
+            <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {allDone && (
+      {expanded && allDone && (
         <View style={styles.allDoneBanner}>
           <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
           <Text style={styles.allDoneText}>All quests complete! Come back tomorrow.</Text>
         </View>
       )}
 
-      {quests.map(quest => (
+      {expanded && quests.map(quest => (
         <QuestRow key={quest.id} quest={quest} />
       ))}
     </View>
@@ -107,6 +113,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   headerTitle: {
     color: Colors.textPrimary,

@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
+import LevelLadderModal from '../components/common/LevelLadderModal';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useLogStore } from '../store/logStore';
@@ -45,6 +46,8 @@ const SHARE_BG_COLORS = [
   '#0D2A2A', '#1A1A1A', '#1A1430', '#2A1A0D',
   '#16213E', '#1B1B2F', '#0F3460', '#2C1654',
   '#1A0A14', '#0A1A14', '#1A1400', '#0A0A1A',
+  '#2D1B69',  // vibrant deep purple
+  '#0A3060',  // rich navy blue
 ];
 
 export default function ProfileScreen() {
@@ -59,6 +62,7 @@ export default function ProfileScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
+  const [levelLadderVisible, setLevelLadderVisible] = useState(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
@@ -173,7 +177,7 @@ export default function ProfileScreen() {
         {badges.map(def => (
           <TouchableOpacity
             key={def.id}
-            onPress={() => setSelectedBadgeId(def.id)}
+            onPress={() => { if (earnedSet.has(def.id)) setSelectedBadgeId(def.id); }}
             activeOpacity={0.75}
           >
             <BadgeItem
@@ -256,12 +260,12 @@ export default function ProfileScreen() {
             <View style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}>
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </View>
-            <View style={{ flex: 1, gap: 4 }}>
+            <TouchableOpacity style={{ flex: 1, gap: 4 }} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
               <Text style={styles.heroLevel}>Level {playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
               <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP total</Text>
               <Text style={styles.heroNext}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
-            </View>
+            </TouchableOpacity>
             <View style={{ gap: Spacing.xl }}>
               <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
                 <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
@@ -402,6 +406,9 @@ export default function ProfileScreen() {
       {/* Badge detail modal */}
       <BadgeDetailModal badgeId={selectedBadgeId} onClose={() => setSelectedBadgeId(null)} />
 
+      {/* Level ladder modal */}
+      <LevelLadderModal visible={levelLadderVisible} currentLevel={playerStats.level} onClose={() => setLevelLadderVisible(false)} />
+
       {/* Feature picker modal */}
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
         <SafeAreaView style={styles.pickerScreen}>
@@ -452,7 +459,7 @@ const styles = StyleSheet.create({
   featureSlotLabel: { color: Colors.textPrimary, fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
   featureSlotEmpty: { color: Colors.textDisabled, fontSize: FontSize.xs },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, backgroundColor: Colors.bg3, borderRadius: 7, padding: 2 },
-  colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
+  colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   colorSwatch: { width: 28, height: 28, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] },
 
