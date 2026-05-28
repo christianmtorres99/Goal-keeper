@@ -94,14 +94,26 @@ interface Props {
 export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble }: Props) {
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
-  const loggedToday = isAlreadyLoggedToday(logs);
+  const baseLoggedToday = isAlreadyLoggedToday(logs);
   const multiplier = getStreakMultiplier(streakInfo.currentStreak);
   const hour = new Date().getHours();
-  const isAtRisk = goal.type === 'habit' && !loggedToday && hour >= 12;
   const graceState = useLogStore(s => s.graceStates[goal.id]);
   const graceUsed = graceState?.graceDayUsed ?? false;
   const activeRestDate = useRestDayStore(s => s.activeRestDate);
   const isRestDay = activeRestDate === todayString();
+
+  // Count goal: compute today's total and completion
+  const todayStr = todayString();
+  const todayLogs = logs.filter(l => l.goalId === goal.id && l.logDate === todayStr);
+  const todayCountTotal = goal.type === 'count'
+    ? todayLogs.reduce((sum, l) => sum + (l.count ?? 1), 0)
+    : 0;
+  const countGoalComplete = goal.type === 'count' && goal.targetCount
+    ? todayCountTotal >= goal.targetCount
+    : false;
+
+  const loggedToday = goal.type === 'count' ? countGoalComplete : baseLoggedToday;
+  const isAtRisk = goal.type === 'habit' && !loggedToday && hour >= 12;
 
   const nextStreakBadge = goal.type === 'habit' ? getNextStreakBadge(streakInfo.currentStreak) : null;
   const nextLogBadge = getNextLogBadge(logs.length);
@@ -178,10 +190,10 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   }, []);
 
   const handleLog = useCallback(() => {
-    const canLog = !loggedToday || goal.allowMultiplePerDay;
+    const canLog = goal.type === 'count' ? !countGoalComplete : (!loggedToday || goal.allowMultiplePerDay);
     if (canLog) triggerBurstAnimation();
     onLog();
-  }, [onLog, triggerBurstAnimation, loggedToday, goal.allowMultiplePerDay]);
+  }, [onLog, triggerBurstAnimation, loggedToday, goal.allowMultiplePerDay, goal.type, countGoalComplete]);
 
   const xpLabel = `+${Math.round(BASE_LOG_XP * multiplier)} XP`;
 
@@ -239,6 +251,20 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           </View>
         )}
 
+        {goal.type === 'count' && goal.targetCount && (
+          <View style={styles.countProgressWrapper}>
+            <Text style={styles.countProgressText}>
+              {todayCountTotal.toLocaleString()} / {goal.targetCount.toLocaleString()} {goal.unit ?? ''}
+            </Text>
+            <View style={styles.countProgressBar}>
+              <View style={[styles.countProgressFill, {
+                width: `${Math.min(100, (todayCountTotal / goal.targetCount) * 100)}%` as any,
+                backgroundColor: countGoalComplete ? Colors.success : goal.color,
+              }]} />
+            </View>
+          </View>
+        )}
+
         <View style={styles.bottomRow}>
           {multiplier > 1 && (
             <Text style={styles.multiplier}>{multiplier}× XP</Text>
@@ -284,17 +310,17 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
               {/* Animated button wrapper */}
               <Animated.View style={animatedButtonStyle}>
                 <TouchableOpacity
-                  style={[styles.logBtn, loggedToday && !goal.allowMultiplePerDay && styles.logBtnDone]}
+                  style={[styles.logBtn, loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' && styles.logBtnDone]}
                   onPress={handleLog}
-                  disabled={loggedToday && !goal.allowMultiplePerDay}
+                  disabled={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count'}
                 >
                   <Ionicons
-                    name={loggedToday && !goal.allowMultiplePerDay ? 'checkmark-circle' : 'add'}
+                    name={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' ? 'checkmark-circle' : 'add'}
                     size={18}
-                    color={loggedToday && !goal.allowMultiplePerDay ? Colors.success : Colors.textPrimary}
+                    color={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' ? Colors.success : Colors.textPrimary}
                   />
-                  <Text style={[styles.logBtnText, loggedToday && !goal.allowMultiplePerDay && styles.logBtnTextDone]}>
-                    {goal.allowMultiplePerDay ? 'Log+' : loggedToday ? 'Done' : 'Log'}
+                  <Text style={[styles.logBtnText, loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' && styles.logBtnTextDone]}>
+                    {goal.type === 'count' ? (countGoalComplete ? 'Done' : 'Add') : goal.allowMultiplePerDay ? 'Log+' : loggedToday ? 'Done' : 'Log'}
                   </Text>
                 </TouchableOpacity>
               </Animated.View>
@@ -372,4 +398,8 @@ const styles = StyleSheet.create({
   restDayText: { color: Colors.textSecondary, fontSize: FontSize.sm },
   doubleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: Colors.warning + '44' },
   doubleText: { color: Colors.warning, fontSize: 10, fontWeight: '800' },
+  countProgressWrapper: { gap: 4, marginTop: 4 },
+  countProgressText: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  countProgressBar: { height: 4, backgroundColor: Colors.bg3, borderRadius: 2, overflow: 'hidden' },
+  countProgressFill: { height: '100%', borderRadius: 2 },
 });

@@ -1,4 +1,4 @@
-export type GoalType = 'habit' | 'milestone';
+export type GoalType = 'habit' | 'milestone' | 'count';
 export type GoalCategory = 'creative' | 'physical' | 'learning' | 'wellness' | 'other';
 export type GoalDifficulty = 'easy' | 'medium' | 'hard' | 'extreme';
 
@@ -32,6 +32,7 @@ export interface Log {
   createdAt: string;
   xpAwarded: number;
   bonusXp: number;
+  count: number;  // default 1 for habit/milestone, actual count for 'count' goals
 }
 
 export interface StreakInfo {

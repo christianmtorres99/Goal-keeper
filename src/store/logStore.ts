@@ -24,7 +24,7 @@ interface LogStore {
   graceStates: Record<string, GraceState>;
   comebackAwardedDate: string | null;
   loadLogs: () => Promise<void>;
-  addLog: (goalId: string, note?: string, logDate?: string, allowMultiple?: boolean) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
+  addLog: (goalId: string, note?: string, logDate?: string, allowMultiple?: boolean, count?: number) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
   removeLog: (logId: string) => Promise<void>;
   getLogsForGoal: (goalId: string) => Log[];
   getLogsForDate: (date: string) => Log[];
@@ -59,6 +59,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         createdAt: r.created_at,
         xpAwarded: r.xp_awarded,
         bonusXp: r.bonus_xp ?? 0,
+        count: r.count ?? 1,
       }));
 
       set({ logs, graceStates });
@@ -68,7 +69,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     }
   },
 
-  addLog: async (goalId, note, logDate?, allowMultiple?) => {
+  addLog: async (goalId, note, logDate?, allowMultiple?, count = 1) => {
     try {
       const { logs, graceStates } = get();
       const goalLogs = logs.filter(l => l.goalId === goalId);
@@ -114,12 +115,13 @@ export const useLogStore = create<LogStore>((set, get) => ({
         createdAt: new Date().toISOString(),
         xpAwarded,
         bonusXp: 0,
+        count: count ?? 1,
       };
 
       const db = await getDb();
       await db.runAsync(
-        'INSERT INTO logs (id, goal_id, log_date, note, created_at, xp_awarded, bonus_xp) VALUES (?,?,?,?,?,?,?)',
-        [log.id, log.goalId, log.logDate, log.note ?? null, log.createdAt, log.xpAwarded, 0]
+        'INSERT INTO logs (id, goal_id, log_date, note, created_at, xp_awarded, bonus_xp, count) VALUES (?,?,?,?,?,?,?,?)',
+        [log.id, log.goalId, log.logDate, log.note ?? null, log.createdAt, log.xpAwarded, 0, log.count]
       );
 
       // For past-day logs: skip grace day update and bonus event detection

@@ -13,6 +13,7 @@ import {
   MIGRATIONS_V3,
   MIGRATIONS_V4,
   MIGRATIONS_V5,
+  MIGRATIONS_V6,
 } from './schema';
 
 let _db: SQLite.SQLiteDatabase | null = null;
@@ -47,6 +48,9 @@ export async function runMigrations(): Promise<void> {
     try { await db.execAsync(sql); } catch {}
   }
   for (const sql of MIGRATIONS_V5) {
+    try { await db.execAsync(sql); } catch {}
+  }
+  for (const sql of MIGRATIONS_V6) {
     try { await db.execAsync(sql); } catch {}
   }
 }
