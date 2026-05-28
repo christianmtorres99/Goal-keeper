@@ -95,6 +95,56 @@ export default function StatsScreen() {
 
   const hasMoodData = useMemo(() => journalEntries.length > 0, [journalEntries]);
 
+  const moodStats = useMemo(() => {
+    const today = todayString();
+    // Build last-30-days arrays
+    const last30: { date: string; mood: number; energy: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = addDays(today, -i);
+      const entry = journalEntries.find(e => e.entryDate === d);
+      last30.push({ date: d, mood: entry?.mood ?? 0, energy: entry?.energy ?? 0 });
+    }
+    const last30Labels = last30.map((item, i) => (i % 5 === 0 ? item.date.slice(5) : ''));
+    const last30Mood = last30.map(item => item.mood);
+    const last30Energy = last30.map(item => item.energy);
+
+    // Averages (only entries with data)
+    const recentEntries = journalEntries.filter(e => e.entryDate >= addDays(today, -29) && e.entryDate <= today);
+    const avgMood = recentEntries.length > 0
+      ? (recentEntries.reduce((s, e) => s + e.mood, 0) / recentEntries.length).toFixed(1)
+      : null;
+    const avgEnergy = recentEntries.length > 0
+      ? (recentEntries.reduce((s, e) => s + e.energy, 0) / recentEntries.length).toFixed(1)
+      : null;
+
+    // Best and worst day
+    let bestDay: { date: string; score: number } | null = null;
+    let worstDay: { date: string; score: number } | null = null;
+    recentEntries.forEach(e => {
+      const score = e.mood + e.energy;
+      if (!bestDay || score > bestDay.score) bestDay = { date: e.entryDate, score };
+      if (!worstDay || score < worstDay.score) worstDay = { date: e.entryDate, score };
+    });
+
+    // Mood distribution 1-5
+    const moodDist: number[] = [0, 0, 0, 0, 0];
+    recentEntries.forEach(e => {
+      const idx = Math.min(Math.max(Math.round(e.mood), 1), 5) - 1;
+      moodDist[idx]++;
+    });
+
+    // Journal streak (consecutive days with entries ending today)
+    const sortedDates = [...new Set(journalEntries.map(e => e.entryDate))].sort();
+    let streak = 0;
+    let cursor = today;
+    while (sortedDates.includes(cursor)) {
+      streak++;
+      cursor = addDays(cursor, -1);
+    }
+
+    return { last30Labels, last30Mood, last30Energy, avgMood, avgEnergy, bestDay, worstDay, moodDist, journalStreak: streak };
+  }, [journalEntries]);
+
   // Weekly summary — last 8 weeks
   const weeklyData = useMemo(() => {
     const today = todayString();
@@ -272,11 +322,32 @@ export default function StatsScreen() {
           <HeatmapGrid logs={filteredLogs} goalColor={heatColor} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
-        {/* Mood & Energy chart */}
-        <Text style={styles.sectionLabel}>Mood & Energy (30 days)</Text>
-        <View style={styles.chartCard}>
-          {hasMoodData ? (
-            <>
+        {/* Mood & Energy — comprehensive section */}
+        <Text style={styles.sectionLabel}>Mood &amp; Energy</Text>
+        {journalEntries.length === 0 ? (
+          <View style={styles.chartCard}>
+            <Text style={styles.noData}>No journal entries yet</Text>
+          </View>
+        ) : (
+          <>
+            {/* Avg tiles */}
+            <View style={styles.statRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{moodStats.avgMood ?? '—'}</Text>
+                <Text style={styles.statLabel}>Avg Mood</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{moodStats.avgEnergy ?? '—'}</Text>
+                <Text style={styles.statLabel}>Avg Energy</Text>
+              </View>
+              <View style={styles.statBox}>
+                <Text style={styles.statValue}>{moodStats.journalStreak}</Text>
+                <Text style={styles.statLabel}>Journal Streak</Text>
+              </View>
+            </View>
+
+            {/* 30-day line chart */}
+            <View style={styles.chartCard}>
               <View style={styles.moodLegend}>
                 <View style={styles.moodLegendItem}>
                   <View style={[styles.moodLegendDot, { backgroundColor: Colors.accent }]} />
@@ -287,26 +358,70 @@ export default function StatsScreen() {
                   <Text style={styles.moodLegendText}>Energy</Text>
                 </View>
               </View>
-              <LineChart
-                data={moodEnergyData}
-                width={W}
-                height={180}
-                chartConfig={{
-                  ...chartConfig,
-                  color: (opacity = 1) => Colors.accent + Math.round(opacity * 255).toString(16).padStart(2, '0'),
-                }}
-                style={styles.chart}
-                bezier
-                withDots={false}
-                fromZero
-                yAxisSuffix=""
-                yAxisLabel=""
-              />
-            </>
-          ) : (
-            <Text style={styles.noData}>Start journaling to see your mood trends</Text>
-          )}
-        </View>
+              {moodStats.last30Mood.some(v => v > 0) ? (
+                <LineChart
+                  data={{
+                    labels: moodStats.last30Labels,
+                    datasets: [
+                      { data: moodStats.last30Mood, color: (op = 1) => Colors.accent + Math.round(op * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
+                      { data: moodStats.last30Energy, color: (op = 1) => Colors.success + Math.round(op * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
+                    ],
+                  }}
+                  width={W}
+                  height={180}
+                  chartConfig={chartConfig}
+                  bezier
+                  withDots={false}
+                  style={styles.chart}
+                  fromZero
+                  yAxisSuffix=""
+                  yAxisLabel=""
+                />
+              ) : (
+                <Text style={styles.noData}>Need more data</Text>
+              )}
+            </View>
+
+            {/* Best / Worst day */}
+            {(moodStats.bestDay || moodStats.worstDay) && (
+              <View style={[styles.chartCard, { flexDirection: 'row', gap: Spacing.md }]}>
+                {moodStats.bestDay && (
+                  <View style={{ flex: 1, alignItems: 'center' }}>
+                    <Text style={styles.moodLegendText}>Best Day</Text>
+                    <Text style={[styles.statValue, { color: Colors.success, fontSize: FontSize.md }]}>{(moodStats.bestDay as any).date}</Text>
+                    <Text style={styles.statLabel}>score {(moodStats.bestDay as any).score}</Text>
+                  </View>
+                )}
+                {moodStats.worstDay && (
+                  <View style={{ flex: 1, alignItems: 'center' }}>
+                    <Text style={styles.moodLegendText}>Worst Day</Text>
+                    <Text style={[styles.statValue, { color: Colors.danger, fontSize: FontSize.md }]}>{(moodStats.worstDay as any).date}</Text>
+                    <Text style={styles.statLabel}>score {(moodStats.worstDay as any).score}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Mood distribution */}
+            <View style={styles.chartCard}>
+              <Text style={[styles.moodLegendText, { marginBottom: Spacing.sm }]}>Mood Distribution</Text>
+              {(['😞', '😕', '😐', '🙂', '😄'] as const).map((emoji, idx) => {
+                const count = moodStats.moodDist[idx];
+                const total = moodStats.moodDist.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? count / total : 0;
+                return (
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 }}>
+                    <Text style={{ width: 24, textAlign: 'center' }}>{emoji}</Text>
+                    <View style={{ flex: 1, height: 10, backgroundColor: Colors.bg3, borderRadius: 5, overflow: 'hidden' }}>
+                      <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: Colors.accent, borderRadius: 5 }} />
+                    </View>
+                    <Text style={[styles.statLabel, { width: 24, textAlign: 'right' }]}>{count}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
 
         {/* Per-goal streaks */}
         <Text style={styles.sectionLabel}>Current Streaks</Text>
