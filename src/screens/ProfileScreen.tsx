@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThemePickerModal from '../components/profile/ThemePickerModal';
+import BadgeDetailModal from '../components/common/BadgeDetailModal';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useLogStore } from '../store/logStore';
@@ -57,6 +58,7 @@ export default function ProfileScreen() {
   const [bgColor, setBgColor] = useState(SHARE_BG_COLORS[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
+  const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
@@ -168,14 +170,19 @@ export default function ProfileScreen() {
     <View key={title} style={styles.section}>
       <Text style={styles.sectionLabel}>{title}</Text>
       <View style={styles.badgeGrid}>
-        {badges.map(badge => (
-          <BadgeItem
-            key={badge.id}
-            badge={badge}
-            earned={earnedSet.has(badge.id)}
-            earnedAt={earnedAtMap[badge.id]}
-            size={BADGE_SIZE}
-          />
+        {badges.map(def => (
+          <TouchableOpacity
+            key={def.id}
+            onPress={() => setSelectedBadgeId(def.id)}
+            activeOpacity={0.75}
+          >
+            <BadgeItem
+              badge={def}
+              earned={earnedSet.has(def.id)}
+              earnedAt={earnedAtMap[def.id]}
+              size={BADGE_SIZE}
+            />
+          </TouchableOpacity>
         ))}
       </View>
     </View>
@@ -391,6 +398,9 @@ export default function ProfileScreen() {
 
       {/* Theme picker modal */}
       <ThemePickerModal visible={themePickerVisible} onClose={() => setThemePickerVisible(false)} />
+
+      {/* Badge detail modal */}
+      <BadgeDetailModal badgeId={selectedBadgeId} onClose={() => setSelectedBadgeId(null)} />
 
       {/* Feature picker modal */}
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
