@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 
 import { runMigrations } from './src/db/client';
 import { useGoalStore } from './src/store/goalStore';
@@ -18,6 +19,19 @@ import { Colors } from './src/constants/theme';
 import { THEMES } from './src/constants/themes';
 import { useThemeStore } from './src/store/themeStore';
 import { ThemeProvider } from './src/context/ThemeContext';
+
+const NAV_THEME = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#A855F7',
+    background: '#080B12',
+    card: '#080B12',
+    text: '#F1F5F9',
+    border: '#2D3555',
+    notification: '#A855F7',
+  },
+};
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -87,12 +101,14 @@ export default function App() {
   }
 
   return (
-    <ThemeProvider key={themeKey}>
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
-        <StatusBar style="light" />
-        <AppNavigator />
-      </GestureHandlerRootView>
-    </ThemeProvider>
+    <NavigationContainer theme={NAV_THEME}>
+      <ThemeProvider key={themeKey}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
+          <StatusBar style="light" />
+          <AppNavigator />
+        </GestureHandlerRootView>
+      </ThemeProvider>
+    </NavigationContainer>
   );
 }
 

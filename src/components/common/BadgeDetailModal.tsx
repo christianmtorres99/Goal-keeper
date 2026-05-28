@@ -31,7 +31,7 @@ import type { BadgeRarity } from '../../types';
 const SCREEN_W = Dimensions.get('window').width;
 const ICON_SIZE = 96;
 const ICON_CONTAINER_SIZE = 140;
-const PARTICLE_RADIUS = 80;
+const PARTICLE_RADIUS = 120;
 
 interface BadgeDetailModalProps {
   badgeId: string | null;
@@ -41,10 +41,10 @@ interface BadgeDetailModalProps {
 // ── Particle count per rarity ─────────────────────────────────────────────
 function particleCount(rarity: BadgeRarity): number {
   switch (rarity) {
-    case 'legendary': return 12;
-    case 'rare':      return 8;
-    case 'uncommon':  return 4;
-    case 'common':    return 6;
+    case 'legendary': return 20;
+    case 'rare':      return 16;
+    case 'uncommon':  return 12;
+    case 'common':    return 12;
   }
 }
 

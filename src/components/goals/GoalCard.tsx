@@ -22,7 +22,7 @@ import { todayString } from '../../utils/dateUtils';
 import { getNextStreakBadge, getNextLogBadge } from '../../utils/motivationUtils';
 
 const BASE_LOG_XP = 50;
-const PARTICLE_COUNT = 6;
+const PARTICLE_COUNT = 14;
 const PARTICLE_ANGLES = Array.from({ length: PARTICLE_COUNT }, (_, i) =>
   (i / PARTICLE_COUNT) * Math.PI * 2
 );
@@ -45,8 +45,8 @@ const Particle = forwardRef<ParticleRef, ParticleProps>(({ angle, color, index }
 
   useImperativeHandle(ref, () => ({
     trigger() {
-      const dx = Math.cos(angle) * 44;
-      const dy = Math.sin(angle) * 44;
+      const dx = Math.cos(angle) * 66;
+      const dy = Math.sin(angle) * 66;
       const delay = index * 20;
       tx.value = 0;
       ty.value = 0;
@@ -121,6 +121,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const xpTranslateY = useSharedValue(0);
   const ringScale = useSharedValue(0);
   const ringOpacity = useSharedValue(0);
+  const burstRingScale = useSharedValue(0.5);
+  const burstRingOpacity = useSharedValue(0);
 
   // Particle refs
   const particleRefs = useRef<Array<ParticleRef | null>>(
@@ -144,6 +146,11 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     opacity: ringOpacity.value,
   }));
 
+  const animatedBurstRingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: burstRingScale.value }],
+    opacity: burstRingOpacity.value,
+  }));
+
   const triggerBurstAnimation = useCallback(() => {
     // Button spring
     buttonScale.value = withSequence(
@@ -161,6 +168,11 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     ringOpacity.value = 0.7;
     ringScale.value = withTiming(3.5, { duration: 550 });
     ringOpacity.value = withTiming(0, { duration: 550 });
+    // Burst ring
+    burstRingScale.value = 0.5;
+    burstRingOpacity.value = 0.5;
+    burstRingScale.value = withTiming(2.0, { duration: 500 });
+    burstRingOpacity.value = withTiming(0, { duration: 500 });
     // Particles
     particleRefs.current.forEach(p => p?.trigger());
   }, []);
@@ -250,6 +262,11 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
                 style={[styles.ring, { borderColor: goal.color }, animatedRingStyle]}
                 pointerEvents="none"
               />
+              {/* Burst ring */}
+              <Animated.View
+                style={[styles.burstRing, { borderColor: goal.color }, animatedBurstRingStyle]}
+                pointerEvents="none"
+              />
               {/* Burst particles */}
               {PARTICLE_ANGLES.map((angle, i) => (
                 <Particle
@@ -334,9 +351,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 2,
   },
+  burstRing: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+  },
   xpFloat: {
     color: Colors.accentBright,
-    fontSize: FontSize.xs,
+    fontSize: 22,
     fontWeight: '800',
   },
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },

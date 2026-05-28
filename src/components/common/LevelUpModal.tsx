@@ -18,14 +18,17 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const flashAnim = useRef(new Animated.Value(0)).current;
 
   const tier = getLevelTier(newLevel);
 
   useEffect(() => {
     if (visible) {
+      flashAnim.setValue(0.4);
+      Animated.timing(flashAnim, { toValue: 0, duration: 400, useNativeDriver: true }).start();
       Animated.sequence([
         Animated.parallel([
-          Animated.spring(scaleAnim, { toValue: 1, tension: 55, friction: 6, useNativeDriver: true }),
+          Animated.spring(scaleAnim, { toValue: 1, tension: 30, friction: 4, useNativeDriver: true }),
           Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
         ]),
         Animated.loop(
@@ -39,6 +42,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
       scaleAnim.setValue(0.5);
       opacityAnim.setValue(0);
       glowAnim.setValue(0);
+      flashAnim.setValue(0);
     }
   }, [visible]);
 
@@ -79,6 +83,12 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
             <Text style={styles.buttonText}>Keep going! ⚡</Text>
           </TouchableOpacity>
         </Animated.View>
+
+        {/* White flash overlay */}
+        <Animated.View
+          style={[styles.flashOverlay, { opacity: flashAnim }]}
+          pointerEvents="none"
+        />
       </Animated.View>
     </Modal>
   );
@@ -113,6 +123,14 @@ const styles = StyleSheet.create({
     borderRadius: W * 0.4,
     borderWidth: 2,
     top: -W * 0.25,
+  },
+  flashOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
   },
   label: {
     color: Colors.textDisabled,

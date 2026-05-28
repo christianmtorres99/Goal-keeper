@@ -1,5 +1,4 @@
 import React from 'react';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -72,46 +71,31 @@ function TabNavigator() {
   );
 }
 
-const NAV_THEME = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: '#A855F7',
-    background: '#080B12',
-    card: '#080B12',
-    text: '#F1F5F9',
-    border: '#2D3555',
-    notification: '#A855F7',
-  },
-};
-
 export default function AppNavigator() {
   return (
-    <NavigationContainer theme={NAV_THEME}>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: { backgroundColor: Colors.bg1 },
-          headerTintColor: Colors.textPrimary,
-          headerTitleStyle: { fontWeight: '700' },
-          contentStyle: { backgroundColor: Colors.bg0 },
-          animation: 'fade',
-        }}
-      >
-        <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="GoalDetail" component={GoalDetailScreen} options={{ title: '' }} />
-        <Stack.Screen name="AddGoal" component={AddGoalScreen} options={{ title: 'New Goal' }} />
-        <Stack.Screen name="ArchivedGoals" component={ArchivedGoalsScreen} options={{ title: 'Archived Goals' }} />
-        <Stack.Screen
-          name="SkillTrack"
-          component={SkillTrackScreen}
-          options={({ route }) => ({ title: route.params.category.charAt(0).toUpperCase() + route.params.category.slice(1) })}
-        />
-        <Stack.Screen
-          name="Journal"
-          component={JournalScreen}
-          options={{ headerShown: false }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: Colors.bg1 },
+        headerTintColor: Colors.textPrimary,
+        headerTitleStyle: { fontWeight: '700' },
+        contentStyle: { backgroundColor: Colors.bg0 },
+        animation: 'fade',
+      }}
+    >
+      <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen name="GoalDetail" component={GoalDetailScreen} options={{ title: '' }} />
+      <Stack.Screen name="AddGoal" component={AddGoalScreen} options={{ title: 'New Goal' }} />
+      <Stack.Screen name="ArchivedGoals" component={ArchivedGoalsScreen} options={{ title: 'Archived Goals' }} />
+      <Stack.Screen
+        name="SkillTrack"
+        component={SkillTrackScreen}
+        options={({ route }) => ({ title: route.params.category.charAt(0).toUpperCase() + route.params.category.slice(1) })}
+      />
+      <Stack.Screen
+        name="Journal"
+        component={JournalScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
   );
 }
