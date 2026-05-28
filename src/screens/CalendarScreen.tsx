@@ -2,13 +2,21 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Svg, { Path as SvgPath } from 'react-native-svg';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
+import { useJournalStore } from '../store/journalStore';
 import { sumXP } from '../utils/xpUtils';
 import { getMonthDays, getMonthName, todayString, dateFromString, formatDisplayDate, daysBetween } from '../utils/dateUtils';
 import EmptyState from '../components/common/EmptyState';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { DrawingPath } from '../types';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const DOW_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DOW_LONG  = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -17,7 +25,11 @@ const SCREEN_W = Dimensions.get('window').width;
 const CELL_W = Math.floor(SCREEN_W / 7);
 const CELL_H = Math.floor(CELL_W * 1.25);
 
+const MOOD_EMOJIS = ['😔', '😕', '😐', '🙂', '😄'];
+const THUMB_SIZE = 80;
+
 export default function CalendarScreen() {
+  const navigation = useNavigation<NavProp>();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -25,6 +37,7 @@ export default function CalendarScreen() {
 
   const { getLogsForMonth, logs: allLogs } = useLogStore();
   const goals = useGoalStore(s => s.goals);
+  const { entries: journalEntries } = useJournalStore();
 
   const monthLogs = useMemo(() => getLogsForMonth(year, month), [year, month, allLogs]);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
@@ -155,6 +168,19 @@ export default function CalendarScreen() {
     [selectedDay, monthLogs]
   );
 
+  // Journal entry for selected day
+  const selectedDayJournal = useMemo(
+    () => selectedDay ? journalEntries.find(e => e.entryDate === selectedDay) ?? null : null,
+    [selectedDay, journalEntries]
+  );
+
+  // Set of days that have journal entries (for this month)
+  const journalDays = useMemo(() => {
+    const s = new Set<string>();
+    journalEntries.forEach(e => { if (e.entryDate.startsWith(monthPrefix)) s.add(e.entryDate); });
+    return s;
+  }, [journalEntries, monthPrefix]);
+
   if (activeGoals.length === 0 && monthLogs.length === 0) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -198,15 +224,17 @@ export default function CalendarScreen() {
           ))}
           {days.map(dateStr => {
             const goalIds = dayActivities[dateStr] ?? [];
+            const hasJournal = journalDays.has(dateStr);
             const isToday = dateStr === todayStr;
             const isFuture = dateStr > todayStr;
             const isPerfect = activeGoals.length > 0 && goalIds.length >= activeGoals.length;
+            const isInteractive = !isFuture && (goalIds.length > 0 || hasJournal);
             return (
               <TouchableOpacity
                 key={dateStr}
                 style={[styles.cell, isToday && styles.cellToday, isPerfect && styles.cellPerfect]}
-                onPress={() => goalIds.length > 0 ? setSelectedDay(dateStr) : null}
-                disabled={isFuture || goalIds.length === 0}
+                onPress={() => isInteractive ? setSelectedDay(dateStr) : null}
+                disabled={!isInteractive}
                 activeOpacity={0.7}
               >
                 <Text style={[
@@ -217,11 +245,14 @@ export default function CalendarScreen() {
                   {parseInt(dateStr.split('-')[2])}
                 </Text>
                 <View style={styles.dots}>
-                  {goalIds.slice(0, 4).map(gid => (
+                  {goalIds.slice(0, 3).map(gid => (
                     <View key={gid} style={[styles.dot, { backgroundColor: goalMap[gid]?.color ?? Colors.accent }]} />
                   ))}
-                  {goalIds.length > 4 && (
+                  {goalIds.length > 3 && (
                     <View style={[styles.dot, { backgroundColor: Colors.textDisabled }]} />
+                  )}
+                  {hasJournal && (
+                    <View style={[styles.dot, styles.journalDot]} />
                   )}
                 </View>
               </TouchableOpacity>
@@ -335,11 +366,17 @@ export default function CalendarScreen() {
       {/* Day detail modal */}
       <Modal visible={!!selectedDay} transparent animationType="fade" onRequestClose={() => setSelectedDay(null)}>
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSelectedDay(null)}>
-          <View style={styles.sheet}>
+          <ScrollView
+            style={styles.sheetScroll}
+            contentContainerStyle={styles.sheet}
+            scrollEnabled={selectedDayLogs.length + (selectedDayJournal ? 1 : 0) > 3}
+          >
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetDate}>
               {selectedDay ? formatDisplayDate(selectedDay) : ''}
             </Text>
+
+            {/* Goal logs */}
             {selectedDayLogs.map(log => {
               const g = goalMap[log.goalId];
               return (
@@ -357,7 +394,76 @@ export default function CalendarScreen() {
                 </View>
               );
             })}
-          </View>
+
+            {/* Journal entry section */}
+            {selectedDayJournal && (
+              <TouchableOpacity
+                style={styles.journalSection}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setSelectedDay(null);
+                  navigation.navigate('Journal', { date: selectedDay! });
+                }}
+              >
+                <View style={styles.journalSectionHeader}>
+                  <Ionicons name="journal-outline" size={14} color={Colors.accentBright} />
+                  <Text style={styles.journalSectionTitle}>Journal Entry</Text>
+                  <Ionicons name="chevron-forward" size={14} color={Colors.textDisabled} />
+                </View>
+                <View style={styles.journalSectionBody}>
+                  {/* Mood + energy */}
+                  <View style={styles.journalMoodRow}>
+                    <Text style={styles.journalMoodEmoji}>
+                      {MOOD_EMOJIS[selectedDayJournal.mood - 1]}
+                    </Text>
+                    <View style={styles.journalEnergyBars}>
+                      {[1, 2, 3, 4, 5].map(v => (
+                        <View
+                          key={v}
+                          style={[
+                            styles.journalEnergyBar,
+                            { height: [4, 7, 10, 13, 16][v - 1] },
+                            v <= selectedDayJournal.energy && styles.journalEnergyBarActive,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                    <Text style={styles.journalEnergyLabel}>{selectedDayJournal.energy}/5</Text>
+                  </View>
+
+                  {/* Text excerpt + drawing thumbnail */}
+                  <View style={styles.journalContentRow}>
+                    {selectedDayJournal.textContent ? (
+                      <Text style={styles.journalExcerpt} numberOfLines={3}>
+                        {selectedDayJournal.textContent.startsWith('{"t":')
+                          ? (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
+                          : selectedDayJournal.textContent}
+                      </Text>
+                    ) : (
+                      <Text style={styles.journalExcerptEmpty}>No text written.</Text>
+                    )}
+                    {selectedDayJournal.drawingData.length > 0 && (
+                      <View style={styles.journalThumb}>
+                        <Svg width={THUMB_SIZE} height={THUMB_SIZE} viewBox="0 0 300 500">
+                          {selectedDayJournal.drawingData.map((p: DrawingPath, i: number) => (
+                            <SvgPath
+                              key={i}
+                              d={p.d}
+                              stroke={p.color}
+                              strokeWidth={p.strokeWidth}
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          ))}
+                        </Svg>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
@@ -429,8 +535,11 @@ const styles = StyleSheet.create({
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendLabel: { color: Colors.textPrimary, fontSize: FontSize.sm },
 
+  journalDot: { backgroundColor: Colors.accentBright, borderWidth: 1.5, borderColor: Colors.bg0 },
+
   // Day modal
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  sheetScroll: { maxHeight: '80%' },
   sheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md },
   sheetHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   sheetDate: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
@@ -441,4 +550,20 @@ const styles = StyleSheet.create({
   logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
   logXPBadge: { backgroundColor: Colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
   logXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700' },
+
+  // Journal section in modal
+  journalSection: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.accentDim },
+  journalSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  journalSectionTitle: { flex: 1, color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700' },
+  journalSectionBody: { gap: Spacing.sm },
+  journalMoodRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm },
+  journalMoodEmoji: { fontSize: 22 },
+  journalEnergyBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3 },
+  journalEnergyBar: { width: 6, borderRadius: 2, backgroundColor: Colors.bg3 },
+  journalEnergyBarActive: { backgroundColor: Colors.success },
+  journalEnergyLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  journalContentRow: { flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start' },
+  journalExcerpt: { flex: 1, color: Colors.textSecondary, fontSize: FontSize.sm, lineHeight: 18 },
+  journalExcerptEmpty: { flex: 1, color: Colors.textDisabled, fontSize: FontSize.sm, fontStyle: 'italic' },
+  journalThumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: Radius.sm, backgroundColor: Colors.bg3, overflow: 'hidden' },
 });

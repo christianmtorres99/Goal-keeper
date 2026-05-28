@@ -12,7 +12,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -161,11 +162,15 @@ function RichTextView({ text, spans, onPress }: RichTextViewProps) {
 
 export default function JournalScreen() {
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, 'Journal'>>();
   const { entries, saveEntry, loadEntries } = useJournalStore();
 
+  const activeDate = route.params?.date ?? todayString();
+  const activeEntry = entries.find(e => e.entryDate === activeDate);
+  // keep 'today' alias for backwards compat in scope (stats calculations still use real today)
   const today = todayString();
-  const todayEntry = entries.find(e => e.entryDate === today);
-  const initialContent = todayEntry ? parseContent(todayEntry.textContent) : { text: '', spans: [] as RichSpan[] };
+  const todayEntry = activeEntry;
+  const initialContent = activeEntry ? parseContent(activeEntry.textContent) : { text: '', spans: [] as RichSpan[] };
 
   const [tab, setTab] = useState<Tab>('write');
   const [mood, setMood] = useState(todayEntry?.mood ?? 3);
@@ -220,19 +225,19 @@ export default function JournalScreen() {
           { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
           { text: 'Cancel', style: 'cancel' },
           { text: 'Save', onPress: async () => {
-            await saveEntry(today, mood, energy, serializeContent(text, spans), drawingPaths);
+            await saveEntry(activeDate, mood, energy, serializeContent(text, spans), drawingPaths);
             navigation.dispatch(e.data.action);
           }},
         ]
       );
     });
     return unsubscribe;
-  }, [navigation, isDirty, mood, energy, text, spans, drawingPaths, saveEntry, today]);
+  }, [navigation, isDirty, mood, energy, text, spans, drawingPaths, saveEntry, activeDate]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      await saveEntry(today, mood, energy, serializeContent(text, spans), drawingPaths);
+      await saveEntry(activeDate, mood, energy, serializeContent(text, spans), drawingPaths);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch {
@@ -240,7 +245,7 @@ export default function JournalScreen() {
     } finally {
       setSaving(false);
     }
-  }, [today, mood, energy, text, spans, drawingPaths, saveEntry, navigation]);
+  }, [activeDate, mood, energy, text, spans, drawingPaths, saveEntry, navigation]);
 
   const handleUndo = useCallback(() => setDrawingPaths(prev => prev.slice(0, -1)), []);
 
@@ -254,7 +259,7 @@ export default function JournalScreen() {
   const switchTab = async (newTab: Tab) => {
     if (newTab === tab) return;
     setIsEditing(false);
-    await saveEntry(today, mood, energy, serializeContent(text, spans), drawingPaths);
+    await saveEntry(activeDate, mood, energy, serializeContent(text, spans), drawingPaths);
     setTab(newTab);
   };
 
@@ -326,7 +331,7 @@ export default function JournalScreen() {
       {tab === 'write' && (
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
           <ScrollView style={styles.flex} contentContainerStyle={styles.writeContent} keyboardShouldPersistTaps="handled">
-            <Text style={styles.dateLabel}>{formatDisplayDate(today)}</Text>
+            <Text style={styles.dateLabel}>{formatDisplayDate(activeDate)}</Text>
 
             {/* Mood */}
             <View style={styles.ratingSection}>

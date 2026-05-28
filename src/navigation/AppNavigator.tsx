@@ -23,7 +23,7 @@ export type RootStackParamList = {
   AddGoal: { goalId?: string };
   ArchivedGoals: undefined;
   SkillTrack: { category: GoalCategory };
-  Journal: undefined;
+  Journal: { date?: string } | undefined;
 };
 
 export type TabParamList = {
