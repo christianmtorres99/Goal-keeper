@@ -71,7 +71,7 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.bg0 }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Weekly Review</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
@@ -155,7 +155,7 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg0 },
+  container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, paddingTop: Spacing.xl },
   title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
   closeBtn: { padding: Spacing.sm },

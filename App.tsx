@@ -21,19 +21,6 @@ import { useThemeStore } from './src/store/themeStore';
 import { useScheduledTaskStore } from './src/store/scheduledTaskStore';
 import { ThemeProvider } from './src/context/ThemeContext';
 
-const NAV_THEME = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: '#A855F7',
-    background: '#080B12',
-    card: '#080B12',
-    text: '#F1F5F9',
-    border: '#2D3555',
-    notification: '#A855F7',
-  },
-};
-
 export default function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +28,19 @@ export default function App() {
   const [themeKey, setThemeKey] = useState(0);
 
   const systemScheme = useColorScheme(); // 'dark' | 'light' | null
+
+  const NAV_THEME = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      primary: Colors.accentBright,
+      background: Colors.bg0,
+      card: Colors.bg0,
+      text: Colors.textPrimary,
+      border: Colors.border,
+      notification: Colors.accentBright,
+    },
+  };
 
   useEffect(() => {
     async function bootstrap() {
@@ -102,7 +102,7 @@ export default function App() {
   if (showOnboarding) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style="light" />
+        <StatusBar style={Colors.bg0 === '#FFFFFF' || Colors.bg0.startsWith('#F') ? 'dark' : 'light'} />
         <OnboardingScreen onDone={() => setShowOnboarding(false)} />
       </GestureHandlerRootView>
     );
@@ -112,7 +112,7 @@ export default function App() {
     <NavigationContainer theme={NAV_THEME}>
       <ThemeProvider key={themeKey}>
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
-          <StatusBar style="light" />
+          <StatusBar style={Colors.bg0 === '#FFFFFF' || Colors.bg0.startsWith('#F') ? 'dark' : 'light'} />
           <AppNavigator />
         </GestureHandlerRootView>
       </ThemeProvider>

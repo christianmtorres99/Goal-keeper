@@ -119,7 +119,7 @@ export default function SkillTrackScreen({ route }: Props) {
   ];
 
   return (
-    <SafeAreaView style={styles.safe} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero header */}
@@ -233,7 +233,7 @@ function InsightTile({ icon, label, value, color }: { icon: string; label: strin
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
 
   heroCard: {

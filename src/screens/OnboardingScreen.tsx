@@ -145,7 +145,7 @@ export default function OnboardingScreen({ onDone }: Props) {
   const isLast = current === SLIDES.length - 1;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['top', 'left', 'right', 'bottom']}>
       <LinearGradient colors={slide.gradient} style={styles.bg} />
 
       {/* Skip */}
@@ -218,7 +218,6 @@ export default function OnboardingScreen({ onDone }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.bg0,
   },
   bg: {
     ...StyleSheet.absoluteFill,

@@ -183,7 +183,7 @@ export default function CalendarScreen() {
 
   if (activeGoals.length === 0 && monthLogs.length === 0) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
             <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
@@ -199,7 +199,7 @@ export default function CalendarScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       {/* Fixed header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
@@ -484,7 +484,7 @@ function StatCard({ icon, iconColor, label, value, sub }: {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg1 },
+  safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   arrow: { padding: Spacing.sm },
   monthTitle: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },

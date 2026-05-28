@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
+    justifyContent: 'center',
   },
   card: {
     width: '30%',

@@ -307,7 +307,7 @@ export default function JournalScreen() {
   const numLines = Math.ceil(paperHeight / LINE_H) + 2;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
@@ -541,7 +541,7 @@ export default function JournalScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1 },
   flex: { flex: 1 },
 
   header: {

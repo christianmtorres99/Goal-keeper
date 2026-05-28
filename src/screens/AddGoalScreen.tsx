@@ -162,7 +162,7 @@ export default function AddGoalScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
@@ -347,7 +347,7 @@ export default function AddGoalScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   label: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
