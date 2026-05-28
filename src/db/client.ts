@@ -4,7 +4,6 @@ import {
   CREATE_GOALS,
   CREATE_GRACE_DAYS,
   CREATE_LOGS,
-  CREATE_LOGS_UNIQUE_INDEX,
   CREATE_TODOS,
   CREATE_TODO_SUB_ITEMS,
   CREATE_JOURNALS,
@@ -30,7 +29,6 @@ export async function runMigrations(): Promise<void> {
   const db = await getDb();
   await db.execAsync(CREATE_GOALS);
   await db.execAsync(CREATE_LOGS);
-  await db.execAsync(CREATE_LOGS_UNIQUE_INDEX);
   await db.execAsync(CREATE_EARNED_BADGES);
   await db.execAsync(CREATE_GRACE_DAYS);
   await db.execAsync(CREATE_TODOS);
