@@ -104,6 +104,18 @@ export const CREATE_TODO_SUB_ITEMS = `
   )
 `;
 
+// ── Scheduled Tasks ──────────────────────────────────────────────────────────
+export const CREATE_SCHEDULED_TASKS = `
+  CREATE TABLE IF NOT EXISTS scheduled_tasks (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    days_of_week TEXT NOT NULL,
+    icon TEXT DEFAULT 'calendar',
+    color TEXT DEFAULT '#8B5CF6',
+    created_at TEXT NOT NULL
+  )
+`;
+
 // ── Journal ───────────────────────────────────────────────────────────────────
 export const CREATE_JOURNALS = `
   CREATE TABLE IF NOT EXISTS journals (

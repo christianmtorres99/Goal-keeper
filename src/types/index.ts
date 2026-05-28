@@ -122,6 +122,16 @@ export interface Todo {
   subItems: SubItem[];
 }
 
+// ── Scheduled Tasks ──────────────────────────────────────────────────────────
+export interface ScheduledTask {
+  id: string;
+  title: string;
+  daysOfWeek: number[];  // 0=Sun, 1=Mon, ..., 6=Sat
+  icon: string;
+  color: string;
+  createdAt: string;
+}
+
 // ── Journal ───────────────────────────────────────────────────────────────────
 export interface DrawingPath {
   d: string;

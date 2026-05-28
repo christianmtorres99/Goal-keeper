@@ -18,6 +18,7 @@ import OnboardingScreen, { ONBOARDING_KEY } from './src/screens/OnboardingScreen
 import { Colors } from './src/constants/theme';
 import { THEMES, LIGHT_THEMES } from './src/constants/themes';
 import { useThemeStore } from './src/store/themeStore';
+import { useScheduledTaskStore } from './src/store/scheduledTaskStore';
 import { ThemeProvider } from './src/context/ThemeContext';
 
 const NAV_THEME = {
@@ -53,6 +54,8 @@ export default function App() {
         await useTodoXPStore.getState().load();
         await useJournalStore.getState().loadEntries();
         await useThemeStore.getState().loadTheme();
+        await useScheduledTaskStore.getState().loadScheduledTasks();
+        await useScheduledTaskStore.getState().generateTodaysTasks();
 
         // Apply the loaded theme to Colors immediately
         const { activeTheme, colorMode } = useThemeStore.getState();

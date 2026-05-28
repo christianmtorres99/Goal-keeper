@@ -8,7 +8,8 @@ import {
   Modal,
   ScrollView,
   Animated,
-  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +18,7 @@ import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
 import { useTodoStore } from '../../store/todoStore';
 import type { Todo, SubItem } from '../../types';
 import { todayString, formatTime12h } from '../../utils/dateUtils';
+import ScheduledTaskModal from './ScheduledTaskModal';
 
 // ── Add Todo Modal ─────────────────────────────────────────────────────────────
 interface AddTodoModalProps {
@@ -197,25 +199,14 @@ interface TodoCardProps {
   onToggleSub: (subId: string) => void;
   onDelete: () => void;
   onReschedule: () => void;
+  onMorePress: (todo: Todo) => void;
 }
 
-function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule }: TodoCardProps) {
+function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMorePress }: TodoCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const completedCount = todo.subItems.filter(s => s.checked).length;
   const totalCount = todo.subItems.length;
-
-  const handleMorePress = () => {
-    Alert.alert(
-      todo.title,
-      'What would you like to do?',
-      [
-        { text: 'Reschedule to Tomorrow', onPress: onReschedule },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
 
   return (
     <View style={[styles.todoCard, todo.completed && styles.todoCardDone]}>
@@ -258,7 +249,7 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule }: Tod
             </TouchableOpacity>
           )}
           {!todo.completed && (
-            <TouchableOpacity onPress={handleMorePress} hitSlop={8}>
+            <TouchableOpacity onPress={() => onMorePress(todo)} hitSlop={8}>
               <Ionicons name="ellipsis-horizontal" size={18} color={Colors.textSecondary} />
             </TouchableOpacity>
           )}
@@ -283,9 +274,13 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule }: Tod
 
 // ── Main TodoSection ──────────────────────────────────────────────────────────
 export default function TodoSection() {
-  const { todos, completeTodo, toggleSubItem, deleteTodo, rescheduleTodo } = useTodoStore();
+  const { todos, completeTodo, toggleSubItem, deleteTodo, rescheduleTodo, updateTodo } = useTodoStore();
   const [expanded, setExpanded] = useState(true);
   const [addVisible, setAddVisible] = useState(false);
+  const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [actionTodo, setActionTodo] = useState<Todo | null>(null);
+  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [editText, setEditText] = useState('');
 
   const today = todayString();
   const tomorrow = (() => {
@@ -332,6 +327,14 @@ export default function TodoSection() {
 
         <TouchableOpacity
           style={styles.addTaskBtn}
+          onPress={() => setScheduleModalVisible(true)}
+          hitSlop={8}
+        >
+          <Ionicons name="repeat" size={18} color={Colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.addTaskBtn}
           onPress={() => setAddVisible(true)}
           hitSlop={8}
         >
@@ -359,6 +362,7 @@ export default function TodoSection() {
                   onToggleSub={(subId) => toggleSubItem(todo.id, subId)}
                   onDelete={() => deleteTodo(todo.id)}
                   onReschedule={() => handleReschedule(todo.id)}
+                  onMorePress={setActionTodo}
                 />
               ))}
               {completedTodos.map(todo => (
@@ -369,6 +373,7 @@ export default function TodoSection() {
                   onToggleSub={(subId) => toggleSubItem(todo.id, subId)}
                   onDelete={() => deleteTodo(todo.id)}
                   onReschedule={() => {}}
+                  onMorePress={setActionTodo}
                 />
               ))}
             </>
@@ -377,6 +382,62 @@ export default function TodoSection() {
       )}
 
       <AddTodoModal visible={addVisible} onClose={() => setAddVisible(false)} />
+      <ScheduledTaskModal visible={scheduleModalVisible} onClose={() => setScheduleModalVisible(false)} />
+
+      {/* Action sheet modal */}
+      <Modal
+        visible={!!actionTodo}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setActionTodo(null)}
+      >
+        <TouchableOpacity style={styles.actionBackdrop} activeOpacity={1} onPress={() => setActionTodo(null)} />
+        <View style={styles.actionSheet}>
+          <View style={styles.actionHandle} />
+          <Text style={styles.actionTitle} numberOfLines={1}>{actionTodo?.title}</Text>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => { setEditText(actionTodo?.title ?? ''); setEditingTodo(actionTodo); setActionTodo(null); }}>
+            <Ionicons name="pencil-outline" size={20} color={Colors.textPrimary} />
+            <Text style={styles.actionBtnText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => { if (actionTodo) { rescheduleTodo(actionTodo.id, tomorrow); } setActionTodo(null); }}>
+            <Ionicons name="calendar-outline" size={20} color={Colors.textPrimary} />
+            <Text style={styles.actionBtnText}>Reschedule to Tomorrow</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, { borderTopWidth: 1, borderTopColor: Colors.border }]} onPress={() => { if (actionTodo) deleteTodo(actionTodo.id); setActionTodo(null); }}>
+            <Ionicons name="trash-outline" size={20} color={Colors.danger} />
+            <Text style={[styles.actionBtnText, { color: Colors.danger }]}>Delete</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, { marginTop: Spacing.xs }]} onPress={() => setActionTodo(null)}>
+            <Text style={[styles.actionBtnText, { color: Colors.textSecondary, textAlign: 'center', width: '100%' }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Edit modal */}
+      <Modal visible={!!editingTodo} transparent animationType="fade" onRequestClose={() => setEditingTodo(null)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.editOverlay}>
+          <View style={styles.editCard}>
+            <Text style={styles.editTitle}>Edit Task</Text>
+            <TextInput
+              style={styles.editInput}
+              value={editText}
+              onChangeText={setEditText}
+              autoFocus
+              placeholder="Task name..."
+              placeholderTextColor={Colors.textDisabled}
+              maxLength={100}
+            />
+            <View style={styles.editActions}>
+              <TouchableOpacity style={styles.editCancel} onPress={() => setEditingTodo(null)}>
+                <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.editSave, { backgroundColor: Colors.accent }]} onPress={async () => { if (editingTodo && editText.trim()) { await updateTodo(editingTodo.id, editText.trim()); } setEditingTodo(null); }}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -515,7 +576,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Modal
+  // Add Todo Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -646,5 +707,102 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: '700',
+  },
+
+  // Action sheet
+  actionBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  actionSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.bg1,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+    paddingTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  actionHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: Colors.border,
+    borderRadius: Radius.full,
+    alignSelf: 'center',
+    marginBottom: Spacing.md,
+  },
+  actionTitle: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xs,
+  },
+  actionBtnText: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: '500',
+  },
+
+  // Edit modal
+  editOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  editCard: {
+    backgroundColor: Colors.bg1,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    width: '100%',
+    gap: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  editTitle: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: '700',
+  },
+  editInput: {
+    backgroundColor: Colors.bg2,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    color: Colors.textPrimary,
+    fontSize: FontSize.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    justifyContent: 'flex-end',
+  },
+  editCancel: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.bg2,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  editSave: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
   },
 });

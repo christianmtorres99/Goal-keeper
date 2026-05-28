@@ -61,8 +61,16 @@ function Particle({ index, total, color, rarity, trigger }: ParticleProps) {
   const angle = (index / total) * 2 * Math.PI;
   const startX = 0;
   const startY = 0;
-  const endX = Math.cos(angle) * PARTICLE_RADIUS;
-  const endY = Math.sin(angle) * PARTICLE_RADIUS;
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+  // Project onto rectangle: scale so the longer dimension equals PARTICLE_RADIUS
+  const absC = Math.abs(cosA);
+  const absS = Math.abs(sinA);
+  const rectScale = absC > 0.001 && absS > 0.001
+    ? PARTICLE_RADIUS / Math.max(absC, absS)
+    : PARTICLE_RADIUS;
+  const endX = cosA * rectScale;
+  const endY = sinA * rectScale;
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);

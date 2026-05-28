@@ -8,6 +8,7 @@ import {
   CREATE_TODOS,
   CREATE_TODO_SUB_ITEMS,
   CREATE_JOURNALS,
+  CREATE_SCHEDULED_TASKS,
   MIGRATIONS_V2,
   MIGRATIONS_V3,
   MIGRATIONS_V4,
@@ -34,6 +35,7 @@ export async function runMigrations(): Promise<void> {
   await db.execAsync(CREATE_TODOS);
   await db.execAsync(CREATE_TODO_SUB_ITEMS);
   await db.execAsync(CREATE_JOURNALS);
+  await db.execAsync(CREATE_SCHEDULED_TASKS);
 
   for (const sql of MIGRATIONS_V2) {
     try { await db.execAsync(sql); } catch {}
