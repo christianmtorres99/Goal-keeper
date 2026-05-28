@@ -86,8 +86,8 @@ export default function StatsScreen() {
     return {
       labels,
       datasets: [
-        { data: moodData, color: (opacity = 1) => Colors.accent + Math.round(opacity * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
-        { data: energyData, color: (opacity = 1) => Colors.success + Math.round(opacity * 255).toString(16).padStart(2, '0'), strokeWidth: 2 },
+        { data: moodData, color: (op = 1) => Colors.accent + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
+        { data: energyData, color: (op = 1) => Colors.success + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
       ],
       legend: ['Mood', 'Energy'],
     };
