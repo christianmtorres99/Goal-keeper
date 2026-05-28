@@ -19,14 +19,17 @@ export function checkBadges(params: {
     earnedBadges, isFirstLog, isPerfectWeek, isPerfectMonth, isComeback, isNewBest,
   } = params;
 
-  const earnedIds = new Set(
-    earnedBadges
-      .filter(b => b.goalId === goalId || b.goalId === null)
-      .map(b => b.badgeId)
+  // Global badges (logs, level, consistency) are earned once across all goals.
+  // Per-goal badges (streak, cycle) check only this goal's earned set.
+  const globalEarnedIds = new Set(earnedBadges.map(b => b.badgeId));
+  const perGoalEarnedIds = new Set(
+    earnedBadges.filter(b => b.goalId === goalId || b.goalId === null).map(b => b.badgeId)
   );
 
   return BADGE_DEFINITIONS.filter(def => {
-    if (earnedIds.has(def.id)) return false;
+    // Global categories use the full earned set (once per account)
+    const isGlobal = def.category === 'logs' || def.category === 'level' || def.category === 'consistency';
+    if (isGlobal ? globalEarnedIds.has(def.id) : perGoalEarnedIds.has(def.id)) return false;
 
     switch (def.category) {
       case 'streak':      return currentStreak >= def.threshold;

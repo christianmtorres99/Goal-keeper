@@ -237,7 +237,7 @@ export default function StatsScreen() {
         <View style={styles.chartCard}>
           <BarChart
             data={weeklyData}
-            width={W - Spacing.md * 2}
+            width={W}
             height={180}
             chartConfig={chartConfig}
             style={styles.chart}
@@ -254,7 +254,7 @@ export default function StatsScreen() {
           {xpGrowthData.datasets[0].data.some(v => v > 0) ? (
             <LineChart
               data={xpGrowthData}
-              width={W - Spacing.md * 2}
+              width={W}
               height={180}
               chartConfig={chartConfig}
               style={styles.chart}
@@ -289,7 +289,7 @@ export default function StatsScreen() {
               </View>
               <LineChart
                 data={moodEnergyData}
-                width={W - Spacing.md * 2}
+                width={W}
                 height={180}
                 chartConfig={{
                   ...chartConfig,

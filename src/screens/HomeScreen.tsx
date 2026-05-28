@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -57,8 +57,6 @@ export default function HomeScreen() {
   const [pendingBonusXP, setPendingBonusXP] = useState(0);
   const [pendingEvents, setPendingEvents] = useState<LogEvent[]>([]);
   const [pendingLevelUp, setPendingLevelUp] = useState<{ oldLevel: number; newLevel: number } | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-
   const [logModalGoalId, setLogModalGoalId] = useState<string | null>(null);
 
   const [undoVisible, setUndoVisible] = useState(false);
@@ -139,14 +137,6 @@ export default function HomeScreen() {
     };
     check();
   }, []);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadGoals();
-    await loadLogs();
-    await loadBadges();
-    setRefreshing(false);
-  }, [loadGoals, loadLogs, loadBadges]);
 
   const handleLogPress = useCallback((goalId: string) => {
     setLogModalGoalId(goalId);
@@ -325,7 +315,6 @@ export default function HomeScreen() {
         onDragEnd={handleDragEnd}
         renderItem={renderItem}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />}
         ListHeaderComponent={
           <View style={styles.headerSection}>
             <View style={styles.header}>

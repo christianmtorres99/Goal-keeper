@@ -53,14 +53,22 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
         earnedAt: now,
       }));
 
-      for (const badge of newEarned) {
+      // Double-check DB to prevent race-condition duplicates (INSERT OR IGNORE only guards on PK)
+      const alreadyInDb = await db.getAllAsync<{ badge_id: string }>(
+        `SELECT badge_id FROM earned_badges WHERE badge_id IN (${newBadgeDefs.map(() => '?').join(',')})`,
+        newBadgeDefs.map(d => d.id)
+      );
+      const alreadyEarnedInDb = new Set(alreadyInDb.map(r => r.badge_id));
+      const badgesToInsert = newEarned.filter(b => !alreadyEarnedInDb.has(b.badgeId));
+
+      for (const badge of badgesToInsert) {
         await db.runAsync(
           'INSERT OR IGNORE INTO earned_badges (id, badge_id, goal_id, earned_at) VALUES (?,?,?,?)',
           [badge.id, badge.badgeId, badge.goalId, badge.earnedAt]
         );
       }
 
-      set(s => ({ earnedBadges: [...s.earnedBadges, ...newEarned] }));
+      set(s => ({ earnedBadges: [...s.earnedBadges, ...badgesToInsert] }));
       return newBadgeDefs;
     } catch (e) {
       console.error('checkAndAward failed:', e);

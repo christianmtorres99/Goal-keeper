@@ -171,7 +171,7 @@ export default function JournalScreen() {
                     style={[styles.energyBar, val <= energy && styles.energyBarActive]}
                     onPress={() => setEnergy(val)}
                   >
-                    <View style={[styles.energyBarFill, { height: 8 + val * 5 }, val <= energy && styles.energyBarFillActive]} />
+                    <View style={[styles.energyBarFill, { height: [8, 17, 26, 35, 44][val - 1] }, val <= energy && styles.energyBarFillActive]} />
                   </TouchableOpacity>
                 ))}
                 <Text style={styles.energyLabel}>{energy}/5</Text>

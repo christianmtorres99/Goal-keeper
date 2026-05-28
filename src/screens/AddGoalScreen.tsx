@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Switch, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Switch, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -147,11 +147,15 @@ export default function AddGoalScreen() {
       await updateGoal(editingId, data);
     } else {
       const newGoal = await addGoal(data);
-      // Fix: update notification with real goal id
+      // Re-schedule with real goal id once we have it
       if (notificationId && reminderEnabled) {
-        await cancelGoalReminder(notificationId).catch(() => {});
-        const realId = await scheduleGoalReminder(newGoal.id, reminderTime24, name.trim());
-        await updateGoal(newGoal.id, { notificationId: realId });
+        try {
+          await cancelGoalReminder(notificationId).catch(() => {});
+          const realId = await scheduleGoalReminder(newGoal.id, reminderTime24, name.trim());
+          await updateGoal(newGoal.id, { notificationId: realId });
+        } catch {
+          // Non-fatal: goal is saved, reminder just won't fire
+        }
       }
     }
     navigation.goBack();
@@ -159,6 +163,7 @@ export default function AddGoalScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
         <Text style={styles.label}>Goal Name *</Text>
@@ -182,12 +187,26 @@ export default function AddGoalScreen() {
           numberOfLines={3}
         />
 
-        <View style={styles.row}>
-          <View style={styles.flex1}>
-            <Text style={styles.label}>Type</Text>
-            <Text style={styles.sublabel}>{isMilestone ? 'Milestone — reach a target' : 'Habit — daily check-in'}</Text>
-          </View>
-          <Switch value={isMilestone} onValueChange={setIsMilestone} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
+        <Text style={styles.label}>Type</Text>
+        <View style={styles.typeRow}>
+          <TouchableOpacity
+            style={[styles.typeCard, !isMilestone && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            onPress={() => setIsMilestone(false)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="repeat" size={22} color={!isMilestone ? selectedColor : Colors.textSecondary} />
+            <Text style={[styles.typeCardTitle, !isMilestone && { color: selectedColor }]}>Habit</Text>
+            <Text style={styles.typeCardSub}>Daily check-in</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.typeCard, isMilestone && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            onPress={() => setIsMilestone(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trophy" size={22} color={isMilestone ? selectedColor : Colors.textSecondary} />
+            <Text style={[styles.typeCardTitle, isMilestone && { color: selectedColor }]}>Milestone</Text>
+            <Text style={styles.typeCardSub}>Reach a target</Text>
+          </TouchableOpacity>
         </View>
 
         {isMilestone && (
@@ -322,6 +341,7 @@ export default function AddGoalScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -336,6 +356,10 @@ const styles = StyleSheet.create({
   multiline: { height: 80, textAlignVertical: 'top' },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   flex1: { flex: 1 },
+  typeRow: { flexDirection: 'row', gap: Spacing.sm },
+  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, padding: Spacing.md, backgroundColor: Colors.bg2, borderWidth: 2, borderColor: Colors.border },
+  typeCardTitle: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '700' },
+  typeCardSub: { color: Colors.textDisabled, fontSize: FontSize.xs, textAlign: 'center' },
   categoryRow: { flexGrow: 0 },
   categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border, marginRight: Spacing.sm },
   categoryText: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },

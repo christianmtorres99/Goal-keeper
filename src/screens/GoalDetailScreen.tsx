@@ -207,6 +207,9 @@ export default function GoalDetailScreen() {
     ? Math.min(goalLogs.length / goal.targetCount * 100, 100)
     : null;
 
+  // Guard: goal was deleted while screen is still mounted during navigation
+  if (!goal) return null;
+
   const chartConfig = makeChartConfig(goal.color, Colors.bg1);
 
   return (
