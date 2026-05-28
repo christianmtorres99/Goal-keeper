@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ThemePickerModal from '../components/profile/ThemePickerModal';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useLogStore } from '../store/logStore';
@@ -55,6 +56,7 @@ export default function ProfileScreen() {
   const [features, setFeatures] = useState<SelectedFeature[]>([]);
   const [bgColor, setBgColor] = useState(SHARE_BG_COLORS[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [themePickerVisible, setThemePickerVisible] = useState(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
@@ -253,9 +255,14 @@ export default function ProfileScreen() {
               <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP total</Text>
               <Text style={styles.heroNext}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
             </View>
-            <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
-              <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
-            </TouchableOpacity>
+            <View style={{ gap: Spacing.sm }}>
+              <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+                <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.shareBtn} onPress={() => setThemePickerVisible(true)}>
+                <Ionicons name="color-palette-outline" size={20} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
           <View style={{ width: '100%' }}>
             <XPBar stats={playerStats} />
@@ -381,6 +388,9 @@ export default function ProfileScreen() {
         {renderBadgeSection('Level Badges', levelBadges)}
         {cycleBadges.length > 0 && renderBadgeSection('Milestone Cycle Badges', cycleBadges)}
       </ScrollView>
+
+      {/* Theme picker modal */}
+      <ThemePickerModal visible={themePickerVisible} onClose={() => setThemePickerVisible(false)} />
 
       {/* Feature picker modal */}
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>

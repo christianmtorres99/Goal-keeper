@@ -15,11 +15,15 @@ import { setupNotificationHandler } from './src/utils/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import OnboardingScreen, { ONBOARDING_KEY } from './src/screens/OnboardingScreen';
 import { Colors } from './src/constants/theme';
+import { THEMES } from './src/constants/themes';
+import { useThemeStore } from './src/store/themeStore';
+import { ThemeProvider } from './src/context/ThemeContext';
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [themeKey, setThemeKey] = useState(0);
 
   useEffect(() => {
     async function bootstrap() {
@@ -32,6 +36,11 @@ export default function App() {
         await useGameStore.getState().load();
         await useTodoXPStore.getState().load();
         await useJournalStore.getState().loadEntries();
+        await useThemeStore.getState().loadTheme();
+
+        // Apply the loaded theme to Colors immediately
+        const activeTheme = useThemeStore.getState().activeTheme;
+        Object.assign(Colors, THEMES[activeTheme]);
 
         const onboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
         if (!onboarded) setShowOnboarding(true);
@@ -42,6 +51,14 @@ export default function App() {
       }
     }
     bootstrap();
+
+    // Subscribe to theme changes and force full remount so StyleSheet caches reset
+    const unsub = useThemeStore.subscribe((state) => {
+      const palette = THEMES[state.activeTheme];
+      Object.assign(Colors, palette);
+      setThemeKey(k => k + 1);
+    });
+    return unsub;
   }, []);
 
   if (error) {
@@ -70,10 +87,12 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
-      <StatusBar style="light" />
-      <AppNavigator />
-    </GestureHandlerRootView>
+    <ThemeProvider key={themeKey}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
+        <StatusBar style="light" />
+        <AppNavigator />
+      </GestureHandlerRootView>
+    </ThemeProvider>
   );
 }
 
