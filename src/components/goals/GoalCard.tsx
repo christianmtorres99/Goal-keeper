@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
+  cancelAnimation,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
@@ -132,9 +133,6 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   }));
 
   const animatedXPStyle = useAnimatedStyle(() => ({
-    position: 'absolute',
-    bottom: 36,
-    alignSelf: 'center',
     opacity: xpOpacity.value,
     transform: [{ translateY: xpTranslateY.value }],
   }));
@@ -145,6 +143,11 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   }));
 
   const triggerBurstAnimation = useCallback(() => {
+    cancelAnimation(buttonScale);
+    cancelAnimation(xpOpacity);
+    cancelAnimation(xpTranslateY);
+    cancelAnimation(ringScale);
+    cancelAnimation(ringOpacity);
     // Button spring
     buttonScale.value = withSequence(
       withTiming(0.82, { duration: 80 }),
@@ -335,6 +338,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   xpFloat: {
+    position: 'absolute',
+    bottom: 36,
+    alignSelf: 'center',
     color: Colors.accentBright,
     fontSize: FontSize.xs,
     fontWeight: '800',

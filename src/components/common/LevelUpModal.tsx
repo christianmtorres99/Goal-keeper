@@ -18,12 +18,13 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const animRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const tier = getLevelTier(newLevel);
 
   useEffect(() => {
     if (visible) {
-      Animated.sequence([
+      animRef.current = Animated.sequence([
         Animated.parallel([
           Animated.spring(scaleAnim, { toValue: 1, tension: 55, friction: 6, useNativeDriver: true }),
           Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
@@ -34,8 +35,10 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
             Animated.timing(glowAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
           ])
         ),
-      ]).start();
+      ]);
+      animRef.current.start();
     } else {
+      animRef.current?.stop();
       scaleAnim.setValue(0.5);
       opacityAnim.setValue(0);
       glowAnim.setValue(0);
