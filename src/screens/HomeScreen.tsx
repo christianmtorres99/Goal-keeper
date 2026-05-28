@@ -18,12 +18,14 @@ import { useQuestStore } from '../store/questStore';
 import { useTodoStore } from '../store/todoStore';
 import { useTodoXPStore } from '../store/todoXPStore';
 import { useRestDayStore } from '../store/restDayStore';
+import { useJournalStore } from '../store/journalStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import { todayString, getWeekStart } from '../utils/dateUtils';
 import { getTimeGreeting, getUndoToastMessage } from '../utils/motivationUtils';
 import { shouldShowRestDayPrompt } from '../utils/restDayEngine';
+import { detectMoodSuggestion } from '../utils/moodSuggestions';
 import { HOT_STREAK_MIN_DAYS } from '../constants/xp';
 import type { Goal } from '../types';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -41,6 +43,7 @@ import LevelUpModal from '../components/common/LevelUpModal';
 import DailyQuestsCard from '../components/common/DailyQuestsCard';
 import TodoSection from '../components/todos/TodoSection';
 import RestDayModal from '../components/home/RestDayModal';
+import MoodSuggestionCard from '../components/home/MoodSuggestionCard';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
@@ -75,6 +78,9 @@ export default function HomeScreen() {
   const { bankedRestDays, activeRestDate, dismissCount, loadRestDay, activateRestDay, dismissPrompt } = restDayStore;
   const [restDayModalVisible, setRestDayModalVisible] = useState(false);
   const restDayModalShown = useRef(false);
+
+  const journalEntries = useJournalStore(s => s.entries);
+  const [dismissedSuggestionId, setDismissedSuggestionId] = useState<string | null>(null);
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
   const hasArchived = useMemo(() => goals.some(g => g.isArchived), [goals]);
@@ -129,6 +135,9 @@ export default function HomeScreen() {
       await useTodoStore.getState().loadTodos();
       await useTodoXPStore.getState().load();
       await loadRestDay();
+      await useJournalStore.getState().loadEntries();
+      const storedDismiss = await AsyncStorage.getItem('moodSuggestionDismissed');
+      setDismissedSuggestionId(storedDismiss);
     };
     init();
   }, [loadRestDay]);
@@ -316,6 +325,15 @@ export default function HomeScreen() {
     reorderGoals(data.map(g => g.id));
   }, [reorderGoals]);
 
+  const moodSuggestion = useMemo(() => detectMoodSuggestion(journalEntries), [journalEntries]);
+  const showMoodCard = moodSuggestion !== null && moodSuggestion.id !== dismissedSuggestionId;
+
+  const handleDismissMoodSuggestion = useCallback(async () => {
+    if (!moodSuggestion) return;
+    setDismissedSuggestionId(moodSuggestion.id);
+    await AsyncStorage.setItem('moodSuggestionDismissed', moodSuggestion.id);
+  }, [moodSuggestion]);
+
   const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
   const greeting = allDone ? 'All done today! 🔥' : getTimeGreeting();
@@ -391,6 +409,14 @@ export default function HomeScreen() {
               <XPBar stats={playerStats} />
               <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
             </TouchableOpacity>
+
+            {showMoodCard && moodSuggestion && (
+              <MoodSuggestionCard
+                suggestion={moodSuggestion}
+                onDismiss={handleDismissMoodSuggestion}
+                onOpenJournal={() => navigation.navigate('Journal')}
+              />
+            )}
 
             {quests.length > 0 && (
               <DailyQuestsCard
