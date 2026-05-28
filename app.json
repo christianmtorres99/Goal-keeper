@@ -2,7 +2,7 @@
   "expo": {
     "name": "Goal Keeper",
     "slug": "Goal-keeper",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -14,6 +14,7 @@
     },
     "android": {
       "package": "com.christianmtorres.goalkeeper",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
