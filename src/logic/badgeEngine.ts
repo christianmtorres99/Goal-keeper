@@ -1,6 +1,8 @@
 import { BADGE_DEFINITIONS } from '../constants/badges';
 import type { BadgeDefinition, EarnedBadge } from '../types';
 
+const GLOBAL_BADGE_IDS = new Set(['streak_1']);
+
 export function checkBadges(params: {
   goalId: string;
   currentStreak: number;
@@ -28,7 +30,8 @@ export function checkBadges(params: {
 
   return BADGE_DEFINITIONS.filter(def => {
     // Global categories use the full earned set (once per account)
-    const isGlobal = def.category === 'logs' || def.category === 'level' || def.category === 'consistency';
+    const isGlobal = def.category === 'logs' || def.category === 'level'
+      || def.category === 'consistency' || GLOBAL_BADGE_IDS.has(def.id);
     if (isGlobal ? globalEarnedIds.has(def.id) : perGoalEarnedIds.has(def.id)) return false;
 
     switch (def.category) {

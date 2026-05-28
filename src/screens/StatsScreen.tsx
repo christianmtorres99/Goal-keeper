@@ -199,7 +199,7 @@ export default function StatsScreen() {
 
   if (activeGoals.length === 0) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
         <Text style={[styles.title, { padding: Spacing.md }]}>Stats</Text>
         <EmptyState icon="bar-chart-outline" title="No stats yet" subtitle="Add a goal and start logging to see your stats" />
       </SafeAreaView>
@@ -207,7 +207,7 @@ export default function StatsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Stats</Text>
 
@@ -460,7 +460,7 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg1 },
+  safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
   statRow: { flexDirection: 'row', gap: Spacing.sm },

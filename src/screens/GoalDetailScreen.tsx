@@ -213,7 +213,7 @@ export default function GoalDetailScreen() {
   const chartConfig = makeChartConfig(goal.color, Colors.bg1);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]}>
       {/* Hidden ShareCard for image capture */}
       <View style={styles.offscreen}>
         <ShareCard
@@ -485,7 +485,7 @@ export default function GoalDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg1 },
+  safe: { flex: 1 },
   offscreen: { position: 'absolute', top: -9999, left: -9999 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   heroCard: { backgroundColor: Colors.bg1, borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },

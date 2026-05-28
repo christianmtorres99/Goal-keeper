@@ -18,7 +18,7 @@ export default function ArchivedGoalsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]}>
       <FlatList
         data={archivedGoals}
         keyExtractor={g => g.id}
@@ -52,7 +52,7 @@ export default function ArchivedGoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg0 },
+  safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.xxl },
   title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700', marginBottom: Spacing.md },
   row: { backgroundColor: Colors.bg1, borderRadius: Radius.md, flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 3 },
