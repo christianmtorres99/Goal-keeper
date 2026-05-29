@@ -322,11 +322,11 @@ export default function AddGoalScreen() {
             <Text style={styles.timeColon}>:</Text>
             {/* Minute */}
             <View style={styles.timeUnit}>
-              <TouchableOpacity onPress={() => setRMinute(m => (m + 5) % 60)} style={styles.timeArrow}>
+              <TouchableOpacity onPress={() => setRMinute(m => (m + 1) % 60)} style={styles.timeArrow}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
               <Text style={styles.timeDigit}>{String(rMinute).padStart(2, '0')}</Text>
-              <TouchableOpacity onPress={() => setRMinute(m => (m - 5 + 60) % 60)} style={styles.timeArrow}>
+              <TouchableOpacity onPress={() => setRMinute(m => (m - 1 + 60) % 60)} style={styles.timeArrow}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>

@@ -409,8 +409,8 @@ export default function HomeScreen() {
           <View style={styles.headerSection}>
             <View style={styles.header}>
               <View>
-                <Text style={styles.greeting}>{greeting}</Text>
-                <Text style={styles.date}>{todayLabel}</Text>
+                <Text style={[styles.greeting, { color: Colors.textPrimary }]}>{greeting}</Text>
+                <Text style={[styles.date, { color: Colors.textSecondary }]}>{todayLabel}</Text>
               </View>
               <View style={styles.headerActions}>
                 <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Journal')}>
@@ -430,9 +430,9 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.xpCard} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.xpCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
               <XPBar stats={playerStats} />
-              <Text style={styles.xpCaption}>Global Level — all goals combined</Text>
+              <Text style={[styles.xpCaption, { color: Colors.textDisabled }]}>Global Level — all goals combined</Text>
             </TouchableOpacity>
 
             {showMoodCard && moodSuggestion && (
@@ -453,7 +453,7 @@ export default function HomeScreen() {
 
             <TodoSection />
 
-            <Text style={[styles.sectionLabel, allDone && styles.sectionLabelDone]}>
+            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }, allDone && styles.sectionLabelDone]}>
               {allDone
                 ? `Perfect day — ${todayLogged.size}/${activeGoals.length} logged`
                 : `Today — ${todayLogged.size}/${activeGoals.length} logged`}
@@ -515,7 +515,7 @@ export default function HomeScreen() {
           setPendingBadges([]);
           setPendingBonusXP(0);
           setPendingEvents([]);
-          if (pendingAnimGoalId) {
+          if (!pendingLevelUp && pendingAnimGoalId) {
             setAnimateSignals(s => ({ ...s, [pendingAnimGoalId]: (s[pendingAnimGoalId] ?? 0) + 1 }));
             setPendingAnimGoalId(null);
           }
@@ -526,7 +526,13 @@ export default function HomeScreen() {
         visible={!!pendingLevelUp}
         oldLevel={pendingLevelUp?.oldLevel ?? 0}
         newLevel={pendingLevelUp?.newLevel ?? 1}
-        onClose={() => setPendingLevelUp(null)}
+        onClose={() => {
+          if (pendingAnimGoalId) {
+            setAnimateSignals(s => ({ ...s, [pendingAnimGoalId]: (s[pendingAnimGoalId] ?? 0) + 1 }));
+            setPendingAnimGoalId(null);
+          }
+          setPendingLevelUp(null);
+        }}
       />
 
       <Modal visible={showWeeklyReview} animationType="slide" onRequestClose={() => setShowWeeklyReview(false)}>
@@ -556,13 +562,13 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
   headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  greeting: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
-  date: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  greeting: { fontSize: FontSize.xxl, fontWeight: '700' },
+  date: { fontSize: FontSize.sm },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   iconBtn: { padding: Spacing.sm },
   addBtn: { backgroundColor: Colors.accent, borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  xpCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
-  xpCaption: { color: Colors.textDisabled, fontSize: FontSize.xs },
-  sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
+  xpCaption: { fontSize: FontSize.xs },
+  sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   sectionLabelDone: { color: Colors.success },
 });
