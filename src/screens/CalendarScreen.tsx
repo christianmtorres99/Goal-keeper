@@ -455,8 +455,8 @@ export default function CalendarScreen() {
                     <View style={styles.journalContentRow}>
                       {selectedDayJournal.textContent ? (
                         <Text style={[styles.journalExcerpt, { color: Colors.textSecondary }]} numberOfLines={3}>
-                          {selectedDayJournal.textContent.startsWith('{"t":')?
-                            (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
+                          {selectedDayJournal.textContent.startsWith('{"t":')
+                            ? (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
                             : selectedDayJournal.textContent}
                         </Text>
                       ) : (
