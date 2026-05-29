@@ -43,6 +43,7 @@ interface TodoStore {
   rescheduleTodo: (id: string, newDate: string) => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
   updateTodo: (id: string, title: string) => Promise<void>;
+  clearExpiredTodos: () => Promise<void>;
 }
 
 export const useTodoStore = create<TodoStore>((set, get) => ({
@@ -247,6 +248,25 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       set(s => ({ todos: s.todos.map(t => t.id === id ? { ...t, title } : t) }));
     } catch (e) {
       console.error('updateTodo failed:', e);
+    }
+  },
+
+  clearExpiredTodos: async () => {
+    try {
+      const db = await getDb();
+      const today = todayString();
+      // Delete todos with no due date or due date before today (keep future-dated todos)
+      await db.runAsync(
+        "DELETE FROM todos WHERE due_date IS NULL OR (due_date < ? AND completed = 0)",
+        [today]
+      );
+      // Also delete completed todos from any previous day
+      await db.runAsync(
+        "DELETE FROM todos WHERE completed = 1 AND completed_at < ?",
+        [today + 'T00:00:00']
+      );
+    } catch (e) {
+      console.error('clearExpiredTodos failed:', e);
     }
   },
 }));
