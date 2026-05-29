@@ -45,7 +45,7 @@ export default function App() {
   useEffect(() => {
     async function bootstrap() {
       try {
-        setupNotificationHandler();
+        await setupNotificationHandler();
         await runMigrations();
         await useGoalStore.getState().loadGoals();
         await useLogStore.getState().loadLogs();

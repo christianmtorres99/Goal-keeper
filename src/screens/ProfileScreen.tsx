@@ -42,12 +42,16 @@ const BADGE_SIZE = Math.floor(
 );
 
 const SHARE_BG_COLORS = [
+  // existing dark colors (keep all):
   '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D',
   '#0D2A2A', '#1A1A1A', '#1A1430', '#2A1A0D',
   '#16213E', '#1B1B2F', '#0F3460', '#2C1654',
   '#1A0A14', '#0A1A14', '#1A1400', '#0A0A1A',
-  '#2D1B69',  // vibrant deep purple
-  '#0A3060',  // rich navy blue
+  '#2D1B69', '#0A3060',
+  // Light-friendly additions:
+  '#F0E6FF', '#E6F0FF', '#E6FFE6', '#FFE6E6',
+  '#FFF0E6', '#E6FFFF', '#FFFCE6', '#F5E6FF',
+  '#EEF2FF', '#FFF8F0',
 ];
 
 export default function ProfileScreen() {
@@ -253,7 +257,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['bottom', 'left', 'right']}>
       {/* Off-screen share card */}
       <ProfileShareCard
         ref={shareCardRef}
@@ -268,7 +272,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero card */}
-        <LinearGradient colors={[tier.color + '55', Colors.bg1]} style={styles.heroCard}>
+        <LinearGradient colors={[bgColor + 'CC', tier.color + '33', Colors.bg1]} style={styles.heroCard}>
           <View style={styles.heroHeader}>
             <View style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}>
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
@@ -288,18 +292,6 @@ export default function ProfileScreen() {
           <View style={{ width: '100%' }}>
             <XPBar stats={playerStats} />
           </View>
-
-          {/* Inline share card preview */}
-          <View style={styles.shareDivider} />
-          <ProfileShareCard
-            inline
-            stats={playerStats}
-            totalXP={totalXP}
-            features={features}
-            bgColor={bgColor}
-            goals={activeGoals}
-            badgeDefs={BADGE_DEFINITIONS}
-          />
 
           {/* 3 feature slots */}
           <Text style={styles.pickerSublabel}>Achievements</Text>
@@ -377,7 +369,7 @@ export default function ProfileScreen() {
                 return (
                   <TouchableOpacity
                     key={cat}
-                    style={styles.skillCard}
+                    style={[styles.skillCard, { backgroundColor: Colors.bg1 }]}
                     onPress={() => navigation.navigate('SkillTrack', { category: cat })}
                     activeOpacity={0.75}
                   >
@@ -397,6 +389,41 @@ export default function ProfileScreen() {
                       <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
                     </View>
                     <XPBar stats={cs.stats} compact />
+                  </TouchableOpacity>
+                );
+              })}
+              {/* Individual skill tracks for 'Other' category goals */}
+              {activeGoals.filter(g => g.category === 'other').map(goal => {
+                const goalLogs = logs.filter(l => l.goalId === goal.id);
+                const goalXP = goalLogs.reduce((sum, l) => sum + l.xpAwarded + (l.bonusXp ?? 0), 0);
+                const goalStats = getPlayerStats(goalXP);
+                const goalStreak = (() => {
+                  const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+                  return computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
+                })();
+                return (
+                  <TouchableOpacity
+                    key={goal.id}
+                    style={[styles.skillCard, { backgroundColor: Colors.bg1 }]}
+                    onPress={() => navigation.navigate('SkillTrack', { category: 'other', goalId: goal.id })}
+                    activeOpacity={0.75}
+                  >
+                    <View style={styles.skillHeader}>
+                      <View style={[styles.skillIconWrap, { backgroundColor: goal.color + '22' }]}>
+                        <StreakFlame streak={goalStreak.currentStreak} size={36}>
+                          <Ionicons name={goal.icon as any} size={18} color={goal.color} />
+                        </StreakFlame>
+                      </View>
+                      <View style={styles.skillInfo}>
+                        <Text style={styles.skillName}>{goal.customCategoryLabel ?? goal.name}</Text>
+                        <Text style={styles.skillGoalCount}>1 goal</Text>
+                      </View>
+                      <View style={styles.skillLevelBadge}>
+                        <Text style={styles.skillLevel}>Lv {goalStats.level}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
+                    </View>
+                    <XPBar stats={goalStats} compact />
                   </TouchableOpacity>
                 );
               })}
@@ -457,7 +484,6 @@ const styles = StyleSheet.create({
   heroXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
   heroNext: { color: Colors.textSecondary, fontSize: FontSize.xs },
   shareBtn: { padding: Spacing.xs },
-  shareDivider: { width: '100%', height: 1, backgroundColor: Colors.border, marginVertical: Spacing.xs },
 
   pickerSublabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
@@ -480,7 +506,7 @@ const styles = StyleSheet.create({
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: BADGE_GAP },
 
   skillGrid: { gap: Spacing.sm },
-  skillCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  skillCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   skillHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   skillIconWrap: { width: 36, height: 36, borderRadius: Radius.md, backgroundColor: Colors.accentDim, alignItems: 'center', justifyContent: 'center' },
   skillInfo: { flex: 1 },

@@ -21,7 +21,7 @@ export type RootStackParamList = {
   GoalDetail: { goalId: string };
   AddGoal: { goalId?: string };
   ArchivedGoals: undefined;
-  SkillTrack: { category: GoalCategory };
+  SkillTrack: { category: GoalCategory; goalId?: string };
   Journal: { date?: string } | undefined;
 };
 
@@ -66,7 +66,17 @@ function TabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="Stats" component={StatsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile', headerShown: true }} />
+      <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{
+            title: 'Profile',
+            headerShown: true,
+            headerTitleAlign: 'center',
+            headerStyle: { backgroundColor: Colors.bg1 },
+            headerTintColor: Colors.textPrimary,
+          }}
+        />
     </Tab.Navigator>
   );
 }
@@ -84,7 +94,7 @@ export default function AppNavigator() {
     >
       <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="GoalDetail" component={GoalDetailScreen} options={{ title: '' }} />
-      <Stack.Screen name="AddGoal" component={AddGoalScreen} options={{ title: 'New Goal' }} />
+      <Stack.Screen name="AddGoal" component={AddGoalScreen} options={{ title: 'New Goal', headerTitleAlign: 'center' }} />
       <Stack.Screen name="ArchivedGoals" component={ArchivedGoalsScreen} options={{ title: 'Archived Goals' }} />
       <Stack.Screen
         name="SkillTrack"
