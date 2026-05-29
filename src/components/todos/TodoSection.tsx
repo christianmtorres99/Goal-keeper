@@ -93,12 +93,12 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalKAV}
       >
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>New Task</Text>
+        <View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
+          <Text style={[styles.modalTitle, { color: Colors.textPrimary }]}>New Task</Text>
 
           <TextInput
-            style={styles.titleInput}
+            style={[styles.titleInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
             placeholder="Task title"
             placeholderTextColor={Colors.textDisabled}
             value={title}
@@ -108,7 +108,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
           />
 
           {/* Due date quick buttons */}
-          <Text style={styles.fieldLabel}>Due Date</Text>
+          <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Due Date</Text>
           <View style={styles.dateBtnRow}>
             {[
               { label: 'Today', value: today },
@@ -116,10 +116,10 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
             ].map(opt => (
               <TouchableOpacity
                 key={opt.label}
-                style={[styles.dateBtn, dueDate === opt.value && styles.dateBtnActive]}
+                style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, dueDate === opt.value && styles.dateBtnActive]}
                 onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
               >
-                <Text style={[styles.dateBtnText, dueDate === opt.value && styles.dateBtnTextActive]}>
+                <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && styles.dateBtnTextActive]}>
                   {opt.label}
                 </Text>
               </TouchableOpacity>
@@ -130,16 +130,16 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
               </View>
             )}
             {dueDate && (
-              <TouchableOpacity style={styles.dateBtn} onPress={() => setDueDate(undefined)}>
+              <TouchableOpacity style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setDueDate(undefined)}>
                 <Ionicons name="close-circle-outline" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
 
           {/* Due time */}
-          <Text style={styles.fieldLabel}>Time (optional, HH:MM)</Text>
+          <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Time (optional, HH:MM)</Text>
           <TextInput
-            style={styles.timeInput}
+            style={[styles.timeInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
             placeholder="e.g. 09:30"
             placeholderTextColor={Colors.textDisabled}
             value={dueTime}
@@ -149,13 +149,13 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
           />
 
           {/* Sub-items */}
-          <Text style={styles.fieldLabel}>Sub-tasks</Text>
+          <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Sub-tasks</Text>
           <ScrollView style={styles.subItemScroll} keyboardShouldPersistTaps="handled">
             {subItemInputs.map((val, idx) => (
               <View key={idx} style={styles.subItemRow}>
                 <Ionicons name="remove-circle-outline" size={18} color={Colors.danger} style={{ marginRight: 4 }} />
                 <TextInput
-                  style={styles.subItemInput}
+                  style={[styles.subItemInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
                   placeholder={`Sub-task ${idx + 1}`}
                   placeholderTextColor={Colors.textDisabled}
                   value={val}
@@ -172,7 +172,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
             ))}
             <TouchableOpacity style={styles.addSubItemBtn} onPress={addSubItemField}>
               <Ionicons name="add-circle-outline" size={16} color={Colors.textSecondary} />
-              <Text style={styles.addSubItemText}>Add sub-task</Text>
+              <Text style={[styles.addSubItemText, { color: Colors.textSecondary }]}>Add sub-task</Text>
             </TouchableOpacity>
           </ScrollView>
 
@@ -181,7 +181,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
             onPress={handleSave}
             disabled={!title.trim()}
           >
-            <Text style={styles.saveBtnText}>Save Task</Text>
+            <Text style={[styles.saveBtnText, { color: Colors.textPrimary }]}>Save Task</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -203,7 +203,7 @@ function SubItemRow({ subItem, onToggle }: SubItemRowProps) {
         size={18}
         color={subItem.checked ? Colors.success : Colors.textDisabled}
       />
-      <Text style={[styles.subItemCheckText, subItem.checked && styles.strikethrough]}>
+      <Text style={[styles.subItemCheckText, { color: Colors.textPrimary }, subItem.checked && styles.strikethrough]}>
         {subItem.title}
       </Text>
     </TouchableOpacity>
@@ -227,7 +227,7 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
   const totalCount = todo.subItems.length;
 
   return (
-    <View style={[styles.todoCard, { backgroundColor: Colors.bg2 }, todo.completed && styles.todoCardDone]}>
+    <View style={[styles.todoCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, todo.completed && styles.todoCardDone]}>
       <View style={styles.todoRow}>
         {/* Checkbox */}
         <TouchableOpacity onPress={onComplete} hitSlop={8} disabled={todo.completed}>
@@ -240,17 +240,17 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
 
         {/* Content */}
         <View style={styles.todoContent}>
-          <Text style={[styles.todoTitle, todo.completed && styles.strikethrough]} numberOfLines={2}>
+          <Text style={[styles.todoTitle, { color: Colors.textPrimary }, todo.completed && styles.strikethrough]} numberOfLines={2}>
             {todo.title}
           </Text>
           <View style={styles.todoMeta}>
             {todo.dueTime ? (
-              <Text style={styles.todoTime}>
+              <Text style={[styles.todoTime, { color: Colors.textSecondary }]}>
                 <Ionicons name="time-outline" size={11} /> {formatTime12h(todo.dueTime)}
               </Text>
             ) : null}
             {totalCount > 0 && (
-              <Text style={styles.subCount}>{completedCount}/{totalCount} tasks</Text>
+              <Text style={[styles.subCount, { color: Colors.textSecondary }]}>{completedCount}/{totalCount} tasks</Text>
             )}
           </View>
         </View>
@@ -276,7 +276,7 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
 
       {/* Sub-items */}
       {expanded && totalCount > 0 && (
-        <View style={styles.subItemsList}>
+        <View style={[styles.subItemsList, { borderTopColor: Colors.border }]}>
           {todo.subItems.map(sub => (
             <SubItemRow
               key={sub.id}
@@ -321,7 +321,7 @@ export default function TodoSection() {
   }, [rescheduleTodo, tomorrow]);
 
   return (
-    <View style={[styles.section, { backgroundColor: Colors.bg1 }]}>
+    <View style={[styles.section, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
       {/* Header */}
       <View style={styles.sectionHeader}>
         <TouchableOpacity
@@ -332,8 +332,8 @@ export default function TodoSection() {
           <Ionicons name="checkbox-outline" size={18} color={Colors.accent} />
           <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Today's Tasks</Text>
           {count > 0 && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countBadgeText}>{count}</Text>
+            <View style={[styles.countBadge, { backgroundColor: Colors.accent }]}>
+              <Text style={[styles.countBadgeText, { color: Colors.textPrimary }]}>{count}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -368,9 +368,9 @@ export default function TodoSection() {
         <View style={styles.taskList}>
           {todos.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>No tasks for today</Text>
+              <Text style={[styles.emptyStateText, { color: Colors.textDisabled }]}>No tasks for today</Text>
               <TouchableOpacity onPress={() => setAddVisible(true)}>
-                <Text style={styles.emptyStateLink}>Add your first task</Text>
+                <Text style={[styles.emptyStateLink, { color: Colors.accent }]}>Add your first task</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -413,16 +413,16 @@ export default function TodoSection() {
         onRequestClose={() => setActionTodo(null)}
       >
         <TouchableOpacity style={styles.actionBackdrop} activeOpacity={1} onPress={() => setActionTodo(null)} />
-        <View style={styles.actionSheet}>
-          <View style={styles.actionHandle} />
-          <Text style={styles.actionTitle} numberOfLines={1}>{actionTodo?.title}</Text>
+        <View style={[styles.actionSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <View style={[styles.actionHandle, { backgroundColor: Colors.border }]} />
+          <Text style={[styles.actionTitle, { color: Colors.textSecondary }]} numberOfLines={1}>{actionTodo?.title}</Text>
           <TouchableOpacity style={styles.actionBtn} onPress={() => { setEditText(actionTodo?.title ?? ''); setEditingTodo(actionTodo); setActionTodo(null); }}>
             <Ionicons name="pencil-outline" size={20} color={Colors.textPrimary} />
-            <Text style={styles.actionBtnText}>Edit</Text>
+            <Text style={[styles.actionBtnText, { color: Colors.textPrimary }]}>Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn} onPress={() => { if (actionTodo) { rescheduleTodo(actionTodo.id, tomorrow); } setActionTodo(null); }}>
             <Ionicons name="calendar-outline" size={20} color={Colors.textPrimary} />
-            <Text style={styles.actionBtnText}>Reschedule to Tomorrow</Text>
+            <Text style={[styles.actionBtnText, { color: Colors.textPrimary }]}>Reschedule to Tomorrow</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, { borderTopWidth: 1, borderTopColor: Colors.border }]} onPress={() => { if (actionTodo) deleteTodo(actionTodo.id); setActionTodo(null); }}>
             <Ionicons name="trash-outline" size={20} color={Colors.danger} />
@@ -437,10 +437,10 @@ export default function TodoSection() {
       {/* Edit modal */}
       <Modal visible={!!editingTodo} transparent animationType="fade" onRequestClose={() => setEditingTodo(null)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.editOverlay}>
-          <View style={styles.editCard}>
-            <Text style={styles.editTitle}>Edit Task</Text>
+          <View style={[styles.editCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <Text style={[styles.editTitle, { color: Colors.textPrimary }]}>Edit Task</Text>
             <TextInput
-              style={styles.editInput}
+              style={[styles.editInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
               value={editText}
               onChangeText={setEditText}
               autoFocus
@@ -449,7 +449,7 @@ export default function TodoSection() {
               maxLength={100}
             />
             <View style={styles.editActions}>
-              <TouchableOpacity style={styles.editCancel} onPress={() => setEditingTodo(null)}>
+              <TouchableOpacity style={[styles.editCancel, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setEditingTodo(null)}>
                 <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.editSave, { backgroundColor: Colors.accent }]} onPress={async () => { if (editingTodo && editText.trim()) { await updateTodo(editingTodo.id, editText.trim()); } setEditingTodo(null); }}>
@@ -467,7 +467,6 @@ const styles = StyleSheet.create({
   section: {
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
   },
 
@@ -488,7 +487,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   countBadge: {
-    backgroundColor: Colors.accent,
     borderRadius: Radius.full,
     minWidth: 20,
     height: 20,
@@ -497,7 +495,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   countBadgeText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.xs,
     fontWeight: '700',
   },
@@ -517,11 +514,9 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   emptyStateText: {
-    color: Colors.textDisabled,
     fontSize: FontSize.sm,
   },
   emptyStateLink: {
-    color: Colors.accent,
     fontSize: FontSize.sm,
     fontWeight: '600',
   },
@@ -531,7 +526,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   todoCardDone: {
     opacity: 0.5,
@@ -546,7 +540,6 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   todoTitle: {
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: '500',
   },
@@ -560,11 +553,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   todoTime: {
-    color: Colors.textSecondary,
     fontSize: FontSize.xs,
   },
   subCount: {
-    color: Colors.textSecondary,
     fontSize: FontSize.xs,
   },
   todoActions: {
@@ -578,7 +569,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
     paddingTop: Spacing.xs,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
     gap: 2,
   },
   subItemCheckRow: {
@@ -589,7 +579,6 @@ const styles = StyleSheet.create({
     paddingLeft: Spacing.xs,
   },
   subItemCheckText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.sm,
     flex: 1,
   },
@@ -597,7 +586,6 @@ const styles = StyleSheet.create({
   // Add Todo Modal
   modalKAV: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   modalSheet: {
-    backgroundColor: Colors.bg1,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     padding: Spacing.lg,
@@ -605,32 +593,25 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     maxHeight: '85%',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   modalHandle: {
     width: 36,
     height: 4,
-    backgroundColor: Colors.border,
     borderRadius: Radius.full,
     alignSelf: 'center',
     marginBottom: Spacing.xs,
   },
   modalTitle: {
-    color: Colors.textPrimary,
     fontSize: FontSize.xl,
     fontWeight: '700',
   },
   titleInput: {
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.md,
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   fieldLabel: {
-    color: Colors.textSecondary,
     fontSize: FontSize.xs,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -646,9 +627,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
-    backgroundColor: Colors.bg2,
     borderWidth: 1,
-    borderColor: Colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -658,7 +637,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent,
   },
   dateBtnText: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
   },
   dateBtnTextActive: {
@@ -666,13 +644,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   timeInput: {
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.sm,
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   subItemScroll: {
     maxHeight: 180,
@@ -685,14 +660,11 @@ const styles = StyleSheet.create({
   },
   subItemInput: {
     flex: 1,
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   addSubItemBtn: {
     flexDirection: 'row',
@@ -702,7 +674,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   addSubItemText: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
   },
   saveBtn: {
@@ -715,7 +686,6 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   saveBtnText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: '700',
   },
@@ -730,25 +700,21 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: Colors.bg1,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xxl,
     paddingTop: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   actionHandle: {
     width: 36,
     height: 4,
-    backgroundColor: Colors.border,
     borderRadius: Radius.full,
     alignSelf: 'center',
     marginBottom: Spacing.md,
   },
   actionTitle: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     fontWeight: '600',
     marginBottom: Spacing.sm,
@@ -762,7 +728,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
   },
   actionBtnText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: '500',
   },
@@ -776,27 +741,21 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
   },
   editCard: {
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.xl,
     padding: Spacing.xl,
     width: '100%',
     gap: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   editTitle: {
-    color: Colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: '700',
   },
   editInput: {
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.md,
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   editActions: {
     flexDirection: 'row',
@@ -807,9 +766,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
-    backgroundColor: Colors.bg2,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   editSave: {
     paddingHorizontal: Spacing.lg,

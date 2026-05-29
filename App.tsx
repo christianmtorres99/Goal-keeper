@@ -123,7 +123,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer theme={NAV_THEME}>
+    <NavigationContainer theme={NAV_THEME} key={themeKey}>
       <ThemeProvider key={themeKey}>
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
           <StatusBar style={Colors.bg0 === '#FFFFFF' || Colors.bg0.startsWith('#F') ? 'dark' : 'light'} />

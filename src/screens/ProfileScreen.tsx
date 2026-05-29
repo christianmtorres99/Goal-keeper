@@ -191,7 +191,7 @@ export default function ProfileScreen() {
 
   const renderBadgeSection = (title: string, badges: typeof BADGE_DEFINITIONS) => (
     <View key={title} style={styles.section}>
-      <Text style={styles.sectionLabel}>{title}</Text>
+      <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>{title}</Text>
       <View style={styles.badgeGrid}>
         {badges.map(def => (
           <TouchableOpacity
@@ -233,7 +233,7 @@ export default function ProfileScreen() {
 
   const renderPickerItem = ({ item }: { item: PickerItem }) => {
     if (item.type === 'header') {
-      return <Text style={styles.pickerHeader}>{item.title}</Text>;
+      return <Text style={[styles.pickerHeader, { color: Colors.textSecondary }]}>{item.title}</Text>;
     }
     const kind = item.type as 'badge' | 'goal';
     const sel = isSelected(kind, item.id);
@@ -242,12 +242,12 @@ export default function ProfileScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.pickerRow, sel && styles.pickerRowSelected, disabled && styles.pickerRowDisabled]}
+        style={[styles.pickerRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }, sel && styles.pickerRowSelected, disabled && styles.pickerRowDisabled]}
         onPress={() => !disabled && toggleFeature(kind, item.id)}
         activeOpacity={disabled ? 1 : 0.7}
       >
         <Ionicons name={item.icon as any} size={22} color={iconColor} />
-        <Text style={[styles.pickerLabel, disabled && { color: Colors.textDisabled }]} numberOfLines={1}>
+        <Text style={[styles.pickerLabel, { color: Colors.textPrimary }, disabled && { color: Colors.textDisabled }]} numberOfLines={1}>
           {item.label}
         </Text>
         {disabled
@@ -284,10 +284,10 @@ export default function ProfileScreen() {
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </TouchableOpacity>
             <TouchableOpacity style={{ flex: 1, gap: 4 }} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
-              <Text style={styles.heroLevel}>Level {playerStats.level}</Text>
+              <Text style={[styles.heroLevel, { color: Colors.textPrimary }]}>Level {playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
-              <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP total</Text>
-              <Text style={styles.heroNext}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
+              <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP total</Text>
+              <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
             </TouchableOpacity>
             <View style={{ gap: Spacing.xl }}>
               <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
@@ -300,15 +300,15 @@ export default function ProfileScreen() {
           </View>
 
           {/* 3 feature slots */}
-          <Text style={styles.pickerSublabel}>Achievements</Text>
+          <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Achievements</Text>
           <View style={styles.featureSlots}>
             {[0, 1, 2].map(idx => {
               const f = features[idx];
               if (!f) {
                 return (
-                  <TouchableOpacity key={idx} style={styles.featureSlot} onPress={() => setPickerVisible(true)}>
+                  <TouchableOpacity key={idx} style={[styles.featureSlot, { borderColor: Colors.bg3, backgroundColor: Colors.bg2 }]} onPress={() => setPickerVisible(true)}>
                     <Ionicons name="add-circle-outline" size={24} color={Colors.textDisabled} />
-                    <Text style={styles.featureSlotEmpty}>Add</Text>
+                    <Text style={[styles.featureSlotEmpty, { color: Colors.textDisabled }]}>Add</Text>
                   </TouchableOpacity>
                 );
               }
@@ -327,23 +327,23 @@ export default function ProfileScreen() {
                   style={styles.featureSlotFilled}
                   onPress={() => setAndSaveFeatures(features.filter((_, i) => i !== idx))}
                 >
-                  <View style={styles.featureSlotRemoveBadge}>
+                  <View style={[styles.featureSlotRemoveBadge, { backgroundColor: Colors.bg3 }]}>
                     <Ionicons name="close" size={9} color={Colors.textDisabled} />
                   </View>
                   <Ionicons name={icon as any} size={26} color={iconColor} />
-                  <Text style={styles.featureSlotLabel} numberOfLines={2}>{label}</Text>
+                  <Text style={[styles.featureSlotLabel, { color: Colors.textPrimary }]} numberOfLines={2}>{label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
           {/* Color picker */}
-          <Text style={styles.pickerSublabel}>Background</Text>
+          <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Background</Text>
           <View style={styles.colorRow}>
             {shareBgColors.map(c => (
               <TouchableOpacity
                 key={c}
-                style={[styles.colorSwatch, { backgroundColor: c }, bgColor === c && styles.swatchSelected]}
+                style={[styles.colorSwatch, { backgroundColor: c }, bgColor === c && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]}
                 onPress={() => setAndSaveBgColor(c)}
               />
             ))}
@@ -358,9 +358,9 @@ export default function ProfileScreen() {
             { label: 'Badges', value: `${totalEarned}/${totalBadges}` },
             { label: 'Goals', value: goals.filter(g => !g.isArchived).length },
           ].map(s => (
-            <View key={s.label} style={styles.statBox}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+            <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+              <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
+              <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
             </View>
           ))}
         </View>
@@ -368,29 +368,29 @@ export default function ProfileScreen() {
         {/* Skill Tracks */}
         {activeCategories.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Skill Tracks</Text>
+            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Skill Tracks</Text>
             <View style={styles.skillGrid}>
               {activeCategories.map(cat => {
                 const cs = categoryStats[cat]!;
                 return (
                   <TouchableOpacity
                     key={cat}
-                    style={[styles.skillCard, { backgroundColor: Colors.bg1 }]}
+                    style={[styles.skillCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
                     onPress={() => navigation.navigate('SkillTrack', { category: cat })}
                     activeOpacity={0.75}
                   >
                     <View style={styles.skillHeader}>
-                      <View style={styles.skillIconWrap}>
+                      <View style={[styles.skillIconWrap, { backgroundColor: Colors.accentDim }]}>
                         <StreakFlame streak={categoryMaxStreak[cat] ?? 0} size={36}>
                           <Ionicons name={CATEGORY_ICONS[cat] as any} size={18} color={Colors.accentBright} />
                         </StreakFlame>
                       </View>
                       <View style={styles.skillInfo}>
-                        <Text style={styles.skillName}>{getCategoryDisplayLabel(goals, cat)}</Text>
-                        <Text style={styles.skillGoalCount}>{cs.goalCount} goal{cs.goalCount !== 1 ? 's' : ''}</Text>
+                        <Text style={[styles.skillName, { color: Colors.textPrimary }]}>{getCategoryDisplayLabel(goals, cat)}</Text>
+                        <Text style={[styles.skillGoalCount, { color: Colors.textSecondary }]}>{cs.goalCount} goal{cs.goalCount !== 1 ? 's' : ''}</Text>
                       </View>
-                      <View style={styles.skillLevelBadge}>
-                        <Text style={styles.skillLevel}>Lv {cs.stats.level}</Text>
+                      <View style={[styles.skillLevelBadge, { backgroundColor: Colors.accentDim }]}>
+                        <Text style={[styles.skillLevel, { color: Colors.accentBright }]}>Lv {cs.stats.level}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
                     </View>
@@ -410,7 +410,7 @@ export default function ProfileScreen() {
                 return (
                   <TouchableOpacity
                     key={goal.id}
-                    style={[styles.skillCard, { backgroundColor: Colors.bg1 }]}
+                    style={[styles.skillCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
                     onPress={() => navigation.navigate('SkillTrack', { category: 'other', goalId: goal.id })}
                     activeOpacity={0.75}
                   >
@@ -421,11 +421,11 @@ export default function ProfileScreen() {
                         </StreakFlame>
                       </View>
                       <View style={styles.skillInfo}>
-                        <Text style={styles.skillName}>{goal.customCategoryLabel ?? goal.name}</Text>
-                        <Text style={styles.skillGoalCount}>1 goal</Text>
+                        <Text style={[styles.skillName, { color: Colors.textPrimary }]}>{goal.customCategoryLabel ?? goal.name}</Text>
+                        <Text style={[styles.skillGoalCount, { color: Colors.textSecondary }]}>1 goal</Text>
                       </View>
-                      <View style={styles.skillLevelBadge}>
-                        <Text style={styles.skillLevel}>Lv {goalStats.level}</Text>
+                      <View style={[styles.skillLevelBadge, { backgroundColor: Colors.accentDim }]}>
+                        <Text style={[styles.skillLevel, { color: Colors.accentBright }]}>Lv {goalStats.level}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
                     </View>
@@ -455,14 +455,14 @@ export default function ProfileScreen() {
 
       {/* Feature picker modal */}
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
-        <SafeAreaView style={styles.pickerScreen}>
+        <SafeAreaView style={[styles.pickerScreen, { backgroundColor: Colors.bg0 }]}>
           <View style={styles.pickerTopBar}>
-            <Text style={styles.pickerTitle}>Pick up to 3 to feature</Text>
+            <Text style={[styles.pickerTitle, { color: Colors.textPrimary }]}>Pick up to 3 to feature</Text>
             <TouchableOpacity onPress={() => setPickerVisible(false)} style={{ padding: Spacing.sm }}>
               <Ionicons name="close" size={24} color={Colors.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.pickerSubtitle}>Selected: {features.length}/3</Text>
+          <Text style={[styles.pickerSubtitle, { color: Colors.textSecondary }]}>Selected: {features.length}/3</Text>
           <FlatList
             data={pickerData}
             keyExtractor={(item, i) => `${item.type}-${i}`}
@@ -470,7 +470,7 @@ export default function ProfileScreen() {
             contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing.xxl }}
           />
           <TouchableOpacity style={styles.pickerDone} onPress={() => setPickerVisible(false)}>
-            <Text style={styles.pickerDoneText}>Done</Text>
+            <Text style={[styles.pickerDoneText, { color: Colors.textPrimary }]}>Done</Text>
           </TouchableOpacity>
         </SafeAreaView>
       </Modal>
@@ -485,52 +485,52 @@ const styles = StyleSheet.create({
   heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1, borderColor: Colors.accentDim },
   heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   heroIconWrap: { width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  heroLevel: { color: Colors.textPrimary, fontSize: FontSize.xxl + 4, fontWeight: '800' },
+  heroLevel: { fontSize: FontSize.xxl + 4, fontWeight: '800' },
   heroTierTitle: { fontSize: FontSize.md, fontWeight: '700' },
-  heroXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
-  heroNext: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  heroXP: { fontSize: FontSize.sm, fontWeight: '600' },
+  heroNext: { fontSize: FontSize.xs },
   shareBtn: { padding: Spacing.xs },
 
-  pickerSublabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  pickerSublabel: { fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
-  featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.bg3, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
+  featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
   featureSlotFilled: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.accentDim, backgroundColor: Colors.accentDim, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
-  featureSlotLabel: { color: Colors.textPrimary, fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
-  featureSlotEmpty: { color: Colors.textDisabled, fontSize: FontSize.xs },
-  featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, backgroundColor: Colors.bg3, borderRadius: 7, padding: 2 },
+  featureSlotLabel: { fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
+  featureSlotEmpty: { fontSize: FontSize.xs },
+  featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   colorSwatch: { width: 28, height: 28, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
-  swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] },
+  swatchSelected: { transform: [{ scale: 1.2 }] },
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
-  statBox: { flex: 1, backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  statValue: { color: Colors.accentBright, fontSize: FontSize.lg, fontWeight: '700' },
-  statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs - 1 },
+  statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
+  statValue: { fontSize: FontSize.lg, fontWeight: '700' },
+  statLabel: { fontSize: FontSize.xs - 1 },
 
   section: { gap: Spacing.sm },
-  sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: BADGE_GAP },
 
   skillGrid: { gap: Spacing.sm },
-  skillCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  skillCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   skillHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  skillIconWrap: { width: 36, height: 36, borderRadius: Radius.md, backgroundColor: Colors.accentDim, alignItems: 'center', justifyContent: 'center' },
+  skillIconWrap: { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   skillInfo: { flex: 1 },
-  skillName: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-  skillGoalCount: { color: Colors.textSecondary, fontSize: FontSize.xs },
-  skillLevelBadge: { backgroundColor: Colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
-  skillLevel: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700' },
+  skillName: { fontSize: FontSize.md, fontWeight: '600' },
+  skillGoalCount: { fontSize: FontSize.xs },
+  skillLevelBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  skillLevel: { fontSize: FontSize.sm, fontWeight: '700' },
 
   // Picker modal
-  pickerScreen: { flex: 1, backgroundColor: Colors.bg0 },
+  pickerScreen: { flex: 1 },
   pickerTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md },
-  pickerTitle: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
-  pickerSubtitle: { color: Colors.textSecondary, fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
-  pickerHeader: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, paddingVertical: Spacing.sm, marginTop: Spacing.sm },
-  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
+  pickerTitle: { fontSize: FontSize.lg, fontWeight: '700' },
+  pickerSubtitle: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
+  pickerHeader: { fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, paddingVertical: Spacing.sm, marginTop: Spacing.sm },
+  pickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.xs, borderWidth: 1 },
   pickerRowSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentDim },
   pickerRowDisabled: { opacity: 0.4 },
-  pickerLabel: { flex: 1, color: Colors.textPrimary, fontSize: FontSize.md },
+  pickerLabel: { flex: 1, fontSize: FontSize.md },
   pickerDone: { margin: Spacing.md, backgroundColor: Colors.accent, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
-  pickerDoneText: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+  pickerDoneText: { fontSize: FontSize.lg, fontWeight: '700' },
 });
