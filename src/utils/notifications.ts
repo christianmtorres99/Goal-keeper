@@ -1,7 +1,8 @@
 import { Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 
 export async function requestNotificationPermissions(): Promise<boolean> {
-  const { default: Notifications } = await import('expo-notifications');
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
@@ -11,7 +12,6 @@ export async function scheduleGoalReminder(
   time: string,
   goalName: string
 ): Promise<string> {
-  const { default: Notifications, SchedulableTriggerInputTypes } = await import('expo-notifications');
   const [hour, minute] = time.split(':').map(Number);
   return Notifications.scheduleNotificationAsync({
     content: {
@@ -30,13 +30,10 @@ export async function scheduleGoalReminder(
 
 export async function cancelGoalReminder(notificationId: string): Promise<void> {
   if (!notificationId) return;
-  const { default: Notifications } = await import('expo-notifications');
   await Notifications.cancelScheduledNotificationAsync(notificationId);
 }
 
 export async function setupNotificationHandler(): Promise<void> {
-  const { default: Notifications } = await import('expo-notifications');
-
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Goal Reminders',
