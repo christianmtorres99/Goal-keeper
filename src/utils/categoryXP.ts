@@ -32,7 +32,7 @@ export function getCategoryStats(
 ): Partial<Record<GoalCategory, { stats: PlayerStats; goalCount: number }>> {
   const result: Partial<Record<GoalCategory, { stats: PlayerStats; goalCount: number }>> = {};
 
-  const categories = [...new Set(goals.filter(g => !g.isArchived).map(g => g.category))];
+  const categories = [...new Set(goals.filter(g => !g.isArchived && g.category !== 'other').map(g => g.category))];
 
   for (const cat of categories) {
     const catGoalIds = new Set(goals.filter(g => g.category === cat && !g.isArchived).map(g => g.id));

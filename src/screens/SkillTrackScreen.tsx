@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
@@ -39,7 +40,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function SkillTrackScreen({ route }: Props) {
-  const { category } = route.params;
+  const { category, goalId } = route.params;
+  const navigation = useNavigation();
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
 
@@ -47,10 +49,23 @@ export default function SkillTrackScreen({ route }: Props) {
   const catLabel = getCategoryDisplayLabel(goals, category);
   const catIcon = CATEGORY_ICONS[category];
 
+  // If goalId is provided, filter to just that single goal
+  const screenGoals = goalId
+    ? goals.filter(g => g.id === goalId && !g.isArchived)
+    : goals.filter(g => g.category === category && !g.isArchived);
+
   const catGoals = useMemo(
-    () => goals.filter(g => !g.isArchived && g.category === category),
-    [goals, category]
+    () => screenGoals,
+    [goals, category, goalId]
   );
+
+  // If goalId is provided, update the screen title to use the goal name
+  useEffect(() => {
+    if (goalId) {
+      const g = goals.find(g => g.id === goalId);
+      if (g) navigation.setOptions({ title: g.customCategoryLabel ?? g.name });
+    }
+  }, [goalId, goals]);
 
   const catGoalIds = useMemo(() => new Set(catGoals.map(g => g.id)), [catGoals]);
 

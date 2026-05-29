@@ -219,7 +219,7 @@ export default function StatsScreen() {
             { label: 'Total Logs', value: totalLogs },
             { label: 'Goals', value: activeGoals.length },
           ].map(s => (
-            <View key={s.label} style={styles.statBox}>
+            <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1 }]}>
               <Text style={styles.statValue}>{s.value}</Text>
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
@@ -285,7 +285,7 @@ export default function StatsScreen() {
 
         {/* Daily logs bar chart */}
         <Text style={styles.sectionLabel}>Last 7 Days</Text>
-        <View style={styles.chartCard}>
+        <View style={[styles.chartCard, { backgroundColor: Colors.bg1 }]}>
           <BarChart
             data={weeklyData}
             width={W}
@@ -301,7 +301,7 @@ export default function StatsScreen() {
 
         {/* XP growth line chart */}
         <Text style={styles.sectionLabel}>XP Growth (30 days)</Text>
-        <View style={styles.chartCard}>
+        <View style={[styles.chartCard, { backgroundColor: Colors.bg1 }]}>
           {xpGrowthData.datasets[0].data.some(v => v > 0) ? (
             <LineChart
               data={xpGrowthData}
@@ -319,36 +319,36 @@ export default function StatsScreen() {
 
         {/* Heatmap */}
         <Text style={styles.sectionLabel}>Activity Heatmap (90 days)</Text>
-        <View style={styles.chartCard}>
+        <View style={[styles.chartCard, { backgroundColor: Colors.bg1 }]}>
           <HeatmapGrid logs={filteredLogs} goalColor={heatColor} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
         {/* Mood & Energy — comprehensive section */}
         <Text style={styles.sectionLabel}>Mood &amp; Energy</Text>
         {journalEntries.length === 0 ? (
-          <View style={styles.chartCard}>
+          <View style={[styles.chartCard, { backgroundColor: Colors.bg1 }]}>
             <Text style={styles.noData}>No journal entries yet</Text>
           </View>
         ) : (
           <>
             {/* Avg tiles */}
             <View style={styles.statRow}>
-              <View style={styles.statBox}>
+              <View style={[styles.statBox, { backgroundColor: Colors.bg1 }]}>
                 <Text style={styles.statValue}>{moodStats.avgMood ?? '—'}</Text>
                 <Text style={styles.statLabel}>Avg Mood</Text>
               </View>
-              <View style={styles.statBox}>
+              <View style={[styles.statBox, { backgroundColor: Colors.bg1 }]}>
                 <Text style={styles.statValue}>{moodStats.avgEnergy ?? '—'}</Text>
                 <Text style={styles.statLabel}>Avg Energy</Text>
               </View>
-              <View style={styles.statBox}>
+              <View style={[styles.statBox, { backgroundColor: Colors.bg1 }]}>
                 <Text style={styles.statValue}>{moodStats.journalStreak}</Text>
                 <Text style={styles.statLabel}>Journal Streak</Text>
               </View>
             </View>
 
             {/* 30-day line chart */}
-            <View style={styles.chartCard}>
+            <View style={[styles.chartCard, { backgroundColor: Colors.bg1 }]}>
               <View style={styles.moodLegend}>
                 <View style={styles.moodLegendItem}>
                   <View style={[styles.moodLegendDot, { backgroundColor: Colors.accent }]} />
@@ -385,7 +385,7 @@ export default function StatsScreen() {
 
             {/* Best / Worst day */}
             {(moodStats.bestDay || moodStats.worstDay) && (
-              <View style={[styles.chartCard, { flexDirection: 'row', gap: Spacing.md }]}>
+              <View style={[styles.chartCard, { backgroundColor: Colors.bg1, flexDirection: 'row', gap: Spacing.md }]}>
                 {moodStats.bestDay && (
                   <View style={{ flex: 1, alignItems: 'center' }}>
                     <Text style={styles.moodLegendText}>Best Day</Text>
@@ -404,7 +404,7 @@ export default function StatsScreen() {
             )}
 
             {/* Mood distribution */}
-            <View style={styles.chartCard}>
+            <View style={[styles.chartCard, { backgroundColor: Colors.bg1 }]}>
               <Text style={[styles.moodLegendText, { marginBottom: Spacing.sm }]}>Mood Distribution</Text>
               {(['😞', '😕', '😐', '🙂', '😄'] as const).map((emoji, idx) => {
                 const count = moodStats.moodDist[idx];
@@ -439,7 +439,7 @@ export default function StatsScreen() {
             const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
             const { currentStreak, longestStreak } = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
             return (
-              <View key={goal.id} style={[styles.streakCard, { borderLeftColor: goal.color }]}>
+              <View key={goal.id} style={[styles.streakCard, { backgroundColor: Colors.bg1, borderLeftColor: goal.color }]}>
                 <Text style={styles.streakGoalName}>{goal.name}</Text>
                 <View style={styles.streakNums}>
                   <View style={styles.streakNum}>
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
   statRow: { flexDirection: 'row', gap: Spacing.sm },
-  statBox: { flex: 1, backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
   statValue: { color: Colors.accentBright, fontSize: FontSize.xl, fontWeight: '700' },
   statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
   filterSection: { gap: Spacing.xs },
@@ -476,10 +476,10 @@ const styles = StyleSheet.create({
   filterText: { color: Colors.textSecondary, fontSize: FontSize.sm },
   filterTextActive: { color: Colors.accentBright },
   sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  chartCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  chartCard: { borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   noData: { color: Colors.textDisabled, textAlign: 'center', padding: Spacing.xl },
-  streakCard: { backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 3, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  streakCard: { borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, borderLeftWidth: 3, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   streakGoalName: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600', flex: 1 },
   streakNums: { flexDirection: 'row', gap: Spacing.lg },
   streakNum: { alignItems: 'center' },

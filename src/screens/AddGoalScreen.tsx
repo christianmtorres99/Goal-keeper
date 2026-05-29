@@ -104,7 +104,7 @@ export default function AddGoalScreen() {
       Alert.alert('Required', 'Please enter a goal name.');
       return;
     }
-    if ((goalType === 'milestone' || goalType === 'count') && (!targetCount || parseInt(targetCount) <= 0)) {
+    if (goalType === 'count' && (!targetCount || parseInt(targetCount) <= 0)) {
       Alert.alert('Required', 'Please enter a valid target count.');
       return;
     }
@@ -127,7 +127,7 @@ export default function AddGoalScreen() {
       notificationId = undefined;
     }
 
-    const hasTarget = goalType === 'milestone' || goalType === 'count';
+    const hasTarget = goalType === 'count';
     const data = {
       name: name.trim(),
       description: description.trim(),
@@ -163,7 +163,7 @@ export default function AddGoalScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['bottom', 'left', 'right']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
@@ -200,15 +200,6 @@ export default function AddGoalScreen() {
             <Text style={styles.typeCardSub}>Daily check-in</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.typeCard, goalType === 'milestone' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
-            onPress={() => setGoalType('milestone')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="trophy" size={22} color={goalType === 'milestone' ? selectedColor : Colors.textSecondary} />
-            <Text style={[styles.typeCardTitle, goalType === 'milestone' && { color: selectedColor }]}>Milestone</Text>
-            <Text style={styles.typeCardSub}>Reach a target</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.typeCard, goalType === 'count' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
             onPress={() => setGoalType('count')}
             activeOpacity={0.7}
@@ -219,7 +210,7 @@ export default function AddGoalScreen() {
           </TouchableOpacity>
         </View>
 
-        {(goalType === 'milestone' || goalType === 'count') && (
+        {goalType === 'count' && (
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={styles.label}>Target Count</Text>
