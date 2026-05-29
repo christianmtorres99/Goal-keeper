@@ -76,6 +76,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.modalSheet}>
         <View style={styles.modalHandle} />
         <Text style={styles.modalTitle}>New Task</Text>
@@ -167,6 +168,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
           <Text style={styles.saveBtnText}>Save Task</Text>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

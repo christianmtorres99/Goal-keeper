@@ -120,6 +120,19 @@ export default function ProfileScreen() {
     });
   }, []);
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => setThemePickerVisible(true)}
+          style={{ marginRight: Spacing.md }}
+        >
+          <Ionicons name="color-palette-outline" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   const savePrefs = useCallback((f: SelectedFeature[], c: string) => {
     AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ features: f, bgColor: c }));
   }, []);
@@ -270,25 +283,23 @@ export default function ProfileScreen() {
               <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
                 <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.shareBtn} onPress={() => setThemePickerVisible(true)}>
-                <Ionicons name="color-palette-outline" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
             </View>
           </View>
           <View style={{ width: '100%' }}>
             <XPBar stats={playerStats} />
           </View>
-        </LinearGradient>
 
-        {/* Customize share card */}
-        <View style={styles.customizeCard}>
-          <View style={styles.customizeHeader}>
-            <View style={styles.tierPreview}>
-              <Ionicons name={tier.icon as any} size={18} color={tier.color} />
-              <Text style={[styles.tierLabel, { color: tier.color }]}>{tier.title}</Text>
-            </View>
-            <Text style={styles.customizeTitle}>Share Card</Text>
-          </View>
+          {/* Inline share card preview */}
+          <View style={styles.shareDivider} />
+          <ProfileShareCard
+            inline
+            stats={playerStats}
+            totalXP={totalXP}
+            features={features}
+            bgColor={bgColor}
+            goals={activeGoals}
+            badgeDefs={BADGE_DEFINITIONS}
+          />
 
           {/* 3 feature slots */}
           <Text style={styles.pickerSublabel}>Achievements</Text>
@@ -339,7 +350,7 @@ export default function ProfileScreen() {
               />
             ))}
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Stats row */}
         <View style={styles.statRow}>
@@ -446,12 +457,8 @@ const styles = StyleSheet.create({
   heroXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
   heroNext: { color: Colors.textSecondary, fontSize: FontSize.xs },
   shareBtn: { padding: Spacing.xs },
+  shareDivider: { width: '100%', height: 1, backgroundColor: Colors.border, marginVertical: Spacing.xs },
 
-  customizeCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
-  customizeHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  tierPreview: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  tierLabel: { fontSize: FontSize.xs, fontWeight: '700' },
-  customizeTitle: { flex: 1, color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
   pickerSublabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
   featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.bg3, backgroundColor: Colors.bg2, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },

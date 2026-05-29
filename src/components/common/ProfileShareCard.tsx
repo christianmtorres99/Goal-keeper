@@ -29,6 +29,7 @@ export function getLevelTier(level: number) {
 }
 
 interface Props {
+  inline?: boolean;
   stats: PlayerStats;
   totalXP: number;
   features: SelectedFeature[];
@@ -38,7 +39,7 @@ interface Props {
 }
 
 const ProfileShareCard = forwardRef<View, Props>(
-  ({ stats, totalXP, features, bgColor, goals, badgeDefs }, ref) => {
+  ({ inline, stats, totalXP, features, bgColor, goals, badgeDefs }, ref) => {
     const tier = getLevelTier(stats.level);
 
     const filledSlots: (SelectedFeature | null)[] = [
@@ -77,7 +78,7 @@ const ProfileShareCard = forwardRef<View, Props>(
     };
 
     return (
-      <View ref={ref} collapsable={false} style={[styles.card, { backgroundColor: bgColor }]}>
+      <View ref={ref} collapsable={false} style={[styles.card, { backgroundColor: bgColor }, inline && styles.cardInline]}>
         {/* App branding */}
         <View style={styles.appRow}>
           <Ionicons name="trophy" size={12} color={Colors.accentBright} />
@@ -154,4 +155,5 @@ const styles = StyleSheet.create({
   featureLabel: { color: '#FFFFFF', fontSize: 10, textAlign: 'center', lineHeight: 13 },
   featureEmpty: { color: 'rgba(255,255,255,0.2)', fontSize: 10 },
   tagline: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontStyle: 'italic' },
+  cardInline: { position: 'relative', top: 0, left: 0, width: '100%' },
 });
