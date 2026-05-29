@@ -43,8 +43,8 @@ export default function CalendarScreen() {
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
 
   const goalMap = useMemo(() => {
-    const m: Record<string, { color: string; name: string; icon: string }> = {};
-    goals.forEach(g => { m[g.id] = { color: g.color, name: g.name, icon: g.icon }; });
+    const m: Record<string, { color: string; name: string; icon: string; type: string; targetCount?: number; unit?: string }> = {};
+    goals.forEach(g => { m[g.id] = { color: g.color, name: g.name, icon: g.icon, type: g.type, targetCount: g.targetCount ?? undefined, unit: g.unit ?? undefined }; });
     return m;
   }, [goals]);
 
@@ -162,11 +162,21 @@ export default function CalendarScreen() {
     setSelectedDay(null);
   };
 
-  // Logs for selected day (with note + XP)
-  const selectedDayLogs = useMemo(
-    () => selectedDay ? monthLogs.filter(l => l.logDate === selectedDay) : [],
-    [selectedDay, monthLogs]
-  );
+  // Grouped logs for selected day
+  const selectedDayGrouped = useMemo(() => {
+    if (!selectedDay) return [];
+    const dayLogs = monthLogs.filter(l => l.logDate === selectedDay);
+    const groupMap: Record<string, { goalId: string; logCount: number; totalCount: number; totalXP: number }> = {};
+    dayLogs.forEach(log => {
+      if (!groupMap[log.goalId]) {
+        groupMap[log.goalId] = { goalId: log.goalId, logCount: 0, totalCount: 0, totalXP: 0 };
+      }
+      groupMap[log.goalId].logCount++;
+      groupMap[log.goalId].totalCount += log.count ?? 1;
+      groupMap[log.goalId].totalXP += log.xpAwarded + (log.bonusXp ?? 0);
+    });
+    return Object.values(groupMap);
+  }, [selectedDay, monthLogs]);
 
   // Journal entry for selected day
   const selectedDayJournal = useMemo(
@@ -365,7 +375,12 @@ export default function CalendarScreen() {
 
       {/* Day detail modal */}
       <Modal visible={!!selectedDay} transparent animationType="fade" onRequestClose={() => setSelectedDay(null)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSelectedDay(null)}>
+        <TouchableOpacity
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+          activeOpacity={1}
+          onPress={() => setSelectedDay(null)}
+        />
+        <View style={styles.sheetContainer}>
           <ScrollView
             style={styles.sheetScroll}
             contentContainerStyle={styles.sheet}
@@ -377,19 +392,26 @@ export default function CalendarScreen() {
             </Text>
 
             {/* Goal logs */}
-            {selectedDayLogs.map(log => {
-              const g = goalMap[log.goalId];
+            {selectedDayGrouped.map(group => {
+              const g = goalMap[group.goalId];
+              const isCount = g?.type === 'count';
+              const nameLabel = group.logCount > 1
+                ? `${g?.name ?? 'Unknown'} ×${group.logCount}`
+                : (g?.name ?? 'Unknown');
+              const subLabel = isCount
+                ? `${group.totalCount.toLocaleString()} / ${g.targetCount?.toLocaleString() ?? '?'} ${g.unit ?? ''}`
+                : null;
               return (
-                <View key={log.id} style={styles.logRow}>
+                <View key={group.goalId} style={styles.logRow}>
                   <View style={[styles.logIconWrap, { backgroundColor: (g?.color ?? Colors.accent) + '22' }]}>
                     <Ionicons name={(g?.icon ?? 'flag') as any} size={18} color={g?.color ?? Colors.accent} />
                   </View>
                   <View style={styles.logInfo}>
-                    <Text style={styles.logGoalName}>{g?.name ?? 'Unknown'}</Text>
-                    {log.note ? <Text style={styles.logNote}>{log.note}</Text> : null}
+                    <Text style={styles.logGoalName}>{nameLabel}</Text>
+                    {subLabel ? <Text style={styles.logNote}>{subLabel}</Text> : null}
                   </View>
                   <View style={styles.logXPBadge}>
-                    <Text style={styles.logXP}>+{log.xpAwarded + log.bonusXp} XP</Text>
+                    <Text style={styles.logXP}>+{Math.round(group.totalXP)} XP</Text>
                   </View>
                 </View>
               );
@@ -464,7 +486,7 @@ export default function CalendarScreen() {
               </TouchableOpacity>
             )}
           </ScrollView>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -538,7 +560,7 @@ const styles = StyleSheet.create({
   journalDot: { backgroundColor: Colors.accentBright, borderWidth: 1.5, borderColor: Colors.bg0 },
 
   // Day modal
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  sheetContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   sheetScroll: { maxHeight: '80%' },
   sheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md },
   sheetHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
