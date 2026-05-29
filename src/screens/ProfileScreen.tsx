@@ -270,9 +270,13 @@ export default function ProfileScreen() {
         {/* Hero card */}
         <LinearGradient colors={[tier.color + '55', Colors.bg1]} style={styles.heroCard}>
           <View style={styles.heroHeader}>
-            <View style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}>
+            <TouchableOpacity
+              style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}
+              onPress={() => setLevelLadderVisible(true)}
+              activeOpacity={0.8}
+            >
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
-            </View>
+            </TouchableOpacity>
             <TouchableOpacity style={{ flex: 1, gap: 4 }} onPress={() => setLevelLadderVisible(true)} activeOpacity={0.8}>
               <Text style={styles.heroLevel}>Level {playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>

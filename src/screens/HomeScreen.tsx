@@ -67,6 +67,9 @@ export default function HomeScreen() {
   const [logModalGoalId, setLogModalGoalId] = useState<string | null>(null);
   const [countModalGoalId, setCountModalGoalId] = useState<string | null>(null);
 
+  const [animateSignals, setAnimateSignals] = useState<Record<string, number>>({});
+  const [pendingAnimGoalId, setPendingAnimGoalId] = useState<string | null>(null);
+
   const [undoVisible, setUndoVisible] = useState(false);
   const [undoLogId, setUndoLogId] = useState<string | null>(null);
   const [undoMessage, setUndoMessage] = useState('');
@@ -198,6 +201,7 @@ export default function HomeScreen() {
 
   const handleLogPress = useCallback((goalId: string) => {
     const goal = goals.find(g => g.id === goalId);
+    setPendingAnimGoalId(goalId);
     if (goal?.type === 'count') {
       setCountModalGoalId(goalId);
     } else {
@@ -318,6 +322,11 @@ export default function HomeScreen() {
       setPendingBadges(newBadges);
       setPendingBonusXP(result.bonusXP + extraXP);
       setPendingEvents(extraEvents);
+      // Animation fires when BadgeModal closes
+    } else {
+      // No badge modal — fire animation immediately
+      setAnimateSignals(s => ({ ...s, [goalId]: (s[goalId] ?? 0) + 1 }));
+      setPendingAnimGoalId(null);
     }
   }, [logModalGoalId, logs, graceStates, playerStats, addLog, addBonusXP, checkAndAward, goals, activeGoals]);
 
@@ -377,6 +386,7 @@ export default function HomeScreen() {
           onLog={() => handleLogPress(goal.id)}
           isDragging={isActive}
           isDailyDouble={goal.id === dailyDoubleGoalId}
+          animateSignal={animateSignals[goal.id]}
           dragHandle={
             <TouchableOpacity onLongPress={drag} delayLongPress={250} hitSlop={12} style={{ padding: 4 }}>
               <Ionicons name="reorder-two" size={22} color={Colors.textSecondary} />
@@ -477,8 +487,12 @@ export default function HomeScreen() {
           todayTotal={todayCountTotal}
           onConfirm={async (count: number, note?: string) => {
             if (!countModalGoalId) return;
+            const gid = countModalGoalId;
             setCountModalGoalId(null);
-            await addLog(countModalGoalId, note, undefined, true, count);
+            await addLog(gid, note, undefined, true, count);
+            // Fire animation after count modal closes (no badge modal for count logs)
+            setAnimateSignals(s => ({ ...s, [gid]: (s[gid] ?? 0) + 1 }));
+            setPendingAnimGoalId(null);
           }}
           onCancel={() => setCountModalGoalId(null)}
         />
@@ -497,7 +511,15 @@ export default function HomeScreen() {
         bonusXP={pendingBonusXP}
         events={pendingEvents}
         visible={pendingBadges.length > 0 || pendingBonusXP > 0}
-        onClose={() => { setPendingBadges([]); setPendingBonusXP(0); setPendingEvents([]); }}
+        onClose={() => {
+          setPendingBadges([]);
+          setPendingBonusXP(0);
+          setPendingEvents([]);
+          if (pendingAnimGoalId) {
+            setAnimateSignals(s => ({ ...s, [pendingAnimGoalId]: (s[pendingAnimGoalId] ?? 0) + 1 }));
+            setPendingAnimGoalId(null);
+          }
+        }}
       />
 
       <LevelUpModal

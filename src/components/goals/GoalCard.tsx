@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -89,9 +89,10 @@ interface Props {
   isDragging?: boolean;
   dragHandle?: React.ReactNode;
   isDailyDouble?: boolean;
+  animateSignal?: number;
 }
 
-export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble }: Props) {
+export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble, animateSignal }: Props) {
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
   const baseLoggedToday = isAlreadyLoggedToday(logs);
@@ -189,17 +190,23 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     particleRefs.current.forEach(p => p?.trigger());
   }, []);
 
+  // Fire animation when animateSignal increments (after modals close)
+  useEffect(() => {
+    if (animateSignal && animateSignal > 0) {
+      const canLog = goal.type === 'count' ? !countGoalComplete : (!loggedToday || goal.allowMultiplePerDay);
+      if (canLog) triggerBurstAnimation();
+    }
+  }, [animateSignal]);
+
   const handleLog = useCallback(() => {
-    const canLog = goal.type === 'count' ? !countGoalComplete : (!loggedToday || goal.allowMultiplePerDay);
-    if (canLog) triggerBurstAnimation();
     onLog();
-  }, [onLog, triggerBurstAnimation, loggedToday, goal.allowMultiplePerDay, goal.type, countGoalComplete]);
+  }, [onLog]);
 
   const xpLabel = `+${Math.round(BASE_LOG_XP * multiplier)} XP`;
 
   return (
     <Pressable
-      style={[styles.card, isAtRisk && styles.cardAtRisk, isDragging && styles.cardDragging]}
+      style={[styles.card, isAtRisk && styles.cardAtRisk, isDragging && styles.cardDragging, { backgroundColor: Colors.bg1 }]}
       onPress={onPress}
     >
       <View style={[styles.colorBar, { backgroundColor: isAtRisk ? Colors.warning : goal.color }]} />
@@ -320,7 +327,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
                     color={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' ? Colors.success : Colors.textPrimary}
                   />
                   <Text style={[styles.logBtnText, loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' && styles.logBtnTextDone]}>
-                    {goal.type === 'count' ? (countGoalComplete ? 'Done' : 'Add') : goal.allowMultiplePerDay ? 'Log+' : loggedToday ? 'Done' : 'Log'}
+                    {goal.type === 'count' ? (countGoalComplete ? 'Done' : 'Add') : goal.allowMultiplePerDay ? 'Log' : loggedToday ? 'Done' : 'Log'}
                   </Text>
                 </TouchableOpacity>
               </Animated.View>
@@ -336,11 +343,11 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.lg,
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: Colors.border,
+    overflow: 'hidden',
   },
   cardAtRisk: { borderColor: Colors.warning + '66' },
   cardDragging: { opacity: 0.9, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },

@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
 import { xpThresholdForLevel } from '../../logic/xpEngine';
@@ -16,7 +15,8 @@ interface Props {
 
 export default function LevelLadderModal({ visible, currentLevel, onClose }: Props) {
   const TOTAL_LEVELS = 55;
-  const levels = Array.from({ length: TOTAL_LEVELS }, (_, i) => i + 1);
+  const maxDisplay = Math.min(currentLevel + 5, TOTAL_LEVELS);
+  const levels = Array.from({ length: maxDisplay }, (_, i) => i + 1);
 
   const translateY = useSharedValue(0);
 
@@ -84,12 +84,13 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
                   );
                 })}
               </ScrollView>
-              {/* Fade overlay at bottom */}
-              <LinearGradient
-                colors={['transparent', Colors.bg1]}
-                style={styles.fadeOverlay}
-                pointerEvents="none"
-              />
+              {currentLevel + 5 < TOTAL_LEVELS && (
+                <View style={styles.moreLevels}>
+                  <Text style={styles.moreLevelsText}>
+                    · · · {TOTAL_LEVELS - Math.min(currentLevel + 5, TOTAL_LEVELS)} more levels await
+                  </Text>
+                </View>
+              )}
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <Text style={styles.closeBtnText}>Close</Text>
@@ -119,7 +120,8 @@ const styles = StyleSheet.create({
   levelNum: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
   tierName: { color: Colors.textSecondary, fontSize: FontSize.xs },
   xpReq: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '600' },
-  fadeOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  moreLevels: { alignItems: 'center', paddingVertical: Spacing.sm },
+  moreLevelsText: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
   closeBtn: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   closeBtnText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
 });

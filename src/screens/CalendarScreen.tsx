@@ -251,6 +251,7 @@ export default function CalendarScreen() {
                   styles.dayNum,
                   isToday && styles.dayNumToday,
                   isFuture && styles.dayNumFuture,
+                  { color: Colors.textPrimary },
                 ]}>
                   {parseInt(dateStr.split('-')[2])}
                 </Text>
@@ -275,7 +276,7 @@ export default function CalendarScreen() {
           <Text style={styles.statsTitle}>Month Stats</Text>
 
           {/* Progress bar */}
-          <View style={styles.progressCard}>
+          <View style={[styles.progressCard, { backgroundColor: Colors.bg1 }]}>
             <View style={styles.progressHeader}>
               <Text style={styles.progressText}>{loggedDayCount} / {elapsedDays} days logged</Text>
               <Text style={[styles.progressPct, { color: completionPct >= 80 ? Colors.success : completionPct >= 50 ? Colors.warning : Colors.textSecondary }]}>
@@ -342,7 +343,7 @@ export default function CalendarScreen() {
 
           {/* Insights */}
           {insights.length > 0 && (
-            <View style={styles.insightsCard}>
+            <View style={[styles.insightsCard, { backgroundColor: Colors.bg1 }]}>
               <View style={styles.insightsHeader}>
                 <Ionicons name="bulb-outline" size={16} color={Colors.warning} />
                 <Text style={styles.insightsTitle}>Insights</Text>
@@ -358,7 +359,7 @@ export default function CalendarScreen() {
 
           {/* Goal legend */}
           {activeGoals.length > 0 && (
-            <View style={styles.legendCard}>
+            <View style={[styles.legendCard, { backgroundColor: Colors.bg1 }]}>
               <Text style={styles.legendTitle}>Goals</Text>
               <View style={styles.legendRow}>
                 {activeGoals.map(g => (
@@ -376,116 +377,117 @@ export default function CalendarScreen() {
       {/* Day detail modal */}
       <Modal visible={!!selectedDay} transparent animationType="fade" onRequestClose={() => setSelectedDay(null)}>
         <TouchableOpacity
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
           activeOpacity={1}
           onPress={() => setSelectedDay(null)}
         />
-        <View style={styles.sheetContainer}>
-          <ScrollView
-            style={styles.sheetScroll}
-            contentContainerStyle={styles.sheet}
-            scrollEnabled
-          >
+        <View style={styles.centeredModalWrap}>
+          <View style={[styles.centeredModal, { backgroundColor: Colors.bg1 }]}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetDate}>
               {selectedDay ? formatDisplayDate(selectedDay) : ''}
             </Text>
-
-            {/* Goal logs */}
-            {selectedDayGrouped.map(group => {
-              const g = goalMap[group.goalId];
-              const isCount = g?.type === 'count';
-              const nameLabel = group.logCount > 1
-                ? `${g?.name ?? 'Unknown'} ×${group.logCount}`
-                : (g?.name ?? 'Unknown');
-              const subLabel = isCount
-                ? `${group.totalCount.toLocaleString()} / ${g.targetCount?.toLocaleString() ?? '?'} ${g.unit ?? ''}`
-                : null;
-              return (
-                <View key={group.goalId} style={styles.logRow}>
-                  <View style={[styles.logIconWrap, { backgroundColor: (g?.color ?? Colors.accent) + '22' }]}>
-                    <Ionicons name={(g?.icon ?? 'flag') as any} size={18} color={g?.color ?? Colors.accent} />
-                  </View>
-                  <View style={styles.logInfo}>
-                    <Text style={styles.logGoalName}>{nameLabel}</Text>
-                    {subLabel ? <Text style={styles.logNote}>{subLabel}</Text> : null}
-                  </View>
-                  <View style={styles.logXPBadge}>
-                    <Text style={styles.logXP}>+{Math.round(group.totalXP)} XP</Text>
-                  </View>
-                </View>
-              );
-            })}
-
-            {/* Journal entry section */}
-            {selectedDayJournal && (
-              <TouchableOpacity
-                style={styles.journalSection}
-                activeOpacity={0.8}
-                onPress={() => {
-                  setSelectedDay(null);
-                  navigation.navigate('Journal', { date: selectedDay! });
-                }}
-              >
-                <View style={styles.journalSectionHeader}>
-                  <Ionicons name="journal-outline" size={14} color={Colors.accentBright} />
-                  <Text style={styles.journalSectionTitle}>Journal Entry</Text>
-                  <Ionicons name="chevron-forward" size={14} color={Colors.textDisabled} />
-                </View>
-                <View style={styles.journalSectionBody}>
-                  {/* Mood + energy */}
-                  <View style={styles.journalMoodRow}>
-                    <Text style={styles.journalMoodEmoji}>
-                      {MOOD_EMOJIS[selectedDayJournal.mood - 1]}
-                    </Text>
-                    <View style={styles.journalEnergyBars}>
-                      {[1, 2, 3, 4, 5].map(v => (
-                        <View
-                          key={v}
-                          style={[
-                            styles.journalEnergyBar,
-                            { height: [4, 7, 10, 13, 16][v - 1] },
-                            v <= selectedDayJournal.energy && styles.journalEnergyBarActive,
-                          ]}
-                        />
-                      ))}
+            <ScrollView
+              style={styles.centeredModalScroll}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.centeredModalContent}
+            >
+              {/* Goal logs */}
+              {selectedDayGrouped.map(group => {
+                const g = goalMap[group.goalId];
+                const isCount = g?.type === 'count';
+                const nameLabel = group.logCount > 1
+                  ? `${g?.name ?? 'Unknown'} ×${group.logCount}`
+                  : (g?.name ?? 'Unknown');
+                const subLabel = isCount
+                  ? `${group.totalCount.toLocaleString()} / ${g.targetCount?.toLocaleString() ?? '?'} ${g.unit ?? ''}`
+                  : null;
+                return (
+                  <View key={group.goalId} style={styles.logRow}>
+                    <View style={[styles.logIconWrap, { backgroundColor: (g?.color ?? Colors.accent) + '22' }]}>
+                      <Ionicons name={(g?.icon ?? 'flag') as any} size={18} color={g?.color ?? Colors.accent} />
                     </View>
-                    <Text style={styles.journalEnergyLabel}>{selectedDayJournal.energy}/5</Text>
+                    <View style={styles.logInfo}>
+                      <Text style={styles.logGoalName}>{nameLabel}</Text>
+                      {subLabel ? <Text style={styles.logNote}>{subLabel}</Text> : null}
+                    </View>
+                    <View style={styles.logXPBadge}>
+                      <Text style={styles.logXP}>+{Math.round(group.totalXP)} XP</Text>
+                    </View>
                   </View>
+                );
+              })}
 
-                  {/* Text excerpt + drawing thumbnail */}
-                  <View style={styles.journalContentRow}>
-                    {selectedDayJournal.textContent ? (
-                      <Text style={styles.journalExcerpt} numberOfLines={3}>
-                        {selectedDayJournal.textContent.startsWith('{"t":')
-                          ? (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
-                          : selectedDayJournal.textContent}
-                      </Text>
-                    ) : (
-                      <Text style={styles.journalExcerptEmpty}>No text written.</Text>
-                    )}
-                    {selectedDayJournal.drawingData.length > 0 && (
-                      <View style={styles.journalThumb}>
-                        <Svg width={THUMB_SIZE} height={THUMB_SIZE} viewBox="0 0 300 500">
-                          {selectedDayJournal.drawingData.map((p: DrawingPath, i: number) => (
-                            <SvgPath
-                              key={i}
-                              d={p.d}
-                              stroke={p.color}
-                              strokeWidth={p.strokeWidth}
-                              fill="none"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          ))}
-                        </Svg>
-                      </View>
-                    )}
+              {/* Journal entry section */}
+              {selectedDayJournal && (
+                <TouchableOpacity
+                  style={styles.journalSection}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setSelectedDay(null);
+                    navigation.navigate('Journal', { date: selectedDay! });
+                  }}
+                >
+                  <View style={styles.journalSectionHeader}>
+                    <Ionicons name="journal-outline" size={14} color={Colors.accentBright} />
+                    <Text style={styles.journalSectionTitle}>Journal Entry</Text>
+                    <Ionicons name="chevron-forward" size={14} color={Colors.textDisabled} />
                   </View>
-                </View>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
+                  <View style={styles.journalSectionBody}>
+                    {/* Mood + energy */}
+                    <View style={styles.journalMoodRow}>
+                      <Text style={styles.journalMoodEmoji}>
+                        {MOOD_EMOJIS[selectedDayJournal.mood - 1]}
+                      </Text>
+                      <View style={styles.journalEnergyBars}>
+                        {[1, 2, 3, 4, 5].map(v => (
+                          <View
+                            key={v}
+                            style={[
+                              styles.journalEnergyBar,
+                              { height: [4, 7, 10, 13, 16][v - 1] },
+                              v <= selectedDayJournal.energy && styles.journalEnergyBarActive,
+                            ]}
+                          />
+                        ))}
+                      </View>
+                      <Text style={styles.journalEnergyLabel}>{selectedDayJournal.energy}/5</Text>
+                    </View>
+
+                    {/* Text excerpt + drawing thumbnail */}
+                    <View style={styles.journalContentRow}>
+                      {selectedDayJournal.textContent ? (
+                        <Text style={styles.journalExcerpt} numberOfLines={3}>
+                          {selectedDayJournal.textContent.startsWith('{"t":')
+                            ? (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
+                            : selectedDayJournal.textContent}
+                        </Text>
+                      ) : (
+                        <Text style={styles.journalExcerptEmpty}>No text written.</Text>
+                      )}
+                      {selectedDayJournal.drawingData.length > 0 && (
+                        <View style={styles.journalThumb}>
+                          <Svg width={THUMB_SIZE} height={THUMB_SIZE} viewBox="0 0 300 500">
+                            {selectedDayJournal.drawingData.map((p: DrawingPath, i: number) => (
+                              <SvgPath
+                                key={i}
+                                d={p.d}
+                                stroke={p.color}
+                                strokeWidth={p.strokeWidth}
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            ))}
+                          </Svg>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -496,7 +498,7 @@ function StatCard({ icon, iconColor, label, value, sub }: {
   icon: string; iconColor: string; label: string; value: string; sub: string;
 }) {
   return (
-    <View style={styles.statCard}>
+    <View style={[styles.statCard, { backgroundColor: Colors.bg1 }]}>
       <Ionicons name={icon as any} size={16} color={iconColor} />
       <Text style={styles.statValue} numberOfLines={1}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
@@ -520,7 +522,7 @@ const styles = StyleSheet.create({
   cell: { width: CELL_W, height: CELL_H, alignItems: 'center', paddingTop: Spacing.xs },
   cellToday: { backgroundColor: Colors.accentDim + '55', borderRadius: Radius.sm },
   cellPerfect: { backgroundColor: Colors.success + '18' },
-  dayNum: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '500', marginBottom: 4 },
+  dayNum: { fontSize: FontSize.sm, fontWeight: '500', marginBottom: 4 },
   dayNumToday: { color: Colors.accentBright, fontWeight: '800' },
   dayNumFuture: { color: Colors.textDisabled },
   dots: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, justifyContent: 'center', maxWidth: CELL_W - 6 },
@@ -530,7 +532,7 @@ const styles = StyleSheet.create({
   statsSection: { padding: Spacing.md, gap: Spacing.md },
   statsTitle: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  progressCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  progressCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
   progressPct: { fontSize: FontSize.lg, fontWeight: '800' },
@@ -538,19 +540,19 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 8, borderRadius: 4 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1, borderColor: Colors.border },
+  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1, borderColor: Colors.border },
   statValue: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
   statLabel: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: '600' },
   statSub: { color: Colors.textSecondary, fontSize: FontSize.xs - 1 },
 
-  insightsCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.sm, gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
+  insightsCard: { borderRadius: Radius.lg, padding: Spacing.sm, gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
   insightsHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   insightsTitle: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
   insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   insightDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.warning, marginTop: 5 },
   insightText: { flex: 1, color: Colors.textSecondary, fontSize: FontSize.xs, lineHeight: 17 },
 
-  legendCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  legendCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   legendTitle: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -560,9 +562,10 @@ const styles = StyleSheet.create({
   journalDot: { backgroundColor: Colors.accentBright, borderWidth: 1.5, borderColor: Colors.bg0 },
 
   // Day modal
-  sheetContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  sheetScroll: { maxHeight: '80%' },
-  sheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md },
+  centeredModalWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.lg },
+  centeredModal: { borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', maxHeight: '75%', gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  centeredModalScroll: { flexGrow: 0 },
+  centeredModalContent: { gap: Spacing.md },
   sheetHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   sheetDate: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md },
