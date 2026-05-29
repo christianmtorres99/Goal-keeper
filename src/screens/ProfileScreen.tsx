@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList, Dimensions, useColorScheme } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { useGoalStore } from '../store/goalStore';
@@ -41,28 +42,29 @@ const BADGE_SIZE = Math.floor(
   (SCREEN_W - Spacing.md * 2 - BADGE_GAP * (NUM_COLS - 1)) / NUM_COLS
 );
 
-const SHARE_BG_COLORS = [
-  // existing dark colors (keep all):
-  '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D',
-  '#0D2A2A', '#1A1A1A', '#1A1430', '#2A1A0D',
-  '#16213E', '#1B1B2F', '#0F3460', '#2C1654',
-  '#1A0A14', '#0A1A14', '#1A1400', '#0A0A1A',
-  '#2D1B69', '#0A3060',
-  // Light-friendly additions:
-  '#F0E6FF', '#E6F0FF', '#E6FFE6', '#FFE6E6',
-  '#FFF0E6', '#E6FFFF', '#FFFCE6', '#F5E6FF',
-  '#EEF2FF', '#FFF8F0',
+const SHARE_BG_COLORS_DARK = [
+  '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D', '#0D2A2A', '#1A1A1A',
+  '#1A1430', '#2A1A0D', '#16213E', '#1B1B2F', '#0F3460', '#2C1654',
+  '#1A0A14', '#0A1A14', '#1A1400', '#0A0A1A', '#2D1B69', '#0A3060',
+];
+const SHARE_BG_COLORS_LIGHT = [
+  '#F0E6FF', '#E6F0FF', '#E6FFE6', '#FFE6E6', '#FFF0E6', '#E6FFFF',
+  '#FFFCE6', '#F5E6FF', '#EEF2FF', '#FFF8F0',
 ];
 
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const systemScheme = useColorScheme();
+  const colorMode = useThemeStore(s => s.colorMode);
+  const effectiveMode = colorMode === 'system' ? (systemScheme ?? 'dark') : colorMode;
+  const shareBgColors = effectiveMode === 'light' ? SHARE_BG_COLORS_LIGHT : SHARE_BG_COLORS_DARK;
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
   const { earnedBadges } = useBadgeStore();
   const shareCardRef = useRef<View>(null);
 
   const [features, setFeatures] = useState<SelectedFeature[]>([]);
-  const [bgColor, setBgColor] = useState(SHARE_BG_COLORS[0]);
+  const [bgColor, setBgColor] = useState(SHARE_BG_COLORS_DARK[0]);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
@@ -338,7 +340,7 @@ export default function ProfileScreen() {
           {/* Color picker */}
           <Text style={styles.pickerSublabel}>Background</Text>
           <View style={styles.colorRow}>
-            {SHARE_BG_COLORS.map(c => (
+            {shareBgColors.map(c => (
               <TouchableOpacity
                 key={c}
                 style={[styles.colorSwatch, { backgroundColor: c }, bgColor === c && styles.swatchSelected]}

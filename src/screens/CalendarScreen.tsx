@@ -198,7 +198,7 @@ export default function CalendarScreen() {
           <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
             <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.monthTitle}>{getMonthName(month)} {year}</Text>
+          <Text style={[styles.monthTitle, { color: Colors.textPrimary }]}>{getMonthName(month)} {year}</Text>
           <TouchableOpacity onPress={nextMonth} style={styles.arrow}>
             <Ionicons name="chevron-forward" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -215,7 +215,7 @@ export default function CalendarScreen() {
         <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
           <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.monthTitle}>{getMonthName(month)} {year}</Text>
+        <Text style={[styles.monthTitle, { color: Colors.textPrimary }]}>{getMonthName(month)} {year}</Text>
         <TouchableOpacity onPress={nextMonth} style={styles.arrow}>
           <Ionicons name="chevron-forward" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -223,7 +223,7 @@ export default function CalendarScreen() {
 
       {/* Fixed DOW labels */}
       <View style={styles.dowRow}>
-        {DOW_SHORT.map(d => <Text key={d} style={styles.dowLabel}>{d}</Text>)}
+        {DOW_SHORT.map(d => <Text key={d} style={[styles.dowLabel, { color: Colors.textSecondary }]}>{d}</Text>)}
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -242,16 +242,20 @@ export default function CalendarScreen() {
             return (
               <TouchableOpacity
                 key={dateStr}
-                style={[styles.cell, isToday && styles.cellToday, isPerfect && styles.cellPerfect]}
+                style={[
+                  styles.cell,
+                  isToday && [styles.cellToday, { backgroundColor: Colors.accentDim + '55' }],
+                  isPerfect && [styles.cellPerfect, { backgroundColor: Colors.success + '18' }],
+                ]}
                 onPress={() => isInteractive ? setSelectedDay(dateStr) : null}
                 disabled={!isInteractive}
                 activeOpacity={0.7}
               >
                 <Text style={[
                   styles.dayNum,
-                  isToday && styles.dayNumToday,
-                  isFuture && styles.dayNumFuture,
                   { color: Colors.textPrimary },
+                  isToday && [styles.dayNumToday, { color: Colors.accentBright }],
+                  isFuture && [styles.dayNumFuture, { color: Colors.textDisabled }],
                 ]}>
                   {parseInt(dateStr.split('-')[2])}
                 </Text>
@@ -263,7 +267,7 @@ export default function CalendarScreen() {
                     <View style={[styles.dot, { backgroundColor: Colors.textDisabled }]} />
                   )}
                   {hasJournal && (
-                    <View style={[styles.dot, styles.journalDot]} />
+                    <View style={[styles.dot, styles.journalDot, { backgroundColor: Colors.accentBright, borderColor: Colors.bg0 }]} />
                   )}
                 </View>
               </TouchableOpacity>
@@ -273,17 +277,17 @@ export default function CalendarScreen() {
 
         {/* ── Stats section ── */}
         <View style={styles.statsSection}>
-          <Text style={styles.statsTitle}>Month Stats</Text>
+          <Text style={[styles.statsTitle, { color: Colors.textSecondary }]}>Month Stats</Text>
 
           {/* Progress bar */}
           <View style={[styles.progressCard, { backgroundColor: Colors.bg1 }]}>
             <View style={styles.progressHeader}>
-              <Text style={styles.progressText}>{loggedDayCount} / {elapsedDays} days logged</Text>
+              <Text style={[styles.progressText, { color: Colors.textPrimary }]}>{loggedDayCount} / {elapsedDays} days logged</Text>
               <Text style={[styles.progressPct, { color: completionPct >= 80 ? Colors.success : completionPct >= 50 ? Colors.warning : Colors.textSecondary }]}>
                 {completionPct}%
               </Text>
             </View>
-            <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarBg, { backgroundColor: Colors.bg3 }]}>
               <View style={[styles.progressBarFill, {
                 width: `${completionPct}%` as any,
                 backgroundColor: completionPct >= 80 ? Colors.success : completionPct >= 50 ? Colors.warning : Colors.accent,
@@ -330,6 +334,15 @@ export default function CalendarScreen() {
                 sub={`wk of ${bestWeek.label}`}
               />
             )}
+            {insights.length > 0 && (
+              <StatCard
+                icon="bulb-outline"
+                iconColor={Colors.warning}
+                label="Insight"
+                value={`${insights.length}`}
+                sub={insights[0].length > 38 ? insights[0].slice(0, 38) + '…' : insights[0]}
+              />
+            )}
             {longestGap !== null && (
               <StatCard
                 icon="time"
@@ -341,31 +354,15 @@ export default function CalendarScreen() {
             )}
           </View>
 
-          {/* Insights */}
-          {insights.length > 0 && (
-            <View style={[styles.insightsCard, { backgroundColor: Colors.bg1 }]}>
-              <View style={styles.insightsHeader}>
-                <Ionicons name="bulb-outline" size={16} color={Colors.warning} />
-                <Text style={styles.insightsTitle}>Insights</Text>
-              </View>
-              {insights.map((msg, i) => (
-                <View key={i} style={styles.insightRow}>
-                  <View style={styles.insightDot} />
-                  <Text style={styles.insightText}>{msg}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
           {/* Goal legend */}
           {activeGoals.length > 0 && (
             <View style={[styles.legendCard, { backgroundColor: Colors.bg1 }]}>
-              <Text style={styles.legendTitle}>Goals</Text>
+              <Text style={[styles.legendTitle, { color: Colors.textSecondary }]}>Goals</Text>
               <View style={styles.legendRow}>
                 {activeGoals.map(g => (
                   <View key={g.id} style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: g.color }]} />
-                    <Text style={styles.legendLabel} numberOfLines={1}>{g.name}</Text>
+                    <Text style={[styles.legendLabel, { color: Colors.textPrimary }]} numberOfLines={1}>{g.name}</Text>
                   </View>
                 ))}
               </View>
@@ -383,8 +380,8 @@ export default function CalendarScreen() {
         />
         <View style={styles.centeredModalWrap}>
           <View style={[styles.centeredModal, { backgroundColor: Colors.bg1 }]}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetDate}>
+            <View style={[styles.sheetHandle, { backgroundColor: Colors.bg3 }]} />
+            <Text style={[styles.sheetDate, { color: Colors.textPrimary }]}>
               {selectedDay ? formatDisplayDate(selectedDay) : ''}
             </Text>
             <ScrollView
@@ -403,16 +400,16 @@ export default function CalendarScreen() {
                   ? `${group.totalCount.toLocaleString()} / ${g.targetCount?.toLocaleString() ?? '?'} ${g.unit ?? ''}`
                   : null;
                 return (
-                  <View key={group.goalId} style={styles.logRow}>
+                  <View key={group.goalId} style={[styles.logRow, { backgroundColor: Colors.bg2 }]}>
                     <View style={[styles.logIconWrap, { backgroundColor: (g?.color ?? Colors.accent) + '22' }]}>
                       <Ionicons name={(g?.icon ?? 'flag') as any} size={18} color={g?.color ?? Colors.accent} />
                     </View>
                     <View style={styles.logInfo}>
-                      <Text style={styles.logGoalName}>{nameLabel}</Text>
-                      {subLabel ? <Text style={styles.logNote}>{subLabel}</Text> : null}
+                      <Text style={[styles.logGoalName, { color: Colors.textPrimary }]}>{nameLabel}</Text>
+                      {subLabel ? <Text style={[styles.logNote, { color: Colors.textSecondary }]}>{subLabel}</Text> : null}
                     </View>
-                    <View style={styles.logXPBadge}>
-                      <Text style={styles.logXP}>+{Math.round(group.totalXP)} XP</Text>
+                    <View style={[styles.logXPBadge, { backgroundColor: Colors.accentDim }]}>
+                      <Text style={[styles.logXP, { color: Colors.accentBright }]}>+{Math.round(group.totalXP)} XP</Text>
                     </View>
                   </View>
                 );
@@ -421,7 +418,7 @@ export default function CalendarScreen() {
               {/* Journal entry section */}
               {selectedDayJournal && (
                 <TouchableOpacity
-                  style={styles.journalSection}
+                  style={[styles.journalSection, { backgroundColor: Colors.bg2, borderColor: Colors.accentDim }]}
                   activeOpacity={0.8}
                   onPress={() => {
                     setSelectedDay(null);
@@ -430,7 +427,7 @@ export default function CalendarScreen() {
                 >
                   <View style={styles.journalSectionHeader}>
                     <Ionicons name="journal-outline" size={14} color={Colors.accentBright} />
-                    <Text style={styles.journalSectionTitle}>Journal Entry</Text>
+                    <Text style={[styles.journalSectionTitle, { color: Colors.accentBright }]}>Journal Entry</Text>
                     <Ionicons name="chevron-forward" size={14} color={Colors.textDisabled} />
                   </View>
                   <View style={styles.journalSectionBody}>
@@ -445,28 +442,28 @@ export default function CalendarScreen() {
                             key={v}
                             style={[
                               styles.journalEnergyBar,
-                              { height: [4, 7, 10, 13, 16][v - 1] },
-                              v <= selectedDayJournal.energy && styles.journalEnergyBarActive,
+                              { height: [4, 7, 10, 13, 16][v - 1], backgroundColor: Colors.bg3 },
+                              v <= selectedDayJournal.energy && [styles.journalEnergyBarActive, { backgroundColor: Colors.success }],
                             ]}
                           />
                         ))}
                       </View>
-                      <Text style={styles.journalEnergyLabel}>{selectedDayJournal.energy}/5</Text>
+                      <Text style={[styles.journalEnergyLabel, { color: Colors.textSecondary }]}>{selectedDayJournal.energy}/5</Text>
                     </View>
 
                     {/* Text excerpt + drawing thumbnail */}
                     <View style={styles.journalContentRow}>
                       {selectedDayJournal.textContent ? (
-                        <Text style={styles.journalExcerpt} numberOfLines={3}>
-                          {selectedDayJournal.textContent.startsWith('{"t":')
-                            ? (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
+                        <Text style={[styles.journalExcerpt, { color: Colors.textSecondary }]} numberOfLines={3}>
+                          {selectedDayJournal.textContent.startsWith('{"t":')?
+                            (() => { try { return JSON.parse(selectedDayJournal.textContent).t ?? ''; } catch { return selectedDayJournal.textContent; } })()
                             : selectedDayJournal.textContent}
                         </Text>
                       ) : (
-                        <Text style={styles.journalExcerptEmpty}>No text written.</Text>
+                        <Text style={[styles.journalExcerptEmpty, { color: Colors.textDisabled }]}>No text written.</Text>
                       )}
                       {selectedDayJournal.drawingData.length > 0 && (
-                        <View style={styles.journalThumb}>
+                        <View style={[styles.journalThumb, { backgroundColor: Colors.bg3 }]}>
                           <Svg width={THUMB_SIZE} height={THUMB_SIZE} viewBox="0 0 300 500">
                             {selectedDayJournal.drawingData.map((p: DrawingPath, i: number) => (
                               <SvgPath
@@ -500,9 +497,9 @@ function StatCard({ icon, iconColor, label, value, sub }: {
   return (
     <View style={[styles.statCard, { backgroundColor: Colors.bg1 }]}>
       <Ionicons name={icon as any} size={16} color={iconColor} />
-      <Text style={styles.statValue} numberOfLines={1}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statSub} numberOfLines={1}>{sub}</Text>
+      <Text style={[styles.statValue, { color: Colors.textPrimary }]} numberOfLines={1}>{value}</Text>
+      <Text style={[styles.statLabel, { color: Colors.textPrimary }]}>{label}</Text>
+      <Text style={[styles.statSub, { color: Colors.textSecondary }]} numberOfLines={1}>{sub}</Text>
     </View>
   );
 }
@@ -511,84 +508,77 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   arrow: { padding: Spacing.sm },
-  monthTitle: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },
+  monthTitle: { fontSize: FontSize.xl, fontWeight: '700' },
 
   dowRow: { flexDirection: 'row', paddingHorizontal: 0 },
-  dowLabel: { width: CELL_W, textAlign: 'center', color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', paddingBottom: Spacing.xs },
+  dowLabel: { width: CELL_W, textAlign: 'center', fontSize: FontSize.xs, fontWeight: '600', paddingBottom: Spacing.xs },
 
   scroll: { paddingBottom: Spacing.xxl },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { width: CELL_W, height: CELL_H, alignItems: 'center', paddingTop: Spacing.xs },
-  cellToday: { backgroundColor: Colors.accentDim + '55', borderRadius: Radius.sm },
-  cellPerfect: { backgroundColor: Colors.success + '18' },
+  cellToday: { borderRadius: Radius.sm },
+  cellPerfect: {},
   dayNum: { fontSize: FontSize.sm, fontWeight: '500', marginBottom: 4 },
-  dayNumToday: { color: Colors.accentBright, fontWeight: '800' },
-  dayNumFuture: { color: Colors.textDisabled },
+  dayNumToday: { fontWeight: '800' },
+  dayNumFuture: {},
   dots: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, justifyContent: 'center', maxWidth: CELL_W - 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
 
   // Stats section
   statsSection: { padding: Spacing.md, gap: Spacing.md },
-  statsTitle: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statsTitle: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
 
   progressCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
+  progressText: { fontSize: FontSize.md, fontWeight: '600' },
   progressPct: { fontSize: FontSize.lg, fontWeight: '800' },
-  progressBarBg: { height: 8, backgroundColor: Colors.bg3, borderRadius: 4, overflow: 'hidden' },
+  progressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden' },
   progressBarFill: { height: 8, borderRadius: 4 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1, borderColor: Colors.border },
-  statValue: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
-  statLabel: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: '600' },
-  statSub: { color: Colors.textSecondary, fontSize: FontSize.xs - 1 },
-
-  insightsCard: { borderRadius: Radius.lg, padding: Spacing.sm, gap: Spacing.xs, borderWidth: 1, borderColor: Colors.border },
-  insightsHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  insightsTitle: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
-  insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
-  insightDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.warning, marginTop: 5 },
-  insightText: { flex: 1, color: Colors.textSecondary, fontSize: FontSize.xs, lineHeight: 17 },
+  statValue: { fontSize: FontSize.lg, fontWeight: '800' },
+  statLabel: { fontSize: FontSize.xs, fontWeight: '600' },
+  statSub: { fontSize: FontSize.xs - 1 },
 
   legendCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
-  legendTitle: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  legendTitle: { fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendLabel: { color: Colors.textPrimary, fontSize: FontSize.sm },
+  legendLabel: { fontSize: FontSize.sm },
 
-  journalDot: { backgroundColor: Colors.accentBright, borderWidth: 1.5, borderColor: Colors.bg0 },
+  journalDot: { borderWidth: 1.5 },
 
   // Day modal
   centeredModalWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.lg },
   centeredModal: { borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', maxHeight: '75%', gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
   centeredModalScroll: { flexGrow: 0 },
   centeredModalContent: { gap: Spacing.md },
-  sheetHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
-  sheetDate: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
-  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  sheetDate: { fontSize: FontSize.lg, fontWeight: '700' },
+  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.md },
   logIconWrap: { width: 38, height: 38, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   logInfo: { flex: 1 },
-  logGoalName: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-  logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
-  logXPBadge: { backgroundColor: Colors.accentDim, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-  logXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700' },
+  logGoalName: { fontSize: FontSize.md, fontWeight: '600' },
+  logNote: { fontSize: FontSize.sm, marginTop: 2 },
+  logXPBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+  logXP: { fontSize: FontSize.sm, fontWeight: '700' },
 
   // Journal section in modal
-  journalSection: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.accentDim },
+  journalSection: { borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   journalSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  journalSectionTitle: { flex: 1, color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700' },
+  journalSectionTitle: { flex: 1, fontSize: FontSize.sm, fontWeight: '700' },
   journalSectionBody: { gap: Spacing.sm },
   journalMoodRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm },
   journalMoodEmoji: { fontSize: 22 },
   journalEnergyBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3 },
-  journalEnergyBar: { width: 6, borderRadius: 2, backgroundColor: Colors.bg3 },
-  journalEnergyBarActive: { backgroundColor: Colors.success },
-  journalEnergyLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  journalEnergyBar: { width: 6, borderRadius: 2 },
+  journalEnergyBarActive: {},
+  journalEnergyLabel: { fontSize: FontSize.xs },
   journalContentRow: { flexDirection: 'row', gap: Spacing.sm, alignItems: 'flex-start' },
-  journalExcerpt: { flex: 1, color: Colors.textSecondary, fontSize: FontSize.sm, lineHeight: 18 },
-  journalExcerptEmpty: { flex: 1, color: Colors.textDisabled, fontSize: FontSize.sm, fontStyle: 'italic' },
-  journalThumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: Radius.sm, backgroundColor: Colors.bg3, overflow: 'hidden' },
+  journalExcerpt: { flex: 1, fontSize: FontSize.sm, lineHeight: 18 },
+  journalExcerptEmpty: { flex: 1, fontSize: FontSize.sm, fontStyle: 'italic' },
+  journalThumb: { width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: Radius.sm, overflow: 'hidden' },
 });
