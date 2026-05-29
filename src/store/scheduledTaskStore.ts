@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getDb } from '../db/client';
 import type { ScheduledTask } from '../types';
+import { todayString } from '../utils/dateUtils';
 
 function uuid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -52,9 +53,8 @@ export const useScheduledTaskStore = create<ScheduledTaskStore>((set, get) => ({
   generateTodaysTasks: async () => {
     const { scheduledTasks } = get();
     if (scheduledTasks.length === 0) return;
-    const today = new Date();
-    const todayDow = today.getDay(); // 0=Sun
-    const todayStr = today.toISOString().slice(0, 10);
+    const todayStr = todayString(); // Use LOCAL date, not UTC
+    const todayDow = new Date().getDay(); // 0=Sun
     // Import todoStore dynamically to avoid circular dependency
     const { useTodoStore } = await import('./todoStore');
     const todos = useTodoStore.getState().todos;

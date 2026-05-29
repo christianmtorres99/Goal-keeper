@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,75 +59,77 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, sheetStyle]}>
-          <View style={styles.handle} />
-          <Text style={styles.title}>Scheduled Tasks</Text>
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-            {scheduledTasks.length === 0 && (
-              <Text style={styles.empty}>No scheduled tasks yet.</Text>
-            )}
-            {scheduledTasks.map(task => (
-              <View key={task.id} style={styles.taskRow}>
-                <View style={styles.taskInfo}>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.taskDays}>{task.daysOfWeek.map(d => DOW_FULL[d]).join(', ')}</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kavWrapper}
+      >
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.sheet, sheetStyle]}>
+            <View style={styles.handle} />
+            <Text style={styles.title}>Scheduled Tasks</Text>
+            <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+              {scheduledTasks.length === 0 && (
+                <Text style={styles.empty}>No scheduled tasks yet.</Text>
+              )}
+              {scheduledTasks.map(task => (
+                <View key={task.id} style={styles.taskRow}>
+                  <View style={styles.taskInfo}>
+                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    <Text style={styles.taskDays}>{task.daysOfWeek.map(d => DOW_FULL[d]).join(', ')}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => deleteScheduledTask(task.id)} hitSlop={8}>
+                    <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={() => deleteScheduledTask(task.id)} hitSlop={8}>
-                  <Ionicons name="trash-outline" size={18} color={Colors.danger} />
+              ))}
+            </ScrollView>
+            <View style={styles.divider} />
+            <Text style={styles.newLabel}>New Scheduled Task</Text>
+            <TextInput
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="e.g. Clean the kitchen"
+              placeholderTextColor={Colors.textDisabled}
+              maxLength={80}
+            />
+            <View style={styles.dowRow}>
+              {DOW_LABELS.map((label, d) => (
+                <TouchableOpacity
+                  key={d}
+                  style={[
+                    styles.dowPill,
+                    selectedDays.includes(d) && { backgroundColor: Colors.accent, borderColor: Colors.accent },
+                  ]}
+                  onPress={() => toggleDay(d)}
+                >
+                  <Text style={[styles.dowText, selectedDays.includes(d) && { color: '#fff' }]}>
+                    {label}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-          <View style={styles.divider} />
-          <Text style={styles.newLabel}>New Scheduled Task</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g. Clean the kitchen"
-            placeholderTextColor={Colors.textDisabled}
-            maxLength={80}
-          />
-          <View style={styles.dowRow}>
-            {DOW_LABELS.map((label, d) => (
-              <TouchableOpacity
-                key={d}
-                style={[
-                  styles.dowPill,
-                  selectedDays.includes(d) && { backgroundColor: Colors.accent, borderColor: Colors.accent },
-                ]}
-                onPress={() => toggleDay(d)}
-              >
-                <Text style={[styles.dowText, selectedDays.includes(d) && { color: '#fff' }]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TouchableOpacity
-            style={[
-              styles.addBtn,
-              { backgroundColor: Colors.accent, opacity: (!title.trim() || selectedDays.length === 0) ? 0.4 : 1 },
-            ]}
-            onPress={handleAdd}
-            disabled={!title.trim() || selectedDays.length === 0}
-          >
-            <Text style={styles.addBtnText}>Add Schedule</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </GestureDetector>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.addBtn,
+                { backgroundColor: Colors.accent, opacity: (!title.trim() || selectedDays.length === 0) ? 0.4 : 1 },
+              ]}
+              onPress={handleAdd}
+              disabled={!title.trim() || selectedDays.length === 0}
+            >
+              <Text style={styles.addBtnText}>Add Schedule</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </GestureDetector>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: OVERLAY_MID },
+  kavWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: Colors.bg1,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -32,6 +32,15 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
   const [dueTime, setDueTime] = useState('');
   const [subItemInputs, setSubItemInputs] = useState<string[]>(['']);
+
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(backdropOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+    } else {
+      backdropOpacity.setValue(0);
+    }
+  }, [visible]);
 
   const today = todayString();
   const tomorrow = (() => {
@@ -75,99 +84,106 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.modalSheet}>
-        <View style={styles.modalHandle} />
-        <Text style={styles.modalTitle}>New Task</Text>
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', opacity: backdropOpacity }]}
+        pointerEvents="none"
+      />
+      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.modalKAV}
+      >
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalTitle}>New Task</Text>
 
-        <TextInput
-          style={styles.titleInput}
-          placeholder="Task title"
-          placeholderTextColor={Colors.textDisabled}
-          value={title}
-          onChangeText={setTitle}
-          autoFocus
-          returnKeyType="done"
-        />
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Task title"
+            placeholderTextColor={Colors.textDisabled}
+            value={title}
+            onChangeText={setTitle}
+            autoFocus
+            returnKeyType="done"
+          />
 
-        {/* Due date quick buttons */}
-        <Text style={styles.fieldLabel}>Due Date</Text>
-        <View style={styles.dateBtnRow}>
-          {[
-            { label: 'Today', value: today },
-            { label: 'Tomorrow', value: tomorrow },
-          ].map(opt => (
-            <TouchableOpacity
-              key={opt.label}
-              style={[styles.dateBtn, dueDate === opt.value && styles.dateBtnActive]}
-              onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
-            >
-              <Text style={[styles.dateBtnText, dueDate === opt.value && styles.dateBtnTextActive]}>
-                {opt.label}
-              </Text>
+          {/* Due date quick buttons */}
+          <Text style={styles.fieldLabel}>Due Date</Text>
+          <View style={styles.dateBtnRow}>
+            {[
+              { label: 'Today', value: today },
+              { label: 'Tomorrow', value: tomorrow },
+            ].map(opt => (
+              <TouchableOpacity
+                key={opt.label}
+                style={[styles.dateBtn, dueDate === opt.value && styles.dateBtnActive]}
+                onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
+              >
+                <Text style={[styles.dateBtnText, dueDate === opt.value && styles.dateBtnTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {dueDate && dueDate !== today && dueDate !== tomorrow && (
+              <View style={[styles.dateBtn, styles.dateBtnActive]}>
+                <Text style={styles.dateBtnTextActive}>{dueDate}</Text>
+              </View>
+            )}
+            {dueDate && (
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setDueDate(undefined)}>
+                <Ionicons name="close-circle-outline" size={16} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Due time */}
+          <Text style={styles.fieldLabel}>Time (optional, HH:MM)</Text>
+          <TextInput
+            style={styles.timeInput}
+            placeholder="e.g. 09:30"
+            placeholderTextColor={Colors.textDisabled}
+            value={dueTime}
+            onChangeText={setDueTime}
+            keyboardType="numbers-and-punctuation"
+            maxLength={5}
+          />
+
+          {/* Sub-items */}
+          <Text style={styles.fieldLabel}>Sub-tasks</Text>
+          <ScrollView style={styles.subItemScroll} keyboardShouldPersistTaps="handled">
+            {subItemInputs.map((val, idx) => (
+              <View key={idx} style={styles.subItemRow}>
+                <Ionicons name="remove-circle-outline" size={18} color={Colors.danger} style={{ marginRight: 4 }} />
+                <TextInput
+                  style={styles.subItemInput}
+                  placeholder={`Sub-task ${idx + 1}`}
+                  placeholderTextColor={Colors.textDisabled}
+                  value={val}
+                  onChangeText={v => updateSubItem(idx, v)}
+                  returnKeyType="next"
+                  onSubmitEditing={addSubItemField}
+                />
+                {subItemInputs.length > 1 && (
+                  <TouchableOpacity onPress={() => removeSubItem(idx)} hitSlop={8}>
+                    <Ionicons name="close" size={16} color={Colors.textDisabled} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            ))}
+            <TouchableOpacity style={styles.addSubItemBtn} onPress={addSubItemField}>
+              <Ionicons name="add-circle-outline" size={16} color={Colors.textSecondary} />
+              <Text style={styles.addSubItemText}>Add sub-task</Text>
             </TouchableOpacity>
-          ))}
-          {dueDate && dueDate !== today && dueDate !== tomorrow && (
-            <View style={[styles.dateBtn, styles.dateBtnActive]}>
-              <Text style={styles.dateBtnTextActive}>{dueDate}</Text>
-            </View>
-          )}
-          {dueDate && (
-            <TouchableOpacity style={styles.dateBtn} onPress={() => setDueDate(undefined)}>
-              <Ionicons name="close-circle-outline" size={16} color={Colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
+          </ScrollView>
 
-        {/* Due time */}
-        <Text style={styles.fieldLabel}>Time (optional, HH:MM)</Text>
-        <TextInput
-          style={styles.timeInput}
-          placeholder="e.g. 09:30"
-          placeholderTextColor={Colors.textDisabled}
-          value={dueTime}
-          onChangeText={setDueTime}
-          keyboardType="numbers-and-punctuation"
-          maxLength={5}
-        />
-
-        {/* Sub-items */}
-        <Text style={styles.fieldLabel}>Sub-tasks</Text>
-        <ScrollView style={styles.subItemScroll} keyboardShouldPersistTaps="handled">
-          {subItemInputs.map((val, idx) => (
-            <View key={idx} style={styles.subItemRow}>
-              <Ionicons name="remove-circle-outline" size={18} color={Colors.danger} style={{ marginRight: 4 }} />
-              <TextInput
-                style={styles.subItemInput}
-                placeholder={`Sub-task ${idx + 1}`}
-                placeholderTextColor={Colors.textDisabled}
-                value={val}
-                onChangeText={v => updateSubItem(idx, v)}
-                returnKeyType="next"
-                onSubmitEditing={addSubItemField}
-              />
-              {subItemInputs.length > 1 && (
-                <TouchableOpacity onPress={() => removeSubItem(idx)} hitSlop={8}>
-                  <Ionicons name="close" size={16} color={Colors.textDisabled} />
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-          <TouchableOpacity style={styles.addSubItemBtn} onPress={addSubItemField}>
-            <Ionicons name="add-circle-outline" size={16} color={Colors.textSecondary} />
-            <Text style={styles.addSubItemText}>Add sub-task</Text>
+          <TouchableOpacity
+            style={[styles.saveBtn, !title.trim() && styles.saveBtnDisabled]}
+            onPress={handleSave}
+            disabled={!title.trim()}
+          >
+            <Text style={styles.saveBtnText}>Save Task</Text>
           </TouchableOpacity>
-        </ScrollView>
-
-        <TouchableOpacity
-          style={[styles.saveBtn, !title.trim() && styles.saveBtnDisabled]}
-          onPress={handleSave}
-          disabled={!title.trim()}
-        >
-          <Text style={styles.saveBtnText}>Save Task</Text>
-        </TouchableOpacity>
-      </View>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -211,7 +227,7 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
   const totalCount = todo.subItems.length;
 
   return (
-    <View style={[styles.todoCard, todo.completed && styles.todoCardDone]}>
+    <View style={[styles.todoCard, { backgroundColor: Colors.bg2 }, todo.completed && styles.todoCardDone]}>
       <View style={styles.todoRow}>
         {/* Checkbox */}
         <TouchableOpacity onPress={onComplete} hitSlop={8} disabled={todo.completed}>
@@ -305,7 +321,7 @@ export default function TodoSection() {
   }, [rescheduleTodo, tomorrow]);
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, { backgroundColor: Colors.bg1 }]}>
       {/* Header */}
       <View style={styles.sectionHeader}>
         <TouchableOpacity
@@ -314,7 +330,7 @@ export default function TodoSection() {
           activeOpacity={0.7}
         >
           <Ionicons name="checkbox-outline" size={18} color={Colors.accent} />
-          <Text style={styles.sectionTitle}>Today's Tasks</Text>
+          <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Today's Tasks</Text>
           {count > 0 && (
             <View style={styles.countBadge}>
               <Text style={styles.countBadgeText}>{count}</Text>
@@ -446,7 +462,6 @@ export default function TodoSection() {
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -466,7 +481,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sectionTitle: {
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: '600',
   },
@@ -511,7 +525,6 @@ const styles = StyleSheet.create({
 
   // TodoCard
   todoCard: {
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     borderWidth: 1,
@@ -579,15 +592,8 @@ const styles = StyleSheet.create({
   },
 
   // Add Todo Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
+  modalKAV: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   modalSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: Colors.bg1,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,

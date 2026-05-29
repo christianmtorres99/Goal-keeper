@@ -19,6 +19,7 @@ import { Colors } from './src/constants/theme';
 import { THEMES, LIGHT_THEMES } from './src/constants/themes';
 import { useThemeStore } from './src/store/themeStore';
 import { useScheduledTaskStore } from './src/store/scheduledTaskStore';
+import { useTodoStore } from './src/store/todoStore';
 import { ThemeProvider } from './src/context/ThemeContext';
 
 export default function App() {
@@ -45,8 +46,21 @@ export default function App() {
   useEffect(() => {
     async function bootstrap() {
       try {
-        setupNotificationHandler();
+        await setupNotificationHandler();
         await runMigrations();
+
+        // Daily reset: clear todos from previous days
+        const lastClear = await AsyncStorage.getItem('lastTodoClearDate');
+        const todayDateStr = (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        })();
+        if (lastClear !== todayDateStr) {
+          await useTodoStore.getState().clearExpiredTodos();
+          await AsyncStorage.setItem('lastTodoClearDate', todayDateStr);
+        }
+        await useTodoStore.getState().loadTodos();
+
         await useGoalStore.getState().loadGoals();
         await useLogStore.getState().loadLogs();
         await useBadgeStore.getState().loadBadges();
