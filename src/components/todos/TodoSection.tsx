@@ -336,11 +336,6 @@ export default function TodoSection() {
               <Text style={styles.countBadgeText}>{count}</Text>
             </View>
           )}
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={Colors.textSecondary}
-          />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -357,6 +352,14 @@ export default function TodoSection() {
           hitSlop={8}
         >
           <Ionicons name="add" size={20} color={Colors.accent} />
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setExpanded(v => !v)} hitSlop={8} style={styles.addTaskBtn}>
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={Colors.textSecondary}
+          />
         </TouchableOpacity>
       </View>
 

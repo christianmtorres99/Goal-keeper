@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -51,6 +50,85 @@ const PAPER_MARGIN = '#CC2222';
 const PAPER_TEXT = '#E8D9C0';
 const LINE_H = FontSize.md * 1.8;
 
+// ── Rich-text segment helpers (module-level) ──────────────────────────────────
+
+interface RichSeg {
+  text: string;
+  bold: boolean;
+  italic: boolean;
+  color: string;
+  size: number;
+}
+
+function mergeAdjacentSegs(segments: RichSeg[]): RichSeg[] {
+  const result: RichSeg[] = [];
+  for (const seg of segments) {
+    const last = result[result.length - 1];
+    if (last && last.bold === seg.bold && last.italic === seg.italic &&
+        last.color === seg.color && last.size === seg.size) {
+      result[result.length - 1] = { ...last, text: last.text + seg.text };
+    } else {
+      result.push(seg);
+    }
+  }
+  return result;
+}
+
+function insertTextIntoSegments(
+  segments: RichSeg[],
+  insertAt: number,
+  insertedText: string,
+  formats: { bold: boolean; italic: boolean; color: string; size: number }
+): RichSeg[] {
+  const newSeg: RichSeg = { text: insertedText, ...formats };
+  let pos = 0;
+  const result: RichSeg[] = [];
+  let inserted = false;
+  for (const seg of segments) {
+    const segEnd = pos + seg.text.length;
+    if (!inserted && insertAt <= segEnd) {
+      const splitAt = insertAt - pos;
+      const before = seg.text.slice(0, splitAt);
+      const after = seg.text.slice(splitAt);
+      if (before) result.push({ ...seg, text: before });
+      result.push(newSeg);
+      if (after) result.push({ ...seg, text: after });
+      inserted = true;
+    } else {
+      result.push(seg);
+    }
+    pos = segEnd;
+  }
+  if (!inserted) result.push(newSeg);
+  return mergeAdjacentSegs(result);
+}
+
+function deleteFromSegments(segments: RichSeg[], deleteStart: number, deleteCount: number): RichSeg[] {
+  const deleteEnd = deleteStart + deleteCount;
+  let pos = 0;
+  const result: RichSeg[] = [];
+  for (const seg of segments) {
+    const segStart = pos;
+    const segEnd = pos + seg.text.length;
+    if (segEnd <= deleteStart || segStart >= deleteEnd) {
+      result.push(seg);
+    } else {
+      const keepBefore = seg.text.slice(0, Math.max(0, deleteStart - segStart));
+      const keepAfter = seg.text.slice(Math.max(0, deleteEnd - segStart));
+      if (keepBefore) result.push({ ...seg, text: keepBefore });
+      if (keepAfter) result.push({ ...seg, text: keepAfter });
+    }
+    pos = segEnd;
+  }
+  return mergeAdjacentSegs(result.filter((s: RichSeg) => s.text.length > 0));
+}
+
+function segsToPlainText(segments: RichSeg[]): string {
+  return segments.map(s => s.text).join('');
+}
+
+// ── Legacy span types kept for backward-compat parse/serialize ────────────────
+
 export interface RichSpan {
   start: number;
   end: number;
@@ -60,58 +138,74 @@ export interface RichSpan {
   color?: string;
 }
 
-function parseContent(raw: string): { text: string; spans: RichSpan[] } {
+function parseContent(raw: string): { segs: RichSeg[] } {
+  const defaultSeg = (text: string): RichSeg => ({
+    text,
+    bold: false,
+    italic: false,
+    color: TEXT_COLORS[0],
+    size: FontSize.md,
+  });
+
   if (raw.startsWith('{"t":')) {
     try {
       const p = JSON.parse(raw);
-      return { text: p.t ?? '', spans: p.s ?? [] };
+      const text: string = p.t ?? '';
+      const spans: RichSpan[] = p.s ?? [];
+      if (spans.length === 0) {
+        return { segs: text ? [defaultSeg(text)] : [] };
+      }
+      // Convert span-based format to segment-based
+      const segs: RichSeg[] = [];
+      let i = 0;
+      while (i < text.length) {
+        const active = spans.filter(s => s.start <= i && s.end > i);
+        const span = active[0];
+        const nextBoundary = spans
+          .filter(s => s.start > i)
+          .reduce((m, s) => Math.min(m, s.start), text.length);
+        const endPos = span ? Math.min(span.end, nextBoundary) : nextBoundary;
+        segs.push({
+          text: text.slice(i, endPos),
+          bold: span?.bold ?? false,
+          italic: span?.italic ?? false,
+          size: span?.size ?? FontSize.md,
+          color: span?.color ?? TEXT_COLORS[0],
+        });
+        i = endPos;
+      }
+      return { segs: mergeAdjacentSegs(segs) };
     } catch { /* fall through */ }
   }
-  return { text: raw, spans: [] };
+  if (raw.startsWith('{"segs":')) {
+    try {
+      const p = JSON.parse(raw);
+      return { segs: p.segs ?? [] };
+    } catch { /* fall through */ }
+  }
+  return { segs: raw ? [defaultSeg(raw)] : [] };
 }
 
-function serializeContent(text: string, spans: RichSpan[]): string {
-  if (spans.length === 0) return text;
-  return JSON.stringify({ t: text, s: spans });
+function serializeContent(segs: RichSeg[]): string {
+  if (segs.length === 0) return '';
+  const text = segsToPlainText(segs);
+  const allDefault = segs.every(s =>
+    !s.bold && !s.italic && s.color === TEXT_COLORS[0] && s.size === FontSize.md
+  );
+  if (allDefault) return text;
+  return JSON.stringify({ segs });
 }
 
-function applySpan(spans: RichSpan[], newSpan: RichSpan): RichSpan[] {
-  // Remove overlapping spans of the same type, then add new span
-  return [...spans.filter(s => {
-    const overlaps = s.start < newSpan.end && s.end > newSpan.start;
-    if (!overlaps) return true;
-    return false; // remove overlapping spans (simplest approach)
-  }), newSpan].filter(s => s.start < s.end);
-}
-
-function shiftSpans(spans: RichSpan[], changeAt: number, delta: number): RichSpan[] {
-  return spans.map(s => {
-    if (delta > 0) {
-      return {
-        ...s,
-        start: s.start >= changeAt ? s.start + delta : s.start,
-        end:   s.end   >  changeAt ? s.end   + delta : s.end,
-      };
-    } else {
-      const delEnd = changeAt;
-      const delStart = changeAt + delta; // delta is negative, so delStart < delEnd
-      return {
-        ...s,
-        start: s.start >= delEnd ? s.start + delta : s.start <= delStart ? s.start : delStart,
-        end:   s.end   >= delEnd ? s.end   + delta : s.end   <= delStart ? s.end   : delStart,
-      };
-    }
-  }).filter(s => s.start < s.end);
-}
+// ── RichTextView ──────────────────────────────────────────────────────────────
 
 interface RichTextViewProps {
-  text: string;
-  spans: RichSpan[];
+  segs: RichSeg[];
   onPress: () => void;
 }
 
-function RichTextView({ text, spans, onPress }: RichTextViewProps) {
-  if (!text) {
+function RichTextView({ segs, onPress }: RichTextViewProps) {
+  const hasText = segs.some(s => s.text.length > 0);
+  if (!hasText) {
     return (
       <TouchableOpacity onPress={onPress} style={styles.richEmpty}>
         <Text style={styles.richPlaceholder}>Write your thoughts...</Text>
@@ -119,29 +213,10 @@ function RichTextView({ text, spans, onPress }: RichTextViewProps) {
     );
   }
 
-  // Build segments
-  const segments: { text: string; bold: boolean; italic: boolean; size: number; color: string }[] = [];
-  let i = 0;
-  while (i < text.length) {
-    const active = spans.filter(s => s.start <= i && s.end > i);
-    const span = active[0];
-    const endPos = span
-      ? Math.min(span.end, ...spans.filter(s => s.start > i).map(s => s.start).concat([text.length]))
-      : spans.filter(s => s.start > i).reduce((m, s) => Math.min(m, s.start), text.length);
-    segments.push({
-      text:   text.slice(i, endPos),
-      bold:   span?.bold ?? false,
-      italic: span?.italic ?? false,
-      size:   span?.size ?? FontSize.md,
-      color:  span?.color ?? PAPER_TEXT,
-    });
-    i = endPos;
-  }
-
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.richViewWrapper}>
       <Text style={styles.richViewBase}>
-        {segments.map((seg, idx) => (
+        {segs.map((seg, idx) => (
           <Text
             key={idx}
             style={{
@@ -160,49 +235,47 @@ function RichTextView({ text, spans, onPress }: RichTextViewProps) {
   );
 }
 
+// ── Main Screen ───────────────────────────────────────────────────────────────
+
 export default function JournalScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, 'Journal'>>();
-  const { entries, saveEntry, loadEntries } = useJournalStore();
+  const { entries, saveEntry } = useJournalStore();
 
   const activeDate = route.params?.date ?? todayString();
   const activeEntry = entries.find(e => e.entryDate === activeDate);
-  // keep 'today' alias for backwards compat in scope (stats calculations still use real today)
   const today = todayString();
   const todayEntry = activeEntry;
-  const initialContent = activeEntry ? parseContent(activeEntry.textContent) : { text: '', spans: [] as RichSpan[] };
+  const initialParsed = activeEntry ? parseContent(activeEntry.textContent) : { segs: [] as RichSeg[] };
 
   const [tab, setTab] = useState<Tab>('write');
   const [mood, setMood] = useState(todayEntry?.mood ?? 3);
   const [energy, setEnergy] = useState(todayEntry?.energy ?? 3);
-  const [text, setText] = useState(initialContent.text);
-  const [spans, setSpans] = useState<RichSpan[]>(initialContent.spans);
+  const [richSegments, setRichSegments] = useState<RichSeg[]>(initialParsed.segs);
+  const [rawText, setRawText] = useState(() => segsToPlainText(initialParsed.segs));
   const [drawingPaths, setDrawingPaths] = useState<DrawingPath[]>(todayEntry?.drawingData ?? []);
   const [penColor, setPenColor] = useState(PEN_COLORS[0].value);
   const [penSize, setPenSize] = useState(1);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [activeBold, setActiveBold] = useState(false);
   const [activeItalic, setActiveItalic] = useState(false);
   const [activeSizeIdx, setActiveSizeIdx] = useState(1);
   const [activeColor, setActiveColor] = useState(TEXT_COLORS[0]);
-  const [paperHeight, setPaperHeight] = useState(300);
 
   const textInputRef = useRef<TextInput>(null);
   const selectionRef = useRef({ start: 0, end: 0 });
-  const lastGoodSelectionRef = useRef({ start: 0, end: 0 });
   const isToolbarPressRef = useRef(false);
 
   const isDirty = useMemo(() => {
-    const originalText = initialContent.text;
+    const originalText = segsToPlainText(initialParsed.segs);
     return (
       mood !== (todayEntry?.mood ?? 3) ||
       energy !== (todayEntry?.energy ?? 3) ||
-      text !== originalText ||
+      rawText !== originalText ||
       drawingPaths.length !== (todayEntry?.drawingData.length ?? 0)
     );
-  }, [mood, energy, text, drawingPaths, todayEntry]);
+  }, [mood, energy, rawText, drawingPaths, todayEntry]);
 
   // Sync from store when entry loads
   useEffect(() => {
@@ -210,8 +283,8 @@ export default function JournalScreen() {
       const c = parseContent(todayEntry.textContent);
       setMood(todayEntry.mood);
       setEnergy(todayEntry.energy);
-      setText(c.text);
-      setSpans(c.spans);
+      setRichSegments(c.segs);
+      setRawText(segsToPlainText(c.segs));
       setDrawingPaths(todayEntry.drawingData);
     }
   }, [todayEntry?.id]);
@@ -228,19 +301,19 @@ export default function JournalScreen() {
           { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
           { text: 'Cancel', style: 'cancel' },
           { text: 'Save', onPress: async () => {
-            await saveEntry(activeDate, mood, energy, serializeContent(text, spans), drawingPaths);
+            await saveEntry(activeDate, mood, energy, serializeContent(richSegments), drawingPaths);
             navigation.dispatch(e.data.action);
           }},
         ]
       );
     });
     return unsubscribe;
-  }, [navigation, isDirty, mood, energy, text, spans, drawingPaths, saveEntry, activeDate]);
+  }, [navigation, isDirty, mood, energy, richSegments, drawingPaths, saveEntry, activeDate]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
     try {
-      await saveEntry(activeDate, mood, energy, serializeContent(text, spans), drawingPaths);
+      await saveEntry(activeDate, mood, energy, serializeContent(richSegments), drawingPaths);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch {
@@ -248,7 +321,7 @@ export default function JournalScreen() {
     } finally {
       setSaving(false);
     }
-  }, [activeDate, mood, energy, text, spans, drawingPaths, saveEntry, navigation]);
+  }, [activeDate, mood, energy, richSegments, drawingPaths, saveEntry, navigation]);
 
   const handleUndo = useCallback(() => setDrawingPaths(prev => prev.slice(0, -1)), []);
 
@@ -262,25 +335,36 @@ export default function JournalScreen() {
   const switchTab = async (newTab: Tab) => {
     if (newTab === tab) return;
     setIsEditing(false);
-    await saveEntry(activeDate, mood, energy, serializeContent(text, spans), drawingPaths);
+    await saveEntry(activeDate, mood, energy, serializeContent(richSegments), drawingPaths);
     setTab(newTab);
   };
 
+  // Toggle-mode text change handler
   const handleTextChange = useCallback((newText: string) => {
-    const delta = newText.length - text.length;
-    if (delta !== 0) {
-      setSpans(prev => shiftSpans(prev, selection.start, delta));
-    }
-    setText(newText);
-  }, [text, selection]);
+    const oldLen = rawText.length;
+    const newLen = newText.length;
+    const currentSize = SIZE_OPTIONS[activeSizeIdx]?.size ?? FontSize.md;
 
-  const applyFormat = useCallback((opts: Partial<Pick<RichSpan, 'bold' | 'italic' | 'size' | 'color'>>) => {
-    const { start, end } = lastGoodSelectionRef.current;
-    if (start === end) return; // nothing selected
-    const newSpan: RichSpan = { start, end, ...opts };
-    setSpans(prev => applySpan(prev, newSpan));
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, [selection]);
+    if (newLen > oldLen) {
+      const curPos = selectionRef.current.start;
+      const insertedLen = newLen - oldLen;
+      const insertStart = Math.max(0, curPos - insertedLen);
+      const insertedText = newText.slice(insertStart, insertStart + insertedLen);
+      const newSegs = insertTextIntoSegments(richSegments, insertStart, insertedText, {
+        bold: activeBold,
+        italic: activeItalic,
+        color: activeColor,
+        size: currentSize,
+      });
+      setRichSegments(newSegs);
+    } else if (newLen < oldLen) {
+      const curPos = selectionRef.current.start;
+      const deleteCount = oldLen - newLen;
+      const newSegs = deleteFromSegments(richSegments, curPos, deleteCount);
+      setRichSegments(newSegs);
+    }
+    setRawText(newText);
+  }, [rawText, richSegments, activeBold, activeItalic, activeColor, activeSizeIdx]);
 
   // Stats data
   const statsData = useMemo(() => {
@@ -303,8 +387,6 @@ export default function JournalScreen() {
 
     return { streak, recent, thisWeekMood: avg(thisWeekEntries, 'mood'), thisWeekEnergy: avg(thisWeekEntries, 'energy'), lastWeekMood: avg(lastWeekEntries, 'mood'), lastWeekEnergy: avg(lastWeekEntries, 'energy') };
   }, [entries, today]);
-
-  const numLines = Math.ceil(paperHeight / LINE_H) + 2;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['top', 'left', 'right']}>
@@ -333,45 +415,45 @@ export default function JournalScreen() {
       {/* Write tab */}
       {tab === 'write' && (
         <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
-          <ScrollView style={styles.flex} contentContainerStyle={styles.writeContent} keyboardShouldPersistTaps="handled">
-            <Text style={styles.dateLabel}>{formatDisplayDate(activeDate)}</Text>
+          <View style={styles.flex}>
+            {/* Journal header — mood, energy, date */}
+            <View style={styles.journalHeader}>
+              <Text style={styles.dateLabel}>{formatDisplayDate(activeDate)}</Text>
 
-            {/* Mood */}
-            <View style={styles.ratingSection}>
-              <Text style={styles.ratingLabel}>How are you feeling?</Text>
-              <View style={styles.emojiRow}>
-                {MOOD_EMOJIS.map((emoji, idx) => {
-                  const val = idx + 1;
-                  return (
-                    <TouchableOpacity key={idx} style={[styles.emojiBtn, mood === val && styles.emojiBtnActive]} onPress={() => setMood(val)}>
-                      <Text style={[styles.emoji, mood === val && styles.emojiSelected]}>{emoji}</Text>
+              {/* Mood */}
+              <View style={styles.ratingSection}>
+                <Text style={styles.ratingLabel}>How are you feeling?</Text>
+                <View style={styles.emojiRow}>
+                  {MOOD_EMOJIS.map((emoji, idx) => {
+                    const val = idx + 1;
+                    return (
+                      <TouchableOpacity key={idx} style={[styles.emojiBtn, mood === val && styles.emojiBtnActive]} onPress={() => setMood(val)}>
+                        <Text style={[styles.emoji, mood === val && styles.emojiSelected]}>{emoji}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Energy */}
+              <View style={styles.ratingSection}>
+                <Text style={styles.ratingLabel}>Energy level</Text>
+                <View style={styles.energyRow}>
+                  {[1, 2, 3, 4, 5].map(val => (
+                    <TouchableOpacity key={val} style={[styles.energyBar, val <= energy && styles.energyBarActive]} onPress={() => setEnergy(val)}>
+                      <View style={[styles.energyBarFill, { height: [6, 14, 21, 28, 35][val - 1] }, val <= energy && styles.energyBarFillActive]} />
                     </TouchableOpacity>
-                  );
-                })}
+                  ))}
+                  <Text style={styles.energyLabel}>{energy}/5</Text>
+                </View>
               </View>
             </View>
 
-            {/* Energy */}
-            <View style={styles.ratingSection}>
-              <Text style={styles.ratingLabel}>Energy level</Text>
-              <View style={styles.energyRow}>
-                {[1, 2, 3, 4, 5].map(val => (
-                  <TouchableOpacity key={val} style={[styles.energyBar, val <= energy && styles.energyBarActive]} onPress={() => setEnergy(val)}>
-                    <View style={[styles.energyBarFill, { height: [8, 17, 26, 35, 44][val - 1] }, val <= energy && styles.energyBarFillActive]} />
-                  </TouchableOpacity>
-                ))}
-                <Text style={styles.energyLabel}>{energy}/5</Text>
-              </View>
-            </View>
-
-            {/* Paper text area */}
-            <View
-              style={styles.paperWrapper}
-              onLayout={e => setPaperHeight(e.nativeEvent.layout.height)}
-            >
-              {/* Paper lines (absolute behind text) */}
+            {/* Paper — fills remaining space */}
+            <View style={styles.paperWrapper}>
+              {/* Paper lines */}
               <View style={StyleSheet.absoluteFill} pointerEvents="none">
-                {Array.from({ length: numLines }, (_, i) => (
+                {Array.from({ length: 40 }, (_, i) => (
                   <View key={i} style={[styles.paperLine, { top: Spacing.md + (i + 1) * LINE_H }]} />
                 ))}
                 <View style={styles.paperMarginLine} />
@@ -381,15 +463,11 @@ export default function JournalScreen() {
                 <TextInput
                   ref={textInputRef}
                   style={styles.paperInput}
-                  value={text}
+                  value={rawText}
                   onChangeText={handleTextChange}
                   onSelectionChange={e => {
                     const sel = e.nativeEvent.selection;
-                    setSelection(sel);
                     selectionRef.current = sel;
-                    if (sel.start !== sel.end) {
-                      lastGoodSelectionRef.current = sel;
-                    }
                   }}
                   onBlur={() => {
                     setTimeout(() => {
@@ -404,55 +482,54 @@ export default function JournalScreen() {
                 />
               ) : (
                 <RichTextView
-                  text={text}
-                  spans={spans}
+                  segs={richSegments}
                   onPress={() => { setIsEditing(true); setTimeout(() => textInputRef.current?.focus(), 50); }}
                 />
               )}
             </View>
+          </View>
 
-            {/* Formatting toolbar */}
-            <View style={styles.formatToolbar}>
+          {/* Formatting toolbar — pinned at bottom */}
+          <View style={styles.formatToolbar}>
+            <TouchableOpacity
+              style={[styles.formatBtn, activeBold && styles.formatBtnActive]}
+              onPressIn={() => { isToolbarPressRef.current = true; }}
+              onPress={() => { setActiveBold(v => !v); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Text style={[styles.formatBtnText, activeBold && styles.formatBtnTextActive]}>B</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.formatBtn, activeItalic && styles.formatBtnActive]}
+              onPressIn={() => { isToolbarPressRef.current = true; }}
+              onPress={() => { setActiveItalic(v => !v); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+            >
+              <Text style={[styles.formatBtnText, styles.italicText, activeItalic && styles.formatBtnTextActive]}>I</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            {SIZE_OPTIONS.map((opt, idx) => (
               <TouchableOpacity
-                style={[styles.formatBtn, activeBold && styles.formatBtnActive]}
+                key={opt.label}
+                style={[styles.formatBtn, activeSizeIdx === idx && styles.formatBtnActive]}
                 onPressIn={() => { isToolbarPressRef.current = true; }}
-                onPress={() => { setActiveBold(!activeBold); applyFormat({ bold: !activeBold }); setIsEditing(false); }}
+                onPress={() => { setActiveSizeIdx(idx); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
               >
-                <Text style={[styles.formatBtnText, activeBold && styles.formatBtnTextActive]}>B</Text>
+                <Text style={[styles.formatBtnText, activeSizeIdx === idx && styles.formatBtnTextActive]}>{opt.label}</Text>
               </TouchableOpacity>
+            ))}
+
+            <View style={styles.divider} />
+
+            {TEXT_COLORS.map(c => (
               <TouchableOpacity
-                style={[styles.formatBtn, activeItalic && styles.formatBtnActive]}
+                key={c}
+                style={[styles.colorDot, { backgroundColor: c }, activeColor === c && styles.colorDotActive]}
                 onPressIn={() => { isToolbarPressRef.current = true; }}
-                onPress={() => { setActiveItalic(!activeItalic); applyFormat({ italic: !activeItalic }); setIsEditing(false); }}
-              >
-                <Text style={[styles.formatBtnText, styles.italicText, activeItalic && styles.formatBtnTextActive]}>I</Text>
-              </TouchableOpacity>
-
-              <View style={styles.divider} />
-
-              {SIZE_OPTIONS.map((opt, idx) => (
-                <TouchableOpacity
-                  key={opt.label}
-                  style={[styles.formatBtn, activeSizeIdx === idx && styles.formatBtnActive]}
-                  onPressIn={() => { isToolbarPressRef.current = true; }}
-                  onPress={() => { setActiveSizeIdx(idx); applyFormat({ size: opt.size }); setIsEditing(false); }}
-                >
-                  <Text style={[styles.formatBtnText, activeSizeIdx === idx && styles.formatBtnTextActive]}>{opt.label}</Text>
-                </TouchableOpacity>
-              ))}
-
-              <View style={styles.divider} />
-
-              {TEXT_COLORS.map(c => (
-                <TouchableOpacity
-                  key={c}
-                  style={[styles.colorDot, { backgroundColor: c }, activeColor === c && styles.colorDotActive]}
-                  onPressIn={() => { isToolbarPressRef.current = true; }}
-                  onPress={() => { setActiveColor(c); applyFormat({ color: c }); setIsEditing(false); }}
-                />
-              ))}
-            </View>
-          </ScrollView>
+                onPress={() => { setActiveColor(c); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+              />
+            ))}
+          </View>
         </KeyboardAvoidingView>
       )}
 
@@ -560,43 +637,52 @@ const styles = StyleSheet.create({
   tabText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '500' },
   tabTextActive: { color: Colors.accentBright, fontWeight: '700' },
 
-  writeContent: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
+  // Journal header (mood/energy/date) — centered
+  journalHeader: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.sm,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
   dateLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
-  ratingSection: { gap: Spacing.sm },
-  ratingLabel: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-  emojiRow: { flexDirection: 'row', gap: Spacing.sm },
-  emojiBtn: { flex: 1, alignItems: 'center', padding: Spacing.sm, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg1 },
+  ratingSection: { gap: Spacing.xs, width: '100%' },
+  ratingLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
+  emojiRow: { flexDirection: 'row', gap: Spacing.xs, justifyContent: 'center' },
+  emojiBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg1 },
   emojiBtnActive: { borderColor: Colors.accent, backgroundColor: Colors.accentDim },
-  emoji: { fontSize: 24 },
-  emojiSelected: { fontSize: 30 },
+  emoji: { fontSize: 20 },
+  emojiSelected: { fontSize: 22 },
 
-  energyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm },
-  energyBar: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: 44, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg1, overflow: 'hidden' },
+  energyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm, justifyContent: 'center' },
+  energyBar: { width: 34, alignItems: 'center', justifyContent: 'flex-end', height: 35, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.bg1, overflow: 'hidden' },
   energyBarActive: { borderColor: Colors.accent },
   energyBarFill: { width: '100%', backgroundColor: Colors.bg3, borderRadius: Radius.sm },
   energyBarFillActive: { backgroundColor: Colors.accent },
   energyLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, minWidth: 24 },
 
-  // Paper text area
+  // Paper text area — fills remaining space
   paperWrapper: {
+    flex: 1,
     backgroundColor: PAPER_BG,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: '#1E1E1E',
-    minHeight: 240,
     overflow: 'hidden',
   },
   paperLine: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: PAPER_LINE },
   paperMarginLine: { position: 'absolute', top: 0, bottom: 0, left: 44, width: 1.5, backgroundColor: PAPER_MARGIN },
   paperInput: {
+    flex: 1,
     color: PAPER_TEXT,
     fontSize: FontSize.md,
     lineHeight: LINE_H,
     padding: Spacing.md,
     paddingLeft: Spacing.md + 44 - 8,
-    minHeight: 240,
     textAlignVertical: 'top',
     backgroundColor: 'transparent',
+  },
+  richViewWrapper: {
+    flex: 1,
   },
   richViewBase: {
     color: PAPER_TEXT,
@@ -604,25 +690,23 @@ const styles = StyleSheet.create({
     lineHeight: LINE_H,
     padding: Spacing.md,
     paddingLeft: Spacing.md + 44 - 8,
-    minHeight: 240,
   },
-  richEmpty: { padding: Spacing.md, paddingLeft: Spacing.md + 44 - 8, minHeight: 240, justifyContent: 'flex-start' },
+  richEmpty: { padding: Spacing.md, paddingLeft: Spacing.md + 44 - 8, flex: 1, justifyContent: 'flex-start' },
   richPlaceholder: { color: '#4A4A4A', fontSize: FontSize.md },
 
-  // Formatting toolbar
+  // Formatting toolbar — pinned at bottom
   formatToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: Spacing.xs,
     backgroundColor: Colors.bg1,
-    borderRadius: Radius.lg,
     padding: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   formatBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.sm, backgroundColor: Colors.bg2 },
-  formatBtnActive: { backgroundColor: Colors.accentDim },
+  formatBtnActive: { backgroundColor: Colors.accentDim, borderWidth: 1, borderColor: Colors.accent },
   formatBtnText: { color: Colors.textSecondary, fontWeight: '700', fontSize: FontSize.sm },
   formatBtnTextActive: { color: Colors.accentBright },
   italicText: { fontStyle: 'italic' },
