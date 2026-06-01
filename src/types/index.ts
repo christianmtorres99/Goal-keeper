@@ -43,7 +43,7 @@ export interface StreakInfo {
   graceDayRefillDate: string | null;
 }
 
-export type BadgeCategory = 'streak' | 'logs' | 'level' | 'consistency' | 'cycle';
+export type BadgeCategory = 'streak' | 'logs' | 'level' | 'consistency' | 'cycle' | 'todos' | 'journal' | 'time';
 export type BadgeRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
 export interface BadgeDefinition {

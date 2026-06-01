@@ -9,9 +9,12 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'streak_14',  category: 'streak', rarity: 'uncommon',  label: 'Two Week Titan',   description: '14-day streak',                       icon: 'fitness',          threshold: 14 },
   { id: 'streak_21',  category: 'streak', rarity: 'rare',      label: 'Habit Forged',     description: '21-day streak — the habit is real',   icon: 'body',             threshold: 21 },
   { id: 'streak_30',  category: 'streak', rarity: 'rare',      label: 'Month Master',     description: '30-day streak',                       icon: 'moon',             threshold: 30 },
+  { id: 'streak_45',  category: 'streak', rarity: 'rare',      label: 'Unstoppable',      description: '45-day streak',                       icon: 'shield-checkmark', threshold: 45 },
   { id: 'streak_60',  category: 'streak', rarity: 'legendary', label: 'Iron Will',        description: '60-day streak',                       icon: 'shield',           threshold: 60 },
   { id: 'streak_90',  category: 'streak', rarity: 'legendary', label: 'Quarter Legend',   description: '90-day streak',                       icon: 'medal',            threshold: 90 },
+  { id: 'streak_120', category: 'streak', rarity: 'legendary', label: 'Storm Chaser',     description: '120-day streak',                      icon: 'thunderstorm',     threshold: 120 },
   { id: 'streak_180', category: 'streak', rarity: 'legendary', label: 'Half Year Hero',   description: '180-day streak',                      icon: 'star',             threshold: 180 },
+  { id: 'streak_240', category: 'streak', rarity: 'legendary', label: 'Eternal Flame',    description: '240-day streak',                      icon: 'infinite',         threshold: 240 },
   { id: 'streak_365', category: 'streak', rarity: 'legendary', label: 'Year God',         description: '365-day streak',                      icon: 'trophy',           threshold: 365 },
 
   // Log count badges
@@ -34,6 +37,21 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'cycle_1', category: 'cycle', rarity: 'common',   label: 'First Finish',    description: 'Complete a milestone goal',           icon: 'checkmark-done', threshold: 1 },
   { id: 'cycle_3', category: 'cycle', rarity: 'uncommon', label: 'Hat Trick',       description: 'Complete 3 cycles of a milestone',   icon: 'repeat',         threshold: 3 },
   { id: 'cycle_5', category: 'cycle', rarity: 'rare',     label: 'Serial Achiever', description: 'Complete 5 cycles of a milestone',   icon: 'rocket',         threshold: 5 },
+
+  // Todo completion badges
+  { id: 'todos_10',  category: 'todos', rarity: 'common',    label: 'Task Starter',  description: 'Complete 10 tasks',  icon: 'checkmark-circle-outline', threshold: 10 },
+  { id: 'todos_50',  category: 'todos', rarity: 'uncommon',  label: 'Productive',    description: 'Complete 50 tasks',  icon: 'list-circle',              threshold: 50 },
+  { id: 'todos_100', category: 'todos', rarity: 'rare',      label: 'Task Master',   description: 'Complete 100 tasks', icon: 'trophy',                   threshold: 100 },
+  { id: 'todos_250', category: 'todos', rarity: 'legendary', label: 'Todo Legend',   description: 'Complete 250 tasks', icon: 'skull',                    threshold: 250 },
+
+  // Journal streak badges
+  { id: 'journal_3',  category: 'journal', rarity: 'common',   label: 'Reflective',    description: 'Journal 3 days in a row',  icon: 'book-outline',    threshold: 3 },
+  { id: 'journal_7',  category: 'journal', rarity: 'uncommon', label: 'Soul Writer',   description: 'Journal 7 days in a row',  icon: 'journal-outline', threshold: 7 },
+  { id: 'journal_30', category: 'journal', rarity: 'rare',     label: 'Inner Scholar', description: 'Journal 30 days in a row', icon: 'library-outline', threshold: 30 },
+
+  // Time-of-day habit badges
+  { id: 'early_bird', category: 'time', rarity: 'uncommon', label: 'Early Bird', description: 'Log a goal before 8am', icon: 'sunny-outline', threshold: 0 },
+  { id: 'night_owl',  category: 'time', rarity: 'uncommon', label: 'Night Owl',  description: 'Log a goal after 10pm', icon: 'moon-outline',  threshold: 0 },
 
   // Level badges
   { id: 'level_1',  category: 'level', rarity: 'common',    label: 'Awakened',     description: 'Reach Level 1',  icon: 'sparkles',        threshold: 1 },
@@ -62,8 +80,8 @@ export const RARITY_LABELS: Record<string, string> = {
 };
 
 export const RARITY_BG: Record<string, string> = {
-  common:    Colors.bg3,
-  uncommon:  '#052E16',
-  rare:      '#1E1B4B',
-  legendary: '#431407',
+  common:    'rgba(107, 114, 128, 0.15)',
+  uncommon:  'rgba(5, 46, 22, 0.4)',
+  rare:      'rgba(99, 102, 241, 0.18)',
+  legendary: 'rgba(251, 191, 36, 0.15)',
 };

@@ -20,6 +20,12 @@ interface BadgeStore {
     isPerfectMonth?: boolean;
     isComeback?: boolean;
     isNewBest?: boolean;
+    logHour?: number;
+  }) => Promise<BadgeDefinition[]>;
+  checkAndAwardGlobal: (params: {
+    totalTodosCompleted?: number;
+    journalStreak?: number;
+    logHour?: number;
   }) => Promise<BadgeDefinition[]>;
   getBadgesForGoal: (goalId: string) => EarnedBadge[];
 }
@@ -49,7 +55,9 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
       const newEarned: EarnedBadge[] = newBadgeDefs.map(def => ({
         id: uuid(),
         badgeId: def.id,
-        goalId: def.category === 'level' || def.category === 'consistency' ? null : params.goalId,
+        goalId: (def.category === 'level' || def.category === 'consistency'
+          || def.category === 'todos' || def.category === 'journal' || def.category === 'time')
+          ? null : params.goalId,
         earnedAt: now,
       }));
 
@@ -73,6 +81,50 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
     } catch (e) {
       console.error('checkAndAward failed:', e);
       throw e;
+    }
+  },
+
+  checkAndAwardGlobal: async (params) => {
+    try {
+      const { earnedBadges } = get();
+      const newBadgeDefs = checkBadges({
+        goalId: 'global',
+        currentStreak: 0,
+        totalLogs: 0,
+        playerLevel: 0,
+        earnedBadges,
+        ...params,
+      });
+      if (newBadgeDefs.length === 0) return [];
+
+      const db = await getDb();
+      const now = new Date().toISOString();
+      const newEarned: EarnedBadge[] = newBadgeDefs.map(def => ({
+        id: Math.random().toString(36).slice(2) + Date.now().toString(36),
+        badgeId: def.id,
+        goalId: null,
+        earnedAt: now,
+      }));
+
+      const alreadyInDb = await db.getAllAsync<{ badge_id: string }>(
+        `SELECT badge_id FROM earned_badges WHERE badge_id IN (${newBadgeDefs.map(() => '?').join(',')})`,
+        newBadgeDefs.map(d => d.id),
+      );
+      const alreadyEarnedInDb = new Set(alreadyInDb.map(r => r.badge_id));
+      const badgesToInsert = newEarned.filter(b => !alreadyEarnedInDb.has(b.badgeId));
+
+      for (const badge of badgesToInsert) {
+        await db.runAsync(
+          'INSERT OR IGNORE INTO earned_badges (id, badge_id, goal_id, earned_at) VALUES (?,?,?,?)',
+          [badge.id, badge.badgeId, badge.goalId, badge.earnedAt],
+        );
+      }
+
+      set(s => ({ earnedBadges: [...s.earnedBadges, ...badgesToInsert] }));
+      return newBadgeDefs;
+    } catch (e) {
+      console.error('checkAndAwardGlobal failed:', e);
+      return [];
     }
   },
 

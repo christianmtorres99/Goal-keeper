@@ -15,6 +15,9 @@ export function checkBadges(params: {
   isPerfectMonth?: boolean;
   isComeback?: boolean;
   isNewBest?: boolean;
+  totalTodosCompleted?: number;
+  journalStreak?: number;
+  logHour?: number;
 }): BadgeDefinition[] {
   const {
     goalId, currentStreak, totalLogs, playerLevel, cycleCount = 0,
@@ -31,7 +34,9 @@ export function checkBadges(params: {
   return BADGE_DEFINITIONS.filter(def => {
     // Global categories use the full earned set (once per account)
     const isGlobal = def.category === 'logs' || def.category === 'level'
-      || def.category === 'consistency' || GLOBAL_BADGE_IDS.has(def.id);
+      || def.category === 'consistency' || def.category === 'todos'
+      || def.category === 'journal' || def.category === 'time'
+      || GLOBAL_BADGE_IDS.has(def.id);
     if (isGlobal ? globalEarnedIds.has(def.id) : perGoalEarnedIds.has(def.id)) return false;
 
     switch (def.category) {
@@ -44,6 +49,16 @@ export function checkBadges(params: {
         if (def.id === 'perfect_month') return !!isPerfectMonth;
         if (def.id === 'comeback')      return !!isComeback;
         if (def.id === 'new_best')      return !!isNewBest;
+        return false;
+      }
+      case 'todos':
+        return (params.totalTodosCompleted ?? 0) >= def.threshold;
+      case 'journal':
+        return (params.journalStreak ?? 0) >= def.threshold;
+      case 'time': {
+        const h = params.logHour ?? -1;
+        if (def.id === 'early_bird') return h >= 0 && h < 8;
+        if (def.id === 'night_owl')  return h >= 22;
         return false;
       }
       default: return false;

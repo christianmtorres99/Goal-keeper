@@ -185,6 +185,9 @@ export default function ProfileScreen() {
   const consistencyBadges = BADGE_DEFINITIONS.filter(b => b.category === 'consistency');
   const levelBadges = BADGE_DEFINITIONS.filter(b => b.category === 'level');
   const cycleBadges = BADGE_DEFINITIONS.filter(b => b.category === 'cycle');
+  const todoBadges = BADGE_DEFINITIONS.filter(b => b.category === 'todos');
+  const journalBadges = BADGE_DEFINITIONS.filter(b => b.category === 'journal');
+  const timeBadges = BADGE_DEFINITIONS.filter(b => b.category === 'time');
 
   const totalEarned = earnedBadges.length;
   const totalBadges = BADGE_DEFINITIONS.length;
@@ -449,6 +452,9 @@ export default function ProfileScreen() {
         {renderBadgeSection('Consistency Badges', consistencyBadges)}
         {renderBadgeSection('Level Badges', levelBadges)}
         {cycleBadges.length > 0 && renderBadgeSection('Milestone Cycle Badges', cycleBadges)}
+        {renderBadgeSection('Todo Completions', todoBadges)}
+        {renderBadgeSection('Journal Streaks', journalBadges)}
+        {renderBadgeSection('Time of Day', timeBadges)}
       </ScrollView>
 
       {/* Theme picker modal */}
