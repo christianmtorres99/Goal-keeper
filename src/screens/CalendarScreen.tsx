@@ -18,8 +18,8 @@ import type { DrawingPath } from '../types';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-const DOW_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const DOW_LONG  = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DOW_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DOW_LONG  = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const SCREEN_W = Dimensions.get('window').width;
 const CELL_W = Math.floor(SCREEN_W / 7);
@@ -60,10 +60,10 @@ export default function CalendarScreen() {
 
   const days = useMemo(() => getMonthDays(year, month), [year, month]);
 
-  // Pad to Monday-aligned grid
+  // Pad to Sunday-aligned grid
   const firstDow = useMemo(() => {
     const d = new Date(year, month - 1, 1);
-    return (d.getDay() + 6) % 7; // Mon=0 … Sun=6
+    return d.getDay(); // Sun=0 … Sat=6
   }, [year, month]);
 
   const todayStr = todayString();
@@ -92,7 +92,7 @@ export default function CalendarScreen() {
     const counts = Array(7).fill(0);
     monthLogs.forEach(l => {
       const d = dateFromString(l.logDate);
-      counts[(d.getDay() + 6) % 7]++;
+      counts[d.getDay()]++;
     });
     const max = Math.max(...counts);
     return max > 0 ? DOW_LONG[counts.indexOf(max)] : null;
@@ -106,12 +106,12 @@ export default function CalendarScreen() {
     return topId ? { ...goalMap[topId], id: topId, count: counts[topId] } : null;
   }, [monthLogs, goalMap]);
 
-  // Best week (Mon–Sun with most logs)
+  // Best week (Sun–Sat with most logs)
   const bestWeek = useMemo(() => {
     const weekCounts: Record<string, number> = {};
     monthLogs.forEach(l => {
       const d = dateFromString(l.logDate);
-      const dow = (d.getDay() + 6) % 7;
+      const dow = d.getDay();
       const weekStart = new Date(d);
       weekStart.setDate(d.getDate() - dow);
       const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`;

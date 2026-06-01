@@ -274,7 +274,12 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero card */}
-        <LinearGradient colors={[bgColor + 'CC', tier.color + '33', Colors.bg1]} style={styles.heroCard}>
+        <LinearGradient
+          colors={[bgColor + 'DD', Colors.bg1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.heroCard}
+        >
           <View style={styles.heroHeader}>
             <TouchableOpacity
               style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}
@@ -339,14 +344,16 @@ export default function ProfileScreen() {
 
           {/* Color picker */}
           <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Background</Text>
-          <View style={styles.colorRow}>
-            {shareBgColors.map(c => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.colorSwatch, { backgroundColor: c }, bgColor === c && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]}
-                onPress={() => setAndSaveBgColor(c)}
-              />
-            ))}
+          <View style={[styles.swatchContainer, { backgroundColor: Colors.bg3 + 'BB', borderColor: Colors.border }]}>
+            <View style={styles.colorRow}>
+              {shareBgColors.map(c => (
+                <TouchableOpacity
+                  key={c}
+                  style={[styles.colorSwatch, { backgroundColor: c }, bgColor === c && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]}
+                  onPress={() => setAndSaveBgColor(c)}
+                />
+              ))}
+            </View>
           </View>
         </LinearGradient>
 
@@ -498,8 +505,14 @@ const styles = StyleSheet.create({
   featureSlotLabel: { fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
   featureSlotEmpty: { fontSize: FontSize.xs },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
+  swatchContainer: {
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    padding: Spacing.sm,
+    marginTop: 2,
+  },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  colorSwatch: { width: 28, height: 28, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
+  colorSwatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { transform: [{ scale: 1.2 }] },
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
