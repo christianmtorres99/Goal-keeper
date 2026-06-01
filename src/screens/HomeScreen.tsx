@@ -310,6 +310,7 @@ export default function HomeScreen() {
       isPerfectMonth: result.events.includes('perfectMonth'),
       isComeback: result.events.includes('comeback'),
       isNewBest: result.events.includes('newBest'),
+      logHour: new Date().getHours(),
     });
 
     // Undo toast with final XP total

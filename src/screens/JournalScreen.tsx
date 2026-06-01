@@ -19,7 +19,9 @@ import * as Haptics from 'expo-haptics';
 
 import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
 import { useJournalStore } from '../store/journalStore';
+import { useBadgeStore } from '../store/badgeStore';
 import { useThemeStore } from '../store/themeStore';
+import { computeJournalStreak } from '../utils/journalUtils';
 import DrawingCanvas from '../components/journal/DrawingCanvas';
 import { todayString, formatDisplayDate, addDays } from '../utils/dateUtils';
 import type { DrawingPath, JournalEntry } from '../types';
@@ -136,6 +138,8 @@ export default function JournalScreen() {
     try {
       await saveEntry(activeDate, mood, energy, text, drawingPaths);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const jStreak = computeJournalStreak(useJournalStore.getState().entries);
+      useBadgeStore.getState().checkAndAwardGlobal({ journalStreak: jStreak });
       navigation.goBack();
     } catch {
       Alert.alert('Error', 'Could not save journal entry.');
