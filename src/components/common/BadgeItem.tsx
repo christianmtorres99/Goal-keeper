@@ -80,7 +80,7 @@ const s = StyleSheet.create({
   lockOverlay:  { position: 'absolute', bottom: 4, right: 4 },
   crownWrap:    { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.bg0, borderRadius: 8, padding: 1 },
   legendaryGlow: {
-    shadowColor: '#F59E0B',
+    shadowColor: Colors.warning,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 8,

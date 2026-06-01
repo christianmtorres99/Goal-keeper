@@ -37,7 +37,7 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
           <Text style={styles.headerXP}>
             {totalEarned}/{totalAvailable} XP
           </Text>
-          <TouchableOpacity onPress={() => setExpanded(e => !e)} hitSlop={8}>
+          <TouchableOpacity onPress={() => setExpanded(e => !e)} hitSlop={12}>
             <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>

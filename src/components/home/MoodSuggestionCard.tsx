@@ -55,6 +55,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   dismissBtn: {
-    padding: 4,
+    padding: Spacing.xs,
   },
 });

@@ -65,7 +65,7 @@ export default function RestDayModal({ visible, onClose, onActivate, streak, ban
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(8, 11, 18, 0.85)',
+    backgroundColor: Colors.bg0 + 'D9',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.lg,
@@ -117,6 +117,8 @@ const styles = StyleSheet.create({
   secondaryBtn: {
     alignItems: 'center',
     paddingVertical: Spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   secondaryBtnText: {
     color: Colors.textSecondary,

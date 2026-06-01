@@ -37,7 +37,7 @@ const SLIDES: Slide[] = [
   },
   {
     icon: 'flame',
-    iconColor: '#F59E0B',
+    iconColor: Colors.warning,
     gradient: ['#78350F', Colors.bg1],
     title: 'Streaks & XP Multipliers',
     subtitle: 'Log every day to grow your streak. The longer it runs, the more XP you earn.',
@@ -61,7 +61,7 @@ const SLIDES: Slide[] = [
   },
   {
     icon: 'calendar',
-    iconColor: '#10B981',
+    iconColor: Colors.success,
     gradient: ['#064E3B', Colors.bg1],
     title: 'Daily Login & Quests',
     subtitle: 'Open the app every day to claim your login bonus — it grows with your login streak.',
@@ -85,7 +85,7 @@ const SLIDES: Slide[] = [
   },
   {
     icon: 'medal',
-    iconColor: '#F59E0B',
+    iconColor: Colors.warning,
     gradient: ['#451A03', Colors.bg1],
     title: 'Badges & Personal Records',
     subtitle: 'Unlock 37 badges across streak, log count, consistency, level, and milestone categories.',
@@ -150,7 +150,7 @@ export default function OnboardingScreen({ onDone }: Props) {
 
       {/* Skip */}
       {!isLast && (
-        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
+        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} hitSlop={8}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       )}

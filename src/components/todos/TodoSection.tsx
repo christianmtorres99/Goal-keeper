@@ -366,7 +366,7 @@ export default function TodoSection() {
           <Ionicons name="add" size={20} color={Colors.accent} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setExpanded(v => !v)} hitSlop={8} style={styles.addTaskBtn}>
+        <TouchableOpacity onPress={() => setExpanded(v => !v)} hitSlop={12} style={styles.addTaskBtn}>
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}
             size={16}
