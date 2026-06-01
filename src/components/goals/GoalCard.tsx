@@ -244,7 +244,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
             <StreakFlame streak={streakInfo.currentStreak} size={34}>
               <Ionicons name={goal.icon as any} size={22} color={goal.color} />
             </StreakFlame>
-            <Text style={[styles.name, { color: Colors.textPrimary }]} numberOfLines={1}>{goal.name}</Text>
+            <Text style={[styles.name, { color: Colors.textPrimary }]} numberOfLines={2}>{goal.name}</Text>
           </View>
           <View style={styles.topRight}>
             {isDailyDouble && (
@@ -386,11 +386,11 @@ const styles = StyleSheet.create({
   body: { flex: 1, padding: Spacing.md, gap: Spacing.sm },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
-  name: { fontSize: FontSize.md, fontWeight: '600', flex: 1 },
+  name: { fontSize: FontSize.md, fontWeight: '600', flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2 },
+  atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   atRiskText: { fontSize: 10, fontWeight: '700' },
-  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '18', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2 },
+  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '18', borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   graceBadgeText: { fontSize: 10, fontWeight: '600' },
   streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.bg3, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   streakBadgeInactive: { backgroundColor: Colors.bg3 + '88' },

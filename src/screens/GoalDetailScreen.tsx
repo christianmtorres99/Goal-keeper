@@ -53,7 +53,7 @@ export default function GoalDetailScreen() {
       headerTitle: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Ionicons name={goal.icon as any} size={20} color={goal.color} />
-          <Text style={{ color: Colors.textPrimary, fontSize: 17, fontWeight: '600' }}>Details</Text>
+          <Text style={{ color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' }}>Details</Text>
         </View>
       ),
     });
@@ -383,7 +383,7 @@ export default function GoalDetailScreen() {
         {/* Log history */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionLabel}>Recent Logs</Text>
-          <TouchableOpacity style={styles.pastDayBtn} onPress={() => setPastPickerVisible(true)}>
+          <TouchableOpacity style={styles.pastDayBtn} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
             <Text style={styles.pastDayBtnText}>Log past day</Text>
           </TouchableOpacity>
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   heroCard: { backgroundColor: Colors.bg1, borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
   iconWrap: { width: 60, height: 60, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
-  heroText: { flex: 1, gap: 4 },
+  heroText: { flex: 1, gap: Spacing.xs },
   goalName: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },
   goalDesc: { color: Colors.textSecondary, fontSize: FontSize.sm },
   tagRow: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   typeText: { fontSize: FontSize.xs, fontWeight: '700' },
   categoryText: { color: Colors.textSecondary, fontSize: FontSize.xs, textTransform: 'capitalize' },
   heroActions: { flexDirection: 'row', gap: Spacing.xs },
-  headerBtn: { padding: 4 },
+  headerBtn: { padding: Spacing.sm },
   milestoneSection: { gap: Spacing.xs },
   milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   milestoneLabel: { color: Colors.textSecondary, fontSize: FontSize.sm },
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   badgeProgressCard: { backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
   badgeProgressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  badgeProgressInfo: { flex: 1, gap: 4 },
+  badgeProgressInfo: { flex: 1, gap: Spacing.xs },
   badgeProgressHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   badgeProgressLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
   badgeProgressValue: { color: Colors.textSecondary, fontSize: FontSize.xs },
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   badgeProgressFill: { height: '100%', borderRadius: Radius.full },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pastDayBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, backgroundColor: Colors.accentDim + '55', borderWidth: 1, borderColor: Colors.accentBright + '44' },
+  pastDayBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingVertical: 4, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, backgroundColor: Colors.accentDim + '55', borderWidth: 1, borderColor: Colors.accentBright + '44' },
   pastDayBtnText: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '600' },
   noLogs: { color: Colors.textDisabled, fontStyle: 'italic' },
   logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, backgroundColor: Colors.bg1, borderRadius: Radius.md, marginBottom: 4, borderWidth: 1, borderColor: Colors.border },
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, flex: 1 },
   // Past-day picker styles
   pickerOverlay: { flex: 1, justifyContent: 'flex-end' },
-  pickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.6)' },
+  pickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: Colors.bg0 + 'AA' },
   pickerSheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderTopWidth: 1, borderColor: Colors.border },
   pickerHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   pickerTitle: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },

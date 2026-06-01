@@ -311,22 +311,22 @@ export default function AddGoalScreen() {
           <View style={styles.timePickerRow}>
             {/* Hour */}
             <View style={styles.timeUnit}>
-              <TouchableOpacity onPress={() => setRHour(h => h === 12 ? 1 : h + 1)} style={styles.timeArrow}>
+              <TouchableOpacity onPress={() => setRHour(h => h === 12 ? 1 : h + 1)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
               <Text style={styles.timeDigit}>{String(rHour).padStart(2, '0')}</Text>
-              <TouchableOpacity onPress={() => setRHour(h => h === 1 ? 12 : h - 1)} style={styles.timeArrow}>
+              <TouchableOpacity onPress={() => setRHour(h => h === 1 ? 12 : h - 1)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
             <Text style={styles.timeColon}>:</Text>
             {/* Minute */}
             <View style={styles.timeUnit}>
-              <TouchableOpacity onPress={() => setRMinute(m => (m + 1) % 60)} style={styles.timeArrow}>
+              <TouchableOpacity onPress={() => setRMinute(m => (m + 1) % 60)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
               <Text style={styles.timeDigit}>{String(rMinute).padStart(2, '0')}</Text>
-              <TouchableOpacity onPress={() => setRMinute(m => (m - 1 + 60) % 60)} style={styles.timeArrow}>
+              <TouchableOpacity onPress={() => setRMinute(m => (m - 1 + 60) % 60)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -358,14 +358,14 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   flex1: { flex: 1 },
   typeRow: { flexDirection: 'row', gap: Spacing.sm },
-  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 2, borderColor: Colors.border },
+  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 2, borderColor: Colors.border, minHeight: 44 },
   typeCardTitle: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '700' },
   typeCardSub: { color: Colors.textDisabled, fontSize: FontSize.xs, textAlign: 'center' },
   categoryRow: { flexGrow: 0 },
   categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border, marginRight: Spacing.sm },
   categoryText: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
-  colorSwatch: { width: 36, height: 36, borderRadius: Radius.full, borderWidth: 2, borderColor: 'transparent' },
+  colorSwatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.15 }] },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   iconBtn: { borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
@@ -373,14 +373,14 @@ const styles = StyleSheet.create({
   saveBtnText: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
   // 12hr time picker
   timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
-  timeUnit: { alignItems: 'center', gap: 4 },
-  timeArrow: { padding: 4 },
-  timeDigit: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', minWidth: 42, textAlign: 'center' },
-  timeColon: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', marginBottom: 8 },
+  timeUnit: { alignItems: 'center', gap: Spacing.xs },
+  timeArrow: { padding: Spacing.sm },
+  timeDigit: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700', minWidth: 42, textAlign: 'center' },
+  timeColon: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700', marginBottom: 8 },
   ampmBtn: { backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   ampmText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
   difficultyRow: { flexDirection: 'row', gap: Spacing.sm },
-  diffBtn: { flex: 1, alignItems: 'center', gap: 3, borderRadius: Radius.md, padding: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  diffLabel: { color: Colors.textSecondary, fontSize: 11, fontWeight: '700' },
-  diffMult: { color: Colors.textDisabled, fontSize: 10, fontWeight: '600' },
+  diffBtn: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.md, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
+  diffLabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '700' },
+  diffMult: { color: Colors.textDisabled, fontSize: FontSize.xs, fontWeight: '600' },
 });
