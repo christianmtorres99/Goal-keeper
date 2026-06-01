@@ -74,7 +74,7 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
     <View style={[styles.container, { backgroundColor: Colors.bg0 }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Weekly Review</Text>
-        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+        <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
           <Ionicons name="close" size={24} color={Colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -165,13 +165,13 @@ const styles = StyleSheet.create({
   cardLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   xpRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   xpBig: { color: Colors.accentBright, fontSize: FontSize.xxxl, fontWeight: '800' },
-  diffBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  diffBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   diffText: { fontSize: FontSize.sm, fontWeight: '600' },
   dowRow: { flexDirection: 'row', paddingLeft: 118 },
   dowLabel: { flex: 1, textAlign: 'center', color: Colors.textSecondary, fontSize: FontSize.xs },
   goalDayRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   goalDayName: { width: 110, color: Colors.textSecondary, fontSize: FontSize.xs },
-  dayDots: { flex: 1, flexDirection: 'row', gap: 4 },
+  dayDots: { flex: 1, flexDirection: 'row', gap: Spacing.xs },
   dayDot: { flex: 1, height: 14, borderRadius: 3 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   streakName: { flex: 1, color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },

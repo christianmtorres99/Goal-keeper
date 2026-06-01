@@ -233,6 +233,7 @@ export default function StatsScreen() {
             <TouchableOpacity
               style={[styles.filterBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, filterMode === 'all' && styles.filterBtnActive]}
               onPress={selectAll}
+              hitSlop={{ top: 4, bottom: 4 }}
             >
               <Text style={[styles.filterText, { color: Colors.textSecondary }, filterMode === 'all' && styles.filterTextActive]}>All</Text>
             </TouchableOpacity>
@@ -245,6 +246,7 @@ export default function StatsScreen() {
                   filterMode === 'goal' && selectedGoalId === g.id && { backgroundColor: g.color + '33', borderColor: g.color },
                 ]}
                 onPress={() => selectGoal(g.id)}
+                hitSlop={{ top: 4, bottom: 4 }}
               >
                 <Text style={[
                   styles.filterText,
@@ -269,6 +271,7 @@ export default function StatsScreen() {
                       filterMode === 'category' && selectedCategory === cat && styles.categoryFilterBtnActive,
                     ]}
                     onPress={() => selectCategory(cat)}
+                    hitSlop={{ top: 4, bottom: 4 }}
                   >
                     <Ionicons
                       name={CATEGORY_ICONS[cat] as any}
@@ -415,7 +418,7 @@ export default function StatsScreen() {
                 const total = moodStats.moodDist.reduce((a, b) => a + b, 0);
                 const pct = total > 0 ? count / total : 0;
                 return (
-                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: 4 }}>
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs }}>
                     <Text style={{ width: 24, textAlign: 'center' }}>{emoji}</Text>
                     <View style={{ flex: 1, height: 10, backgroundColor: Colors.bg3, borderRadius: 5, overflow: 'hidden' }}>
                       <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: Colors.accent, borderRadius: 5 }} />
@@ -473,9 +476,9 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: FontSize.xs },
   filterSection: { gap: Spacing.xs },
   filterRow: { flexGrow: 0 },
-  filterBtn: { borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderWidth: 1, marginRight: Spacing.xs },
+  filterBtn: { borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.xs },
   filterBtnActive: { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
-  categoryFilterBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  categoryFilterBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   categoryFilterBtnActive: { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
   filterText: { fontSize: FontSize.sm },
   filterTextActive: { color: Colors.accentBright },

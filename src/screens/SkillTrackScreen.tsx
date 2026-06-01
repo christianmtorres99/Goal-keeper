@@ -33,8 +33,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   creative: '#EC4899',
   physical: '#F97316',
   learning: '#3B82F6',
-  wellness: '#10B981',
-  other: '#A855F7',
+  wellness: Colors.success,
+  other: Colors.accentBright,
 };
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   statValue: { fontSize: FontSize.lg, fontWeight: '700' },
-  statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs - 1, textAlign: 'center' },
+  statLabel: { color: Colors.textSecondary, fontSize: 10, textAlign: 'center' },
 
   card: {
     backgroundColor: Colors.bg1,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: Spacing.sm,
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.xs,
     borderWidth: 1,
   },
   insightValue: { fontSize: FontSize.lg, fontWeight: '800' },

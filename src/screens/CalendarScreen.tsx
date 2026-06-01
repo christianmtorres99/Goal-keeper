@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: Spacing.xxl },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: CELL_W, height: CELL_H, alignItems: 'center', paddingTop: Spacing.xs },
+  cell: { width: CELL_W, height: CELL_H, alignItems: 'center', paddingTop: Spacing.sm },
   cellToday: { borderRadius: Radius.sm },
   cellPerfect: {},
   dayNum: { fontSize: FontSize.sm, fontWeight: '500', marginBottom: 4 },
