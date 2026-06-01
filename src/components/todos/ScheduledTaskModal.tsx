@@ -67,7 +67,7 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
           <Animated.View style={[styles.sheet, sheetStyle]}>
             <View style={styles.handle} />
             <Text style={styles.title}>Scheduled Tasks</Text>
-            <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.list} showsVerticalScrollIndicator={true}>
               {scheduledTasks.length === 0 && (
                 <Text style={styles.empty}>No scheduled tasks yet.</Text>
               )}
@@ -83,6 +83,9 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
                 </View>
               ))}
             </ScrollView>
+            {scheduledTasks.length > 3 && (
+              <Text style={[styles.scrollHint, { color: Colors.textDisabled }]}>↕ Scroll to see all</Text>
+            )}
             <View style={styles.divider} />
             <Text style={styles.newLabel}>New Scheduled Task</Text>
             <TextInput
@@ -134,7 +137,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     padding: Spacing.xl,
-    maxHeight: '80%',
+    maxHeight: '85%',
     gap: Spacing.md,
     borderTopWidth: 1,
     borderColor: Colors.border,
@@ -148,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   title: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
-  list: { maxHeight: 180 },
+  list: { maxHeight: 280 },
   empty: {
     color: Colors.textDisabled,
     fontSize: FontSize.sm,
@@ -164,6 +167,7 @@ const styles = StyleSheet.create({
   taskInfo: { flex: 1 },
   taskTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
   taskDays: { color: Colors.textSecondary, fontSize: FontSize.xs, marginTop: 2 },
+  scrollHint: { textAlign: 'center', fontSize: 11, marginTop: 2 },
   divider: { height: 1, backgroundColor: Colors.border },
   newLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
   input: {

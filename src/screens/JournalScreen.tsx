@@ -40,7 +40,6 @@ const PEN_SIZES = [2, 4, 8];
 
 const PAPER_BG    = '#111111';
 const PAPER_LINE  = '#1A1A1A';
-const PAPER_MARGIN = '#CC2222';
 const PAPER_TEXT = '#E8D9C0';
 const LINE_H = FontSize.md * 1.8;
 
@@ -68,6 +67,7 @@ export default function JournalScreen() {
   const todayEntry = activeEntry;
 
   const [tab, setTab] = useState<Tab>('write');
+  const [moodCollapsed, setMoodCollapsed] = useState(false);
   const [mood, setMood] = useState(todayEntry?.mood ?? 3);
   const [energy, setEnergy] = useState(todayEntry?.energy ?? 3);
   const [text, setText] = useState(() => todayEntry ? extractPlainText(todayEntry.textContent) : '');
@@ -86,7 +86,6 @@ export default function JournalScreen() {
 
   const paperBg      = isLight ? '#FEFEFE' : PAPER_BG;
   const paperLine    = isLight ? '#E5E7EB' : PAPER_LINE;
-  const paperMargin  = isLight ? '#FCA5A5' : PAPER_MARGIN;
   const paperTextColor = isLight ? '#1A1A2E' : (PAPER_TEXT ?? '#E8D9C0');
 
   const isDirty = useMemo(() => {
@@ -212,57 +211,71 @@ export default function JournalScreen() {
           <View style={styles.flex}>
             {/* Journal header — mood, energy, date */}
             <View style={[styles.journalHeader, { borderBottomColor: Colors.border }]}>
-              <Text style={[styles.dateLabel, { color: Colors.textSecondary }]}>{formatDisplayDate(activeDate)}</Text>
+              <TouchableOpacity
+                style={styles.moodToggleRow}
+                onPress={() => setMoodCollapsed(c => !c)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.dateLabel, { color: Colors.textSecondary }]}>{formatDisplayDate(activeDate)}</Text>
+                <Ionicons
+                  name={moodCollapsed ? 'chevron-down' : 'chevron-up'}
+                  size={14}
+                  color={Colors.textSecondary}
+                />
+              </TouchableOpacity>
+              {!moodCollapsed && (
+                <>
+                  {/* Mood */}
+                  <View style={styles.ratingSection}>
+                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>How are you feeling?</Text>
+                    <View style={styles.emojiRow}>
+                      {MOOD_EMOJIS.map((emoji, idx) => {
+                        const val = idx + 1;
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            style={[
+                              styles.emojiBtn,
+                              { borderColor: Colors.border, backgroundColor: Colors.bg1 },
+                              mood === val && { borderColor: Colors.accent, backgroundColor: Colors.accentDim },
+                            ]}
+                            onPress={() => setMood(val)}
+                          >
+                            <Text style={[styles.emoji, mood === val && styles.emojiSelected]}>{emoji}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
 
-              {/* Mood */}
-              <View style={styles.ratingSection}>
-                <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>How are you feeling?</Text>
-                <View style={styles.emojiRow}>
-                  {MOOD_EMOJIS.map((emoji, idx) => {
-                    const val = idx + 1;
-                    return (
-                      <TouchableOpacity
-                        key={idx}
-                        style={[
-                          styles.emojiBtn,
-                          { borderColor: Colors.border, backgroundColor: Colors.bg1 },
-                          mood === val && { borderColor: Colors.accent, backgroundColor: Colors.accentDim },
-                        ]}
-                        onPress={() => setMood(val)}
-                      >
-                        <Text style={[styles.emoji, mood === val && styles.emojiSelected]}>{emoji}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Energy */}
-              <View style={styles.ratingSection}>
-                <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Energy level</Text>
-                <View style={styles.energyRow}>
-                  {[1, 2, 3, 4, 5].map(val => (
-                    <TouchableOpacity
-                      key={val}
-                      style={[
-                        styles.energyBar,
-                        { borderColor: Colors.border, backgroundColor: Colors.bg1 },
-                        val <= energy && { borderColor: Colors.accent },
-                      ]}
-                      onPress={() => setEnergy(val)}
-                    >
-                      <View
-                        style={[
-                          styles.energyBarFill,
-                          { height: [8, 16, 24, 32, 40][val - 1], backgroundColor: Colors.bg3 },
-                          val <= energy && { backgroundColor: Colors.accent },
-                        ]}
-                      />
-                    </TouchableOpacity>
-                  ))}
-                  <Text style={[styles.energyLabel, { color: Colors.textSecondary }]}>{energy}/5</Text>
-                </View>
-              </View>
+                  {/* Energy */}
+                  <View style={styles.ratingSection}>
+                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Energy level</Text>
+                    <View style={styles.energyRow}>
+                      {[1, 2, 3, 4, 5].map(val => (
+                        <TouchableOpacity
+                          key={val}
+                          style={[
+                            styles.energyBar,
+                            { borderColor: Colors.border, backgroundColor: Colors.bg1 },
+                            val <= energy && { borderColor: Colors.accent },
+                          ]}
+                          onPress={() => setEnergy(val)}
+                        >
+                          <View
+                            style={[
+                              styles.energyBarFill,
+                              { height: [8, 16, 24, 32, 40][val - 1], backgroundColor: Colors.bg3 },
+                              val <= energy && { backgroundColor: Colors.accent },
+                            ]}
+                          />
+                        </TouchableOpacity>
+                      ))}
+                      <Text style={[styles.energyLabel, { color: Colors.textSecondary }]}>{energy}/5</Text>
+                    </View>
+                  </View>
+                </>
+              )}
             </View>
 
             {/* Paper — fills remaining space */}
@@ -272,7 +285,6 @@ export default function JournalScreen() {
                 {Array.from({ length: 40 }, (_, i) => (
                   <View key={i} style={[styles.paperLine, { top: Spacing.md + (i + 1) * LINE_H, backgroundColor: paperLine }]} />
                 ))}
-                <View style={[styles.paperMarginLine, { backgroundColor: paperMargin }]} />
               </View>
 
               <TextInput
@@ -299,7 +311,7 @@ export default function JournalScreen() {
             <DrawingCanvas paths={drawingPaths} onPathsChange={setDrawingPaths} penColor={penColor} penWidth={PEN_SIZES[penSize]} style={styles.canvas} />
           </View>
           <View style={[styles.drawToolbar, { borderTopColor: Colors.border, backgroundColor: Colors.bg1 }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorScroll}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.colorScroll} contentContainerStyle={styles.colorScrollContent}>
               {PEN_COLORS.map(c => (
                 <TouchableOpacity key={c.value} style={[styles.colorSwatch, { backgroundColor: c.value }, penColor === c.value && styles.swatchSelected]} onPress={() => setPenColor(c.value)} />
               ))}
@@ -395,7 +407,7 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomWidth: 2, borderBottomColor: Colors.accent },
   tabText: { fontSize: FontSize.md, fontWeight: '500' },
 
-  // Journal header (mood/energy/date) — centered
+  // Journal header (mood/energy/date)
   journalHeader: {
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.sm,
@@ -404,6 +416,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
   },
+  moodToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4, width: '100%' },
   dateLabel: { fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
   ratingSection: { gap: Spacing.xs, width: '100%' },
   ratingLabel: { fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
@@ -430,10 +443,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   paperLine: { position: 'absolute', left: 0, right: 0, height: 1 },
-  paperMarginLine: { position: 'absolute', top: 0, bottom: 0, left: 44, width: 1.5 },
   paperInput: {
     flex: 1,
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     fontSize: 15,
     lineHeight: 24,
     padding: Spacing.md,
@@ -444,12 +455,13 @@ const styles = StyleSheet.create({
   canvasWrapper: { flex: 1, margin: Spacing.md, borderRadius: Radius.lg, overflow: 'hidden', borderWidth: 1 },
   canvas: { flex: 1 },
   drawToolbar: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', minHeight: 56,
     paddingHorizontal: Spacing.md, paddingBottom: Spacing.md,
     gap: Spacing.sm, borderTopWidth: 1, paddingTop: Spacing.sm,
   },
-  colorScroll: { flexGrow: 0, flexShrink: 1 },
-  colorSwatch: { width: 26, height: 26, borderRadius: Radius.full, marginRight: Spacing.xs, borderWidth: 2, borderColor: 'transparent' },
+  colorScroll: { flex: 1 },
+  colorScrollContent: { paddingHorizontal: 4 },
+  colorSwatch: { width: 30, height: 30, borderRadius: Radius.full, marginRight: Spacing.xs, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] },
   sizeBtns: { flexDirection: 'row', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.xs },
   sizeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.sm },

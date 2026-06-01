@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -34,11 +35,23 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   const [subItemInputs, setSubItemInputs] = useState<string[]>(['']);
 
   const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(60)).current;
+
   useEffect(() => {
     if (visible) {
-      Animated.timing(backdropOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+      sheetTranslateY.setValue(60);
+      Animated.parallel([
+        Animated.timing(backdropOpacity, { toValue: 1, duration: 280, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.timing(sheetTranslateY, { toValue: 0, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]).start();
     } else {
-      backdropOpacity.setValue(0);
+      Animated.parallel([
+        Animated.timing(backdropOpacity, { toValue: 0, duration: 200, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+        Animated.timing(sheetTranslateY, { toValue: 60, duration: 200, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+      ]).start(() => {
+        backdropOpacity.setValue(0);
+        sheetTranslateY.setValue(60);
+      });
     }
   }, [visible]);
 
@@ -83,7 +96,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Animated.View
         style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', opacity: backdropOpacity }]}
         pointerEvents="none"
@@ -93,7 +106,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalKAV}
       >
-        <View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+        <Animated.View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border, transform: [{ translateY: sheetTranslateY }] }]}>
           <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
           <Text style={[styles.modalTitle, { color: Colors.textPrimary }]}>New Task</Text>
 
@@ -103,7 +116,6 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
             placeholderTextColor={Colors.textDisabled}
             value={title}
             onChangeText={setTitle}
-            autoFocus
             returnKeyType="done"
           />
 
@@ -183,7 +195,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
           >
             <Text style={[styles.saveBtnText, { color: Colors.textPrimary }]}>Save Task</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
