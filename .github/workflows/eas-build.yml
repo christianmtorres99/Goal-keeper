@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - claude/goal-tracking-app-QiCgn
+      - claude/project-overview-planning-kXME1
 
 jobs:
   build:
