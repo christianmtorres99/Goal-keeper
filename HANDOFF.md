@@ -1,8 +1,8 @@
 # Goal Keeper — Handoff Document
-**Date:** 2026-06-01  
-**Branch:** `claude/goal-tracking-app-QiCgn`  
-**Repo:** `christianmtorres99/Goal-keeper`  
-**CI Status:** All checks passing ✓
+**Date:** 2026-06-02
+**Branch:** `claude/project-overview-planning-kXME1`
+**Repo:** `christianmtorres99/Goal-keeper`
+**CI Status:** EAS build triggered ✓
 
 ---
 
@@ -10,14 +10,14 @@
 
 React Native / Expo SDK ~56.0.3 goal-tracking app with:
 - Habit & count-based goals with streaks, XP, and leveling
-- Badge/achievement system (37 badges across 8 categories)
+- Badge/achievement system (38 badges across 8 categories)
 - Journal with mood/energy tracking and drawing
 - Todo system with scheduled tasks
 - Skill tracking screen
 - Calendar heatmap
 - Weekly review modal
 - Daily quests
-- Light/dark themes with multiple color palettes
+- Light/dark themes with 6 color palettes each
 - Onboarding flow
 
 ---
@@ -47,6 +47,41 @@ Always use these constants. Never hardcode pixel values, hex colors, or font siz
 
 ---
 
+## Theme System
+
+### Architecture
+
+The app supports 6 themes (`violet`, `ocean`, `forest`, `crimson`, `golden`, `sakura`) each with a dark and a light variant. The user can choose dark / light / system.
+
+**Three layers, all kept in sync:**
+
+| Layer | File | Purpose |
+|-------|------|---------|
+| `THEMES` / `LIGHT_THEMES` | `src/constants/themes.ts` | Static palette records |
+| `ThemeContext` / `ThemeProvider` | `src/context/ThemeContext.tsx` | React context driven by `useThemeStore` |
+| `Colors` (mutable object) | `src/constants/theme.ts` | Legacy fallback for `StyleSheet.create` calls in error/loading states only |
+
+**`useColors()` hook** (`src/hooks/useColors.ts`) — the standard way every component reads colors:
+```ts
+const { colors, isLight } = useColors();
+// colors.bg0, colors.accent, etc.
+```
+
+`ThemeProvider` in `App.tsx` wraps the whole navigation tree. It reads `useThemeStore` directly, so any theme/mode change triggers a React context update — **no navigation remount needed**.
+
+### Rule for new screens / components
+- Use `useColors()` at the top of the component for any color reference.
+- Never use the static `Colors` object in screen code (it's only kept for the bootstrap `StyleSheet.create` in `App.tsx`).
+- `StyleSheet.create({})` called inside a component body (not at module level) is fine — pass `colors.*` into it.
+
+### themeStore API
+```ts
+useThemeStore.getState().setTheme(name: ThemeName)       // persists to AsyncStorage
+useThemeStore.getState().setColorMode('dark'|'light'|'system')
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -58,7 +93,7 @@ src/
     StatsScreen.tsx          — analytics, filter by goal/category
     CalendarScreen.tsx       — monthly heatmap, Sunday-first
     JournalScreen.tsx        — journal entries with mood/energy + drawing
-    ProfileScreen.tsx        — XP/level card, badge gallery, theme picker
+    ProfileScreen.tsx        — XP/level card, badge gallery, theme picker, share card
     SkillTrackScreen.tsx     — skill heatmap per category
     WeeklyReviewScreen.tsx   — weekly XP/streak summary modal
     OnboardingScreen.tsx     — first-launch slides
@@ -66,14 +101,15 @@ src/
 
   components/
     common/    BadgeItem, DailyQuestsCard, LevelUpModal, LevelLadderModal,
-               MilestoneCompleteModal, UndoToast, StreakFlame
+               MilestoneCompleteModal, UndoToast, StreakFlame, XPBar,
+               LogCountModal, LogNoteModal, BadgeDetailModal, BadgeModal, EmptyState
     goals/     GoalCard (animated flame icon, 2-line names)
     home/      RestDayModal, MoodSuggestionCard
     todos/     TodoSection, ScheduledTaskModal
     calendar/  (calendar sub-components)
-    charts/    (chart components)
+    charts/    HeatmapGrid (and others)
     journal/   (journal sub-components)
-    profile/   (profile sub-components)
+    profile/   ThemePickerModal
 
   store/             # Zustand stores (see list above)
   logic/             # Pure business logic
@@ -82,6 +118,8 @@ src/
     xpEngine.ts      — getPlayerStats(), getStreakMultiplier()
   utils/             # Helpers (dates, colors, journal, moods, XP, notifications)
   constants/         # theme.ts, badges.ts, themes.ts, xp.ts
+  context/           # ThemeContext.tsx
+  hooks/             # useColors.ts
   types/index.ts     # All shared TypeScript types
   db/client.ts       # SQLite init + getDb()
 ```
@@ -90,8 +128,8 @@ src/
 
 ## Badge System
 
-**Definitions:** `src/constants/badges.ts` — `BADGE_DEFINITIONS[]`  
-**Engine:** `src/logic/badgeEngine.ts` — `checkBadges(params)` pure function  
+**Definitions:** `src/constants/badges.ts` — `BADGE_DEFINITIONS[]`
+**Engine:** `src/logic/badgeEngine.ts` — `checkBadges(params)` pure function
 **Store:** `src/store/badgeStore.ts`
 
 ### Badge Categories (38 total)
@@ -126,15 +164,15 @@ src/
   ```
 
 ### Animation Libraries
-- **Reanimated v4** (`useSharedValue`, `useAnimatedStyle`, `withTiming`, `withRepeat`, `withSequence`) — used in GoalCard flame, progress bars, etc.
+- **Reanimated v4** (`useSharedValue`, `useAnimatedStyle`, `withTiming`, `withRepeat`, `withSequence`) — used in GoalCard flame, progress bars, ThemePickerModal sheet.
 - **React Native Animated API** — used in modal backdrops and sheet slide-ins (TodoSection, ScheduledTaskModal). Do NOT mix the two in the same animated value.
 
 ### GoalCard Flame
 `src/components/goals/GoalCard.tsx` — `FlameIcon` component with 4 tiers:
 - 0 streak: gray, static
-- 1-6: yellow, gentle pulse
-- 7-29: orange, pulse
-- 30-89: red, shake + particles
+- 1–6: yellow, gentle pulse
+- 7–29: orange, pulse
+- 30–89: red, shake + particles
 - 90+: white/hot, fast shake + more particles
 
 ### HomeScreen Collapsible Done Section
@@ -156,26 +194,33 @@ useBadgeStore.getState().checkAndAwardGlobal({ journalStreak: streak });
 ### Todo XP / Badge Check
 `todoStore.completeTodo()` increments `AsyncStorage('totalTodosCompleted')` and calls `checkAndAwardGlobal`.
 
+### ThemePickerModal
+- `animationType="fade"` (NOT "slide") — slide causes a dark-box artifact on transparent modals.
+- The internal `Animated.View` handles its own slide-up animation via `useSharedValue`.
+- Preview card palette: `isLight ? LIGHT_THEMES[key] : THEMES[key]`.
+
 ---
 
 ## Session History Summary
 
 | Session | Key Work |
 |---------|----------|
-| 1-8 | Core app build: goals, logs, streaks, XP, badges, journal, todos, calendar, stats, profile, themes |
+| 1–8 | Core app build: goals, logs, streaks, XP, badges, journal, todos, calendar, stats, profile, themes |
 | 9 | Log animation, progress bar, accent bar, 1-min time picker increments |
-| 10 | Animated flame icon (4-tier), collapsible "Done" section, skinnier GoalCard, journal fixes (no red line, system font, collapsible mood/energy), todo modal flash fix, ScheduledTaskModal keyboard fix, Calendar sunday-start, Profile gradient fix, new badges (streak 45/120/240, todos, journal, time-of-day) |
-| 11 | metro.config.js fix (expo/metro-config), code audit fixes (themeStore async bug, questStore error logging, profileScreen savePrefs, badgeStore uuid consistency, todoStore constant), design audit across all screens (tap targets ≥44px, spacing constants, typography constants, shadow color constants) |
+| 10 | Animated flame icon (4-tier), collapsible "Done" section, journal fixes, todo modal flash fix, ScheduledTaskModal keyboard fix, Calendar sunday-start, Profile gradient, new badges (streak 45/120/240, todos, journal, time-of-day) |
+| 11 | metro.config.js fix, code audit (async/Zustand bug, questStore, badgeStore), design audit (tap targets ≥44px, spacing/typography/shadow constants) |
+| 12 | Full light mode: migrated all 34 files to `useColors()` + `ThemeContext`; added `ThemeProvider`, `useColors` hook, 6 LIGHT_THEMES palettes; `OVERLAY_LIGHT_MODE`/`OVERLAY_DARK_MODE` constants; `isLight` guard throughout |
+| 13 | Light mode polish: chart & badge slot colors, XP bar, share card swatches (+6 light, −2 redundant dark); nav reset fix (removed `key={themeKey}` from NavigationContainer); ThemePickerModal fade animation; light-mode preview cards in theme picker |
 
 ---
 
 ## What's NOT Done / Possible Next Steps
 
-- **LevelUpModal** flash color — `shadowColor: '#000'` not updated (file had no changes needed at review time; double-check if desired)
-- **Push notifications** — `src/utils/notifications.ts` exists but may need review for Expo SDK 56 compatibility
 - No end-to-end tests exist
 - No Storybook or component docs
-- EAS build is configured (Android Preview workflow passing)
+- Push notifications (`src/utils/notifications.ts`) exists but untested on real device
+- Weekly review modal is not auto-triggered (must be opened manually from Profile)
+- EAS build is configured (Android Preview workflow)
 
 ---
 
