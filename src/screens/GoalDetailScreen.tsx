@@ -212,7 +212,7 @@ export default function GoalDetailScreen() {
   // Guard: goal was deleted while screen is still mounted during navigation
   if (!goal) return null;
 
-  const chartConfig = makeChartConfig(goal.color, Colors.bg1);
+  const chartConfig = makeChartConfig(goal.color, Colors.bg1, Colors);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]}>

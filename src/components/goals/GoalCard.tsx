@@ -95,7 +95,7 @@ interface Props {
 }
 
 export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble, animateSignal }: Props) {
-  const { colors: Colors } = useColors();
+  const { colors: Colors, isLight } = useColors();
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
   const baseLoggedToday = isAlreadyLoggedToday(logs);
@@ -309,7 +309,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
 
         <View style={styles.bottomRow}>
           {multiplier > 1 && (
-            <Text style={[styles.multiplier, { color: Colors.accentBright, backgroundColor: Colors.accentDim }]}>{multiplier}× XP</Text>
+            <Text style={[styles.multiplier, { color: Colors.accentBright, backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>{multiplier}× XP</Text>
           )}
           {goal.type === 'milestone' && goal.targetCount && (
             <Text style={[styles.milestoneText, { color: Colors.textSecondary }]}>

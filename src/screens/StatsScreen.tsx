@@ -37,6 +37,8 @@ export default function StatsScreen() {
   const chartConfig = useMemo(() => ({
     backgroundGradientFrom: Colors.bg1,
     backgroundGradientTo: Colors.bg1,
+    backgroundGradientFromOpacity: 0,
+    backgroundGradientToOpacity: 0,
     color: (opacity = 1) => Colors.accentBright + Math.round(Math.max(opacity, 0.85) * 255).toString(16).padStart(2, '0'),
     labelColor: () => Colors.textSecondary,
     strokeWidth: 3,

@@ -11,13 +11,13 @@ interface Props {
 }
 
 export default function XPBar({ stats, compact }: Props) {
-  const { colors: Colors } = useColors();
+  const { colors: Colors, isLight } = useColors();
   const { level, xpIntoLevel, xpForNextLevel, progressPercent } = stats;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={[styles.levelBadge, { backgroundColor: Colors.accentDim }]}>
+        <View style={[styles.levelBadge, { backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>
           <Text style={[styles.levelText, { color: Colors.accentBright }]}>Lv {level}</Text>
         </View>
         {!compact && (

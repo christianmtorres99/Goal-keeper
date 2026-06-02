@@ -66,7 +66,9 @@ export default function ProfileScreen() {
   const shareCardRef = useRef<View>(null);
 
   const [features, setFeatures] = useState<SelectedFeature[]>([]);
-  const [bgColor, setBgColor] = useState(SHARE_BG_COLORS_DARK[0]);
+  const [bgColorDark, setBgColorDark] = useState(SHARE_BG_COLORS_DARK[0]);
+  const [bgColorLight, setBgColorLight] = useState(SHARE_BG_COLORS_LIGHT[0]);
+  const bgColor = isLight ? bgColorLight : bgColorDark;
   const [pickerVisible, setPickerVisible] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
@@ -123,7 +125,9 @@ export default function ProfileScreen() {
       try {
         const p = JSON.parse(raw);
         if (p.features) setFeatures(p.features);
-        if (p.bgColor) setBgColor(p.bgColor);
+        if (p.bgColorDark) setBgColorDark(p.bgColorDark);
+        if (p.bgColorLight) setBgColorLight(p.bgColorLight);
+        if (!p.bgColorDark && p.bgColor) setBgColorDark(p.bgColor);
       } catch {}
     });
   }, []);
@@ -141,18 +145,23 @@ export default function ProfileScreen() {
     });
   }, [navigation, Colors.textPrimary]);
 
-  const savePrefs = useCallback((f: SelectedFeature[], c: string) => {
-    AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ features: f, bgColor: c }));
+  const savePrefs = useCallback((f: SelectedFeature[], darkC: string, lightC: string) => {
+    AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ features: f, bgColorDark: darkC, bgColorLight: lightC }));
   }, []);
 
   const setAndSaveFeatures = (f: SelectedFeature[]) => {
     setFeatures(f);
-    savePrefs(f, bgColor);
+    savePrefs(f, bgColorDark, bgColorLight);
   };
 
   const setAndSaveBgColor = (c: string) => {
-    setBgColor(c);
-    savePrefs(features, c);
+    if (isLight) {
+      setBgColorLight(c);
+      savePrefs(features, bgColorDark, c);
+    } else {
+      setBgColorDark(c);
+      savePrefs(features, c, bgColorLight);
+    }
   };
 
   const handleShare = async () => {
@@ -316,7 +325,7 @@ export default function ProfileScreen() {
               const f = features[idx];
               if (!f) {
                 return (
-                  <TouchableOpacity key={idx} style={[styles.featureSlot, { borderColor: Colors.bg3, backgroundColor: Colors.bg2 }]} onPress={() => setPickerVisible(true)}>
+                  <TouchableOpacity key={idx} style={[styles.featureSlot, { borderColor: Colors.accentDim, backgroundColor: Colors.accentDim + (isLight ? '18' : '40') }]} onPress={() => setPickerVisible(true)}>
                     <Ionicons name="add-circle-outline" size={24} color={Colors.textDisabled} />
                     <Text style={[styles.featureSlotEmpty, { color: Colors.textDisabled }]}>Add</Text>
                   </TouchableOpacity>
@@ -334,7 +343,7 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={idx}
-                  style={[styles.featureSlotFilled, { borderColor: Colors.accentDim, backgroundColor: Colors.accentDim }]}
+                  style={[styles.featureSlotFilled, { borderColor: Colors.accentBright + '80', backgroundColor: Colors.accentDim + (isLight ? '18' : '40') }]}
                   onPress={() => setAndSaveFeatures(features.filter((_, i) => i !== idx))}
                 >
                   <View style={[styles.featureSlotRemoveBadge, { backgroundColor: Colors.bg3 }]}>
@@ -392,7 +401,7 @@ export default function ProfileScreen() {
                     activeOpacity={0.75}
                   >
                     <View style={styles.skillHeader}>
-                      <View style={[styles.skillIconWrap, { backgroundColor: Colors.accentDim }]}>
+                      <View style={[styles.skillIconWrap, { backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>
                         <StreakFlame streak={categoryMaxStreak[cat] ?? 0} size={36}>
                           <Ionicons name={CATEGORY_ICONS[cat] as any} size={18} color={Colors.accentBright} />
                         </StreakFlame>
@@ -401,7 +410,7 @@ export default function ProfileScreen() {
                         <Text style={[styles.skillName, { color: Colors.textPrimary }]}>{getCategoryDisplayLabel(goals, cat)}</Text>
                         <Text style={[styles.skillGoalCount, { color: Colors.textSecondary }]}>{cs.goalCount} goal{cs.goalCount !== 1 ? 's' : ''}</Text>
                       </View>
-                      <View style={[styles.skillLevelBadge, { backgroundColor: Colors.accentDim }]}>
+                      <View style={[styles.skillLevelBadge, { backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>
                         <Text style={[styles.skillLevel, { color: Colors.accentBright }]}>Lv {cs.stats.level}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
@@ -436,7 +445,7 @@ export default function ProfileScreen() {
                         <Text style={[styles.skillName, { color: Colors.textPrimary }]}>{goal.customCategoryLabel ?? goal.name}</Text>
                         <Text style={[styles.skillGoalCount, { color: Colors.textSecondary }]}>1 goal</Text>
                       </View>
-                      <View style={[styles.skillLevelBadge, { backgroundColor: Colors.accentDim }]}>
+                      <View style={[styles.skillLevelBadge, { backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>
                         <Text style={[styles.skillLevel, { color: Colors.accentBright }]}>Lv {goalStats.level}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />

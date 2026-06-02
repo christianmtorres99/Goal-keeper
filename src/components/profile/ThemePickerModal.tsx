@@ -90,10 +90,7 @@ export default function ThemePickerModal({
                         styles.card,
                         { borderColor: isActive ? meta.preview : Colors.border },
                       ]}
-                      onPress={() => {
-                        setTheme(key);
-                        onClose();
-                      }}
+                      onPress={() => setTheme(key)}
                     >
                       <View style={[styles.preview, { backgroundColor: palette.bg1 }]}>
                         <View style={[styles.accentDot, { backgroundColor: meta.preview }]} />
