@@ -30,7 +30,7 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
 
   return (
     <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-      <View style={styles.header}>
+      <TouchableOpacity style={styles.header} onPress={() => setExpanded(e => !e)} activeOpacity={0.7}>
         <View style={styles.headerLeft}>
           <Ionicons name="list-outline" size={16} color={Colors.accentBright} />
           <Text style={[styles.headerTitle, { color: Colors.textPrimary }]}>Daily Quests</Text>
@@ -39,11 +39,9 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
           <Text style={[styles.headerXP, { color: Colors.accentBright }]}>
             {totalEarned}/{totalAvailable} XP
           </Text>
-          <TouchableOpacity onPress={() => setExpanded(e => !e)} hitSlop={12}>
-            <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textSecondary} />
-          </TouchableOpacity>
+          <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textSecondary} />
         </View>
-      </View>
+      </TouchableOpacity>
 
       {expanded && allDone && (
         <View style={[styles.allDoneBanner, { backgroundColor: Colors.success + '18' }]}>

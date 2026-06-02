@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   },
   cardAtRisk: {},
   cardDragging: { opacity: 0.9, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
-  body: { flex: 1, padding: Spacing.md, gap: Spacing.sm },
+  body: { flex: 1, padding: 12, gap: 6 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
   name: { fontSize: FontSize.md, fontWeight: '600', flex: 1, lineHeight: FontSize.md * 1.4 },

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
@@ -31,6 +32,7 @@ interface AddTodoModalProps {
 function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   const { colors: Colors, isLight } = useColors();
   const { addTodo } = useTodoStore();
+  const insets = useSafeAreaInsets();
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
   const [dueTime, setDueTime] = useState('');
@@ -97,6 +99,8 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
     setSubItemInputs(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const bottomPad = Math.max(insets.bottom, Spacing.md);
+
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Animated.View
@@ -108,7 +112,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.modalKAV}
       >
-        <Animated.View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border, transform: [{ translateY: sheetTranslateY }] }]}>
+        <Animated.View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border, paddingBottom: bottomPad, transform: [{ translateY: sheetTranslateY }] }]}>
           <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
           <Text style={[styles.modalTitle, { color: Colors.textPrimary }]}>New Task</Text>
 
@@ -307,7 +311,11 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
 }
 
 // ── Main TodoSection ──────────────────────────────────────────────────────────
-export default function TodoSection() {
+interface TodoSectionProps {
+  onComplete?: (todoId: string, xpAmount: number) => void;
+}
+
+export default function TodoSection({ onComplete }: TodoSectionProps) {
   const { colors: Colors, isLight } = useColors();
   const { todos, completeTodo, toggleSubItem, deleteTodo, rescheduleTodo, updateTodo } = useTodoStore();
   const [expanded, setExpanded] = useState(true);
@@ -330,8 +338,12 @@ export default function TodoSection() {
 
   const handleComplete = useCallback(async (id: string) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const todo = useTodoStore.getState().todos.find(t => t.id === id);
     await completeTodo(id);
-  }, [completeTodo]);
+    if (onComplete && todo) {
+      onComplete(id, todo.xpReward);
+    }
+  }, [completeTodo, onComplete]);
 
   const handleReschedule = useCallback(async (id: string) => {
     await rescheduleTodo(id, tomorrow);
@@ -605,7 +617,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     padding: Spacing.lg,
-    paddingBottom: Spacing.xxl,
     gap: Spacing.md,
     maxHeight: '85%',
     borderWidth: 1,

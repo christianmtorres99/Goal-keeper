@@ -6,6 +6,7 @@ const KEY = 'todoXP_v1';
 interface TodoXPStore {
   totalXP: number;
   addXP: (amount: number) => Promise<void>;
+  subtractXP: (amount: number) => Promise<void>;
   load: () => Promise<void>;
 }
 
@@ -28,6 +29,16 @@ export const useTodoXPStore = create<TodoXPStore>((set, get) => ({
       await AsyncStorage.setItem(KEY, String(next));
     } catch (e) {
       console.error('todoXPStore.addXP failed:', e);
+    }
+  },
+
+  subtractXP: async (amount: number) => {
+    try {
+      const next = Math.max(0, get().totalXP - amount);
+      set({ totalXP: next });
+      await AsyncStorage.setItem(KEY, String(next));
+    } catch (e) {
+      console.error('todoXPStore.subtractXP failed:', e);
     }
   },
 }));

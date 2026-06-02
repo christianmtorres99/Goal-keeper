@@ -27,14 +27,18 @@ import type { DrawingPath, JournalEntry } from '../types';
 
 type Tab = 'write' | 'draw' | 'stats';
 
-const MOOD_EMOJIS = ['😔', '😕', '😐', '🙂', '😄'];
+const MOOD_EMOJIS  = ['😔', '😕', '😐', '🙂', '😄'];
+const MOOD_LABELS  = ['Low', 'Meh', 'Okay', 'Good', 'Great'];
+const ENERGY_ICONS: Array<'battery-dead-outline' | 'battery-half-outline' | 'battery-full-outline' | 'flash-outline' | 'flash'> =
+  ['battery-dead-outline', 'battery-half-outline', 'battery-full-outline', 'flash-outline', 'flash'];
+const ENERGY_LABELS = ['Low', 'Fair', 'Good', 'High', 'Max'];
 const PEN_SIZES = [2, 4, 8];
 
-const PAPER_BG_DARK   = '#111111';
-const PAPER_LINE_DARK = '#1A1A1A';
-const PAPER_BG_LIGHT  = '#FEFEFE';
+const PAPER_BG_DARK    = '#111111';
+const PAPER_LINE_DARK  = '#1A1A1A';
+const PAPER_BG_LIGHT   = '#FEFEFE';
 const PAPER_LINE_LIGHT = '#E5E7EB';
-const LINE_H = FontSize.md * 1.8;
+const LINE_H = FontSize.md * 1.8; // 27px — shared by paper lines AND textInput lineHeight
 
 // ── Plain-text extraction helper ──────────────────────────────────────────────
 
@@ -45,6 +49,41 @@ function extractPlainText(raw: string): string {
     if (typeof parsed.t === 'string') return parsed.t;
   } catch {}
   return raw;
+}
+
+// ── Shared chip for mood & energy ─────────────────────────────────────────────
+
+interface ChipProps {
+  selected: boolean;
+  onPress: () => void;
+  label: string;
+  /** Either an emoji string or an Ionicons name */
+  icon: string;
+  iconIsEmoji?: boolean;
+}
+
+function RatingChip({ selected, onPress, label, icon, iconIsEmoji }: ChipProps) {
+  const { colors: Colors } = useColors();
+  return (
+    <TouchableOpacity
+      style={[
+        styles.chip,
+        { backgroundColor: Colors.bg2, borderColor: Colors.border },
+        selected && { backgroundColor: Colors.accentDim, borderColor: Colors.accent, transform: [{ scale: 1.06 }] },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      {iconIsEmoji ? (
+        <Text style={[styles.chipEmoji, selected && styles.chipEmojiSelected]}>{icon}</Text>
+      ) : (
+        <Ionicons name={icon as any} size={selected ? 22 : 20} color={selected ? Colors.accentBright : Colors.textSecondary} />
+      )}
+      <Text style={[styles.chipLabel, { color: selected ? Colors.accentBright : Colors.textSecondary }, selected && { fontWeight: '700' }]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 }
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
@@ -107,7 +146,7 @@ export default function JournalScreen() {
     }
   }, [todayEntry?.id]);
 
-  // Reset pen to first color when light/dark mode switches to avoid invisible ink
+  // Reset pen to first color when light/dark mode switches
   useEffect(() => {
     setPenColor(penColors[0].value);
   }, [isLight]);
@@ -115,7 +154,7 @@ export default function JournalScreen() {
   // Unsaved changes guard
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
-      if (isSavingRef.current) return; // intentional save — don't block
+      if (isSavingRef.current) return;
       if (!isDirty) return;
       e.preventDefault();
       Alert.alert(
@@ -229,55 +268,39 @@ export default function JournalScreen() {
                   color={Colors.textSecondary}
                 />
               </TouchableOpacity>
+
               {!moodCollapsed && (
                 <>
-                  {/* Mood */}
+                  {/* Mood chips */}
                   <View style={styles.ratingSection}>
-                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>How are you feeling?</Text>
-                    <View style={styles.emojiRow}>
-                      {MOOD_EMOJIS.map((emoji, idx) => {
-                        const val = idx + 1;
-                        return (
-                          <TouchableOpacity
-                            key={idx}
-                            style={[
-                              styles.emojiBtn,
-                              { borderColor: Colors.border, backgroundColor: Colors.bg1 },
-                              mood === val && { borderColor: Colors.accent, backgroundColor: Colors.accentDim },
-                            ]}
-                            onPress={() => setMood(val)}
-                          >
-                            <Text style={[styles.emoji, mood === val && styles.emojiSelected]}>{emoji}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
+                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Mood</Text>
+                    <View style={styles.chipRow}>
+                      {MOOD_EMOJIS.map((emoji, idx) => (
+                        <RatingChip
+                          key={idx}
+                          selected={mood === idx + 1}
+                          onPress={() => setMood(idx + 1)}
+                          icon={emoji}
+                          label={MOOD_LABELS[idx]}
+                          iconIsEmoji
+                        />
+                      ))}
                     </View>
                   </View>
 
-                  {/* Energy */}
+                  {/* Energy chips */}
                   <View style={styles.ratingSection}>
-                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Energy level</Text>
-                    <View style={styles.energyRow}>
-                      {[1, 2, 3, 4, 5].map(val => (
-                        <TouchableOpacity
-                          key={val}
-                          style={[
-                            styles.energyBar,
-                            { borderColor: Colors.border, backgroundColor: Colors.bg1 },
-                            val <= energy && { borderColor: Colors.accent },
-                          ]}
-                          onPress={() => setEnergy(val)}
-                        >
-                          <View
-                            style={[
-                              styles.energyBarFill,
-                              { height: [8, 16, 24, 32, 40][val - 1], backgroundColor: Colors.bg3 },
-                              val <= energy && { backgroundColor: Colors.accent },
-                            ]}
-                          />
-                        </TouchableOpacity>
+                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Energy</Text>
+                    <View style={styles.chipRow}>
+                      {ENERGY_ICONS.map((icon, idx) => (
+                        <RatingChip
+                          key={idx}
+                          selected={energy === idx + 1}
+                          onPress={() => setEnergy(idx + 1)}
+                          icon={icon}
+                          label={ENERGY_LABELS[idx]}
+                        />
                       ))}
-                      <Text style={[styles.energyLabel, { color: Colors.textSecondary }]}>{energy}/5</Text>
                     </View>
                   </View>
                 </>
@@ -294,7 +317,7 @@ export default function JournalScreen() {
               </View>
 
               <TextInput
-                style={[styles.paperInput, { color: paperTextColor }]}
+                style={[styles.paperInput, { color: paperTextColor, lineHeight: LINE_H }]}
                 multiline
                 value={text}
                 onChangeText={setText}
@@ -424,23 +447,23 @@ const styles = StyleSheet.create({
   moodToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4, width: '100%' },
   dateLabel: { fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
   ratingSection: { gap: Spacing.xs, width: '100%' },
-  ratingLabel: { fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
-  emojiRow: { flexDirection: 'row', gap: Spacing.xs, justifyContent: 'center' },
-  emojiBtn: {
-    width: 44, height: 44,
-    alignItems: 'center', justifyContent: 'center',
-    borderRadius: Radius.md, borderWidth: 1,
-  },
-  emoji: { fontSize: 26 },
-  emojiSelected: { fontSize: 28 },
+  ratingLabel: { fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  energyRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm, justifyContent: 'center' },
-  energyBar: {
-    width: 34, alignItems: 'center', justifyContent: 'flex-end',
-    height: 44, borderRadius: Radius.sm, borderWidth: 1, overflow: 'hidden',
+  // Chip row (mood + energy)
+  chipRow: { flexDirection: 'row', gap: Spacing.xs },
+  chip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    minHeight: 64,
   },
-  energyBarFill: { width: '100%', borderRadius: Radius.sm },
-  energyLabel: { fontSize: FontSize.sm, minWidth: 24 },
+  chipEmoji: { fontSize: 24 },
+  chipEmojiSelected: { fontSize: 26 },
+  chipLabel: { fontSize: 10, fontWeight: '600', textAlign: 'center' },
 
   // Paper text area — fills remaining space
   paperWrapper: {
@@ -450,8 +473,8 @@ const styles = StyleSheet.create({
   paperLine: { position: 'absolute', left: 0, right: 0, height: 1 },
   paperInput: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 24,
+    fontSize: FontSize.md,
+    // lineHeight is set inline as LINE_H so it matches the paper line spacing
     padding: Spacing.md,
     textAlignVertical: 'top',
   },

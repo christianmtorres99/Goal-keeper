@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -164,6 +166,14 @@ export default function CalendarScreen() {
     setSelectedDay(null);
   };
 
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-40, 40])
+    .failOffsetY([-20, 20])
+    .onEnd((e) => {
+      if (e.translationX < -60) runOnJS(nextMonth)();
+      else if (e.translationX > 60) runOnJS(prevMonth)();
+    });
+
   // Grouped logs for selected day
   const selectedDayGrouped = useMemo(() => {
     if (!selectedDay) return [];
@@ -228,6 +238,7 @@ export default function CalendarScreen() {
         {DOW_SHORT.map(d => <Text key={d} style={[styles.dowLabel, { color: Colors.textSecondary }]}>{d}</Text>)}
       </View>
 
+      <GestureDetector gesture={swipeGesture}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Calendar grid */}
         <View style={styles.grid}>
@@ -257,7 +268,7 @@ export default function CalendarScreen() {
                   styles.dayNum,
                   { color: Colors.textPrimary },
                   isToday && [styles.dayNumToday, { color: Colors.accentBright }],
-                  isFuture && [styles.dayNumFuture, { color: Colors.textDisabled }],
+                  isFuture && isCurrentMonth && [styles.dayNumFuture, { color: Colors.textDisabled }],
                 ]}>
                   {parseInt(dateStr.split('-')[2])}
                 </Text>
@@ -372,6 +383,7 @@ export default function CalendarScreen() {
           )}
         </View>
       </ScrollView>
+      </GestureDetector>
 
       {/* Day detail modal */}
       <Modal visible={!!selectedDay} transparent animationType="fade" onRequestClose={() => setSelectedDay(null)}>

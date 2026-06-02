@@ -49,7 +49,10 @@ import MoodSuggestionCard from '../components/home/MoodSuggestionCard';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
-const TAB_BAR_HEIGHT = 56;
+
+type UndoEntry =
+  | { type: 'goal'; logId: string; message: string }
+  | { type: 'todo'; todoId: string; xp: number; message: string };
 
 export default function HomeScreen() {
   const { colors: Colors, isLight } = useColors();
@@ -72,12 +75,14 @@ export default function HomeScreen() {
   const [animateSignals, setAnimateSignals] = useState<Record<string, number>>({});
   const [pendingAnimGoalId, setPendingAnimGoalId] = useState<string | null>(null);
 
-  const [undoVisible, setUndoVisible] = useState(false);
-  const [undoLogId, setUndoLogId] = useState<string | null>(null);
-  const [undoMessage, setUndoMessage] = useState('');
+  // Unified undo state
+  const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
 
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
+
+  // Logged goals collapsible
+  const [loggedCollapsed, setLoggedCollapsed] = useState(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
 
@@ -99,6 +104,16 @@ export default function HomeScreen() {
     const today = todayString();
     return new Set(logs.filter(l => l.logDate === today).map(l => l.goalId));
   }, [logs]);
+
+  // Split goals into pending (not logged today) and logged (logged today)
+  const pendingGoals = useMemo(
+    () => activeGoals.filter(g => !todayLogged.has(g.id)),
+    [activeGoals, todayLogged]
+  );
+  const loggedGoals = useMemo(
+    () => activeGoals.filter(g => todayLogged.has(g.id)),
+    [activeGoals, todayLogged]
+  );
 
   const questsEarned = useMemo(
     () => quests.filter(q => q.completed).reduce((s, q) => s + q.xpReward, 0),
@@ -191,9 +206,8 @@ export default function HomeScreen() {
   const handleRestDayActivate = useCallback(async () => {
     setRestDayModalVisible(false);
     await activateRestDay();
-    const xp = Math.floor(Math.random() * 51) + 100; // 100–150 XP
-    setUndoMessage(`Rest Day activated! +${xp} XP — your streak is safe 😌`);
-    setUndoVisible(true);
+    const xp = Math.floor(Math.random() * 51) + 100;
+    setUndoEntry({ type: 'goal', logId: '', message: `Rest Day activated! +${xp} XP — your streak is safe 😌` });
   }, [activateRestDay]);
 
   const handleRestDayDismiss = useCallback(async () => {
@@ -226,7 +240,6 @@ export default function HomeScreen() {
     const gs = useGameStore.getState();
     const qs = useQuestStore.getState();
 
-    // Streak rebuild bonus (1.5× = +50% for 7 days after a broken streak)
     if (result.events.includes('comeback')) {
       await gs.startRebuild(goalId);
     }
@@ -239,7 +252,6 @@ export default function HomeScreen() {
       }
     }
 
-    // Apply deferred login bonus to first log of the day
     const loginXP = gs.pendingLoginXP;
     if (loginXP > 0) {
       await addBonusXP(result.log.id, loginXP);
@@ -247,7 +259,6 @@ export default function HomeScreen() {
       await useGameStore.getState().clearPendingLoginXP();
     }
 
-    // Daily double bonus (2× = +100% of base XP)
     if (gs.dailyDoubleGoalId === goalId) {
       const ddBonus = result.log.xpAwarded;
       if (ddBonus > 0) {
@@ -257,7 +268,6 @@ export default function HomeScreen() {
       }
     }
 
-    // Hot streak bonus: if streak was already active from prior days, +50% per log
     const today = todayString();
     const hotStreakWasActive = gs.hotStreakDays >= HOT_STREAK_MIN_DAYS && gs.lastPerfectDate !== today;
     const todayLoggedAfter = new Set([...logs.filter(l => l.logDate === today).map(l => l.goalId), goalId]);
@@ -272,20 +282,16 @@ export default function HomeScreen() {
       }
     }
 
-    // Update XP streak
     await gs.onXpEarned();
 
-    // Quest progress
     const hour = new Date().getHours();
     qs.markProgress('log_any', goalId);
     if (note?.trim()) qs.markProgress('use_note');
     if (hour < 10) qs.markProgress('early_log');
 
-    // Update log_all quest with the real unique goal count for today
     const uniqueGoalsToday = todayLoggedAfter.size;
     qs.markAllGoals(uniqueGoalsToday);
 
-    // Complete newly satisfied quests and award XP
     const freshQuests = useQuestStore.getState().quests;
     let questXP = 0;
     for (const quest of freshQuests) {
@@ -299,7 +305,6 @@ export default function HomeScreen() {
       extraXP += questXP;
     }
 
-    // Badge check
     const goalLogs = logs.filter(l => l.goalId === goalId);
     const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
     const streakInfo = computeStreakWithGrace([...goalLogs, result.log], grace.graceDayUsed, grace.graceDayRefillDate);
@@ -315,30 +320,33 @@ export default function HomeScreen() {
       logHour: new Date().getHours(),
     });
 
-    // Undo toast with final XP total
     const totalDisplayXP = result.log.xpAwarded + result.bonusXP + extraXP;
-    setUndoLogId(result.log.id);
-    setUndoMessage(getUndoToastMessage(goalName, totalDisplayXP, extraEvents));
-    setUndoVisible(true);
+    setUndoEntry({ type: 'goal', logId: result.log.id, message: getUndoToastMessage(goalName, totalDisplayXP, extraEvents) });
 
     if (newBadges.length > 0 || result.bonusXP > 0 || extraXP > 0) {
       setPendingBadges(newBadges);
       setPendingBonusXP(result.bonusXP + extraXP);
       setPendingEvents(extraEvents);
-      // Animation fires when BadgeModal closes
     } else {
-      // No badge modal — fire animation immediately
       setAnimateSignals(s => ({ ...s, [goalId]: (s[goalId] ?? 0) + 1 }));
       setPendingAnimGoalId(null);
     }
   }, [logModalGoalId, logs, graceStates, playerStats, addLog, addBonusXP, checkAndAward, goals, activeGoals]);
 
+  // Called by TodoSection when a todo is completed
+  const handleTodoComplete = useCallback((todoId: string, xpAmount: number) => {
+    setUndoEntry({ type: 'todo', todoId, xp: xpAmount, message: `Task done! +${xpAmount} XP` });
+  }, []);
+
   const handleUndo = useCallback(async () => {
-    if (undoLogId) {
-      await removeLog(undoLogId);
-      setUndoLogId(null);
+    if (!undoEntry) return;
+    if (undoEntry.type === 'goal' && undoEntry.logId) {
+      await removeLog(undoEntry.logId);
+    } else if (undoEntry.type === 'todo') {
+      await useTodoStore.getState().uncompleteTodo(undoEntry.todoId);
+      await useTodoXPStore.getState().subtractXP(undoEntry.xp);
     }
-  }, [undoLogId, removeLog]);
+  }, [undoEntry, removeLog]);
 
   const handleDragEnd = useCallback(({ data }: { data: Goal[] }) => {
     reorderGoals(data.map(g => g.id));
@@ -400,10 +408,29 @@ export default function HomeScreen() {
     );
   }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId]);
 
+  // Render a non-draggable GoalCard for logged goals
+  const renderLoggedGoal = useCallback((goal: Goal) => {
+    const goalLogs = logs.filter(l => l.goalId === goal.id);
+    const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+    const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
+    return (
+      <GoalCard
+        key={goal.id}
+        goal={goal}
+        logs={goalLogs}
+        streakInfo={streakInfo}
+        onPress={() => navigation.navigate('GoalDetail', { goalId: goal.id })}
+        onLog={() => handleLogPress(goal.id)}
+        isDailyDouble={goal.id === dailyDoubleGoalId}
+        animateSignal={animateSignals[goal.id]}
+      />
+    );
+  }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId, animateSignals]);
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       <DraggableFlatList
-        data={activeGoals}
+        data={pendingGoals}
         keyExtractor={g => g.id}
         onDragEnd={handleDragEnd}
         renderItem={renderItem}
@@ -454,17 +481,46 @@ export default function HomeScreen() {
               />
             )}
 
-            <TodoSection />
+            <TodoSection onComplete={handleTodoComplete} />
 
-            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }, allDone && { color: Colors.success }]}>
-              {allDone
-                ? `Perfect day — ${todayLogged.size}/${activeGoals.length} logged`
-                : `Today — ${todayLogged.size}/${activeGoals.length} logged`}
-            </Text>
+            {pendingGoals.length > 0 && (
+              <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>
+                {`Up next — ${pendingGoals.length} remaining`}
+              </Text>
+            )}
           </View>
         }
+        ListFooterComponent={
+          loggedGoals.length > 0 ? (
+            <View style={[styles.loggedSection, { gap: Spacing.sm }]}>
+              <TouchableOpacity
+                style={styles.loggedHeader}
+                onPress={() => setLoggedCollapsed(v => !v)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+                <Text style={[styles.loggedHeaderText, { color: Colors.success }]}>
+                  Done Today — {loggedGoals.length} / {activeGoals.length}
+                </Text>
+                <View style={{ flex: 1 }} />
+                <Ionicons
+                  name={loggedCollapsed ? 'chevron-down' : 'chevron-up'}
+                  size={16}
+                  color={Colors.textSecondary}
+                />
+              </TouchableOpacity>
+              {!loggedCollapsed && (
+                <View style={{ gap: Spacing.sm }}>
+                  {loggedGoals.map(renderLoggedGoal)}
+                </View>
+              )}
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <EmptyState icon="flag-outline" title="No goals yet" subtitle="Tap + to add your first goal" />
+          loggedGoals.length === 0 ? (
+            <EmptyState icon="flag-outline" title="No goals yet" subtitle="Tap + to add your first goal" />
+          ) : null
         }
         ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
       />
@@ -493,7 +549,6 @@ export default function HomeScreen() {
             const gid = countModalGoalId;
             setCountModalGoalId(null);
             await addLog(gid, note, undefined, true, count);
-            // Fire animation after count modal closes (no badge modal for count logs)
             setAnimateSignals(s => ({ ...s, [gid]: (s[gid] ?? 0) + 1 }));
             setPendingAnimGoalId(null);
           }}
@@ -502,10 +557,10 @@ export default function HomeScreen() {
       )}
 
       <UndoToast
-        visible={undoVisible}
-        message={undoMessage}
+        visible={undoEntry !== null}
+        message={undoEntry?.message ?? ''}
         onUndo={handleUndo}
-        onDismiss={() => setUndoVisible(false)}
+        onDismiss={() => setUndoEntry(null)}
         topOffset={insets.top + 8}
       />
 
@@ -573,5 +628,14 @@ const styles = StyleSheet.create({
   xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   xpCaption: { fontSize: FontSize.xs },
   sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  sectionLabelDone: {},
+  // Logged goals section
+  loggedSection: { marginTop: Spacing.md },
+  loggedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+  loggedHeaderText: { fontSize: FontSize.sm, fontWeight: '700' },
 });

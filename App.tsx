@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, AppState, AppStateStatus } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -88,13 +89,30 @@ export default function App() {
     }
     bootstrap();
 
+    // Midnight reset: re-run daily clear when app returns to foreground on a new day
+    const handleAppState = async (nextState: AppStateStatus) => {
+      if (nextState !== 'active') return;
+      const lastClear = await AsyncStorage.getItem('lastTodoClearDate');
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (lastClear !== today) {
+        await useTodoStore.getState().clearExpiredTodos();
+        await useTodoStore.getState().loadTodos();
+        await AsyncStorage.setItem('lastTodoClearDate', today);
+      }
+    };
+    const appStateSub = AppState.addEventListener('change', handleAppState);
+
     // Keep static Colors object in sync for StyleSheet.create references
     const unsub = useThemeStore.subscribe((state) => {
       const effectiveMode = state.colorMode === 'system' ? (systemScheme ?? 'dark') : state.colorMode;
       const palette = effectiveMode === 'light' ? LIGHT_THEMES[state.activeTheme] : THEMES[state.activeTheme];
       Object.assign(Colors, palette);
     });
-    return unsub;
+    return () => {
+      unsub();
+      appStateSub.remove();
+    };
   }, [systemScheme]);
 
   if (error) {
@@ -115,22 +133,26 @@ export default function App() {
 
   if (showOnboarding) {
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style={isLight ? 'dark' : 'light'} />
-        <OnboardingScreen onDone={() => setShowOnboarding(false)} />
-      </GestureHandlerRootView>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <StatusBar style={isLight ? 'dark' : 'light'} />
+          <OnboardingScreen onDone={() => setShowOnboarding(false)} />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <NavigationContainer theme={NAV_THEME}>
-      <ThemeProvider>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg1 }}>
-          <StatusBar style={isLight ? 'dark' : 'light'} />
-          <AppNavigator />
-        </GestureHandlerRootView>
-      </ThemeProvider>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer theme={NAV_THEME}>
+        <ThemeProvider>
+          <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg1 }}>
+            <StatusBar style={isLight ? 'dark' : 'light'} />
+            <AppNavigator />
+          </GestureHandlerRootView>
+        </ThemeProvider>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

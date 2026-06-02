@@ -39,6 +39,7 @@ interface TodoStore {
   loadTodos: () => Promise<void>;
   addTodo: (title: string, dueDate?: string, dueTime?: string, subItemTitles?: string[]) => Promise<void>;
   completeTodo: (id: string) => Promise<void>;
+  uncompleteTodo: (id: string) => Promise<void>;
   toggleSubItem: (todoId: string, subItemId: string) => Promise<void>;
   addSubItem: (todoId: string, title: string) => Promise<void>;
   rescheduleTodo: (id: string, newDate: string) => Promise<void>;
@@ -159,6 +160,23 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       }));
     } catch (e) {
       console.error('completeTodo failed:', e);
+    }
+  },
+
+  uncompleteTodo: async (id) => {
+    try {
+      const db = await getDb();
+      await db.runAsync(
+        'UPDATE todos SET completed=0, completed_at=NULL WHERE id=?',
+        [id]
+      );
+      set(s => ({
+        todos: s.todos.map(t =>
+          t.id === id ? { ...t, completed: false, completedAt: undefined } : t
+        ),
+      }));
+    } catch (e) {
+      console.error('uncompleteTodo failed:', e);
     }
   },
 

@@ -91,7 +91,7 @@ export default function StatsScreen() {
       labels,
       datasets: [
         { data: moodData, color: (op = 1) => Colors.accent + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
-        { data: energyData, color: (op = 1) => Colors.success + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '00'), strokeWidth: 3 },
+        { data: energyData, color: (op = 1) => Colors.warning + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
       ],
       legend: ['Mood', 'Energy'],
     };
@@ -366,7 +366,7 @@ export default function StatsScreen() {
                   <Text style={[styles.moodLegendText, { color: Colors.textSecondary }]}>Mood</Text>
                 </View>
                 <View style={styles.moodLegendItem}>
-                  <View style={[styles.moodLegendDot, { backgroundColor: Colors.success }]} />
+                  <View style={[styles.moodLegendDot, { backgroundColor: Colors.warning }]} />
                   <Text style={[styles.moodLegendText, { color: Colors.textSecondary }]}>Energy</Text>
                 </View>
               </View>
@@ -376,7 +376,7 @@ export default function StatsScreen() {
                     labels: moodStats.last30Labels,
                     datasets: [
                       { data: moodStats.last30Mood, color: (op = 1) => Colors.accent + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
-                      { data: moodStats.last30Energy, color: (op = 1) => Colors.success + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
+                      { data: moodStats.last30Energy, color: (op = 1) => Colors.warning + Math.round(Math.max(op, 0.9) * 255).toString(16).padStart(2, '0'), strokeWidth: 3 },
                     ],
                   }}
                   width={W}
