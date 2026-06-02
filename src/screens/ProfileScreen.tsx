@@ -45,12 +45,13 @@ const BADGE_SIZE = Math.floor(
 
 const SHARE_BG_COLORS_DARK = [
   '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D', '#0D2A2A', '#1A1A1A',
-  '#1A1430', '#2A1A0D', '#16213E', '#1B1B2F', '#0F3460', '#2C1654',
-  '#1A0A14', '#0A1A14', '#1A1400', '#0A0A1A', '#2D1B69', '#0A3060',
+  '#1A1430', '#2A1A0D', '#16213E', '#0F3460', '#2C1654',
+  '#1A0A14', '#0A1A14', '#1A1400', '#2D1B69', '#0A3060',
 ];
 const SHARE_BG_COLORS_LIGHT = [
   '#F0E6FF', '#E6F0FF', '#E6FFE6', '#FFE6E6', '#FFF0E6', '#E6FFFF',
   '#FFFCE6', '#F5E6FF', '#EEF2FF', '#FFF8F0',
+  '#FAFAFA', '#F5ECD7', '#F2D4CC', '#CCE5FF', '#D4F2E8', '#FFF0FB',
 ];
 
 export default function ProfileScreen() {

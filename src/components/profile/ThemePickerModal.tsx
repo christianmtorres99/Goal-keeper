@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../store/themeStore';
-import { THEMES, THEME_META, type ThemeName } from '../../constants/themes';
+import { THEMES, LIGHT_THEMES, THEME_META, type ThemeName } from '../../constants/themes';
 import { Radius, Spacing, FontSize, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 
@@ -45,7 +45,7 @@ export default function ThemePickerModal({
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <TouchableOpacity style={[styles.overlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]} activeOpacity={1} onPress={onClose}>
@@ -82,7 +82,7 @@ export default function ThemePickerModal({
               {(Object.entries(THEME_META) as [ThemeName, { label: string; preview: string }][]).map(
                 ([key, meta]) => {
                   const isActive = activeTheme === key;
-                  const palette = THEMES[key];
+                  const palette = isLight ? LIGHT_THEMES[key] : THEMES[key];
                   return (
                     <TouchableOpacity
                       key={key}

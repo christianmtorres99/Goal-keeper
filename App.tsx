@@ -21,25 +21,26 @@ import { useThemeStore } from './src/store/themeStore';
 import { useScheduledTaskStore } from './src/store/scheduledTaskStore';
 import { useTodoStore } from './src/store/todoStore';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { useColors } from './src/hooks/useColors';
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [themeKey, setThemeKey] = useState(0);
 
   const systemScheme = useColorScheme(); // 'dark' | 'light' | null
+  const { colors: appColors, isLight } = useColors();
 
   const NAV_THEME = {
     ...DarkTheme,
     colors: {
       ...DarkTheme.colors,
-      primary: Colors.accentBright,
-      background: Colors.bg0,
-      card: Colors.bg0,
-      text: Colors.textPrimary,
-      border: Colors.border,
-      notification: Colors.accentBright,
+      primary: appColors.accentBright,
+      background: appColors.bg0,
+      card: appColors.bg0,
+      text: appColors.textPrimary,
+      border: appColors.border,
+      notification: appColors.accentBright,
     },
   };
 
@@ -87,12 +88,11 @@ export default function App() {
     }
     bootstrap();
 
-    // Subscribe to theme changes and force full remount so StyleSheet caches reset
+    // Keep static Colors object in sync for StyleSheet.create references
     const unsub = useThemeStore.subscribe((state) => {
       const effectiveMode = state.colorMode === 'system' ? (systemScheme ?? 'dark') : state.colorMode;
       const palette = effectiveMode === 'light' ? LIGHT_THEMES[state.activeTheme] : THEMES[state.activeTheme];
       Object.assign(Colors, palette);
-      setThemeKey(k => k + 1);
     });
     return unsub;
   }, [systemScheme]);
@@ -116,17 +116,17 @@ export default function App() {
   if (showOnboarding) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style={Colors.bg0 === '#FFFFFF' || Colors.bg0.startsWith('#F') ? 'dark' : 'light'} />
+        <StatusBar style={isLight ? 'dark' : 'light'} />
         <OnboardingScreen onDone={() => setShowOnboarding(false)} />
       </GestureHandlerRootView>
     );
   }
 
   return (
-    <NavigationContainer theme={NAV_THEME} key={themeKey}>
-      <ThemeProvider key={themeKey}>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.bg1 }}>
-          <StatusBar style={Colors.bg0 === '#FFFFFF' || Colors.bg0.startsWith('#F') ? 'dark' : 'light'} />
+    <NavigationContainer theme={NAV_THEME}>
+      <ThemeProvider>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg1 }}>
+          <StatusBar style={isLight ? 'dark' : 'light'} />
           <AppNavigator />
         </GestureHandlerRootView>
       </ThemeProvider>
