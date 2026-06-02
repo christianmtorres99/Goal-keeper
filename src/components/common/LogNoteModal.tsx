@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvo
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing, OVERLAY_MID } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { getStreakMultiplier, calculateXPForLog } from '../../logic/xpEngine';
 import { getMotivationalQuote } from '../../utils/motivationUtils';
 
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function LogNoteModal({ visible, goalName, goalColor, currentStreak, onConfirm, onCancel, pastDate }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const [note, setNote] = useState('');
   const nextStreak = currentStreak + 1;
   const xpPreview = calculateXPForLog(pastDate ? 1 : nextStreak);
@@ -28,11 +30,7 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
 
   useEffect(() => {
     if (visible) {
-      Animated.timing(backdropOpacity, {
-        toValue: 1,
-        duration: 280,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(backdropOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
     } else {
       backdropOpacity.setValue(0);
     }
@@ -69,51 +67,53 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
     onCancel();
   };
 
+  const backdropColor = isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK;
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
         <Animated.View
-          style={[styles.backdrop, { opacity: backdropOpacity }]}
+          style={[styles.backdrop, { backgroundColor: backdropColor, opacity: backdropOpacity }]}
           pointerEvents="none"
         />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleCancel} />
         <GestureDetector gesture={panGesture}>
-          <ReAnimated.View style={[styles.sheet, sheetStyle]}>
-            <View style={styles.handle} />
+          <ReAnimated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
             <View style={styles.header}>
               <View style={[styles.colorDot, { backgroundColor: goalColor }]} />
-              <Text style={styles.goalName}>{goalName}</Text>
+              <Text style={[styles.goalName, { color: Colors.textPrimary }]}>{goalName}</Text>
             </View>
 
             {pastDate ? (
-              <View style={styles.preview}>
+              <View style={[styles.preview, { backgroundColor: Colors.bg2 }]}>
                 <View style={styles.previewItem}>
                   <Ionicons name="calendar-outline" size={16} color={Colors.accentBright} />
-                  <Text style={styles.previewValue}>Past day — {pastDate}</Text>
+                  <Text style={[styles.previewValue, { color: Colors.textPrimary }]}>Past day — {pastDate}</Text>
                 </View>
                 <View style={styles.previewItem}>
                   <Ionicons name="flash" size={16} color={Colors.accentBright} />
-                  <Text style={styles.previewValue}>+15 XP</Text>
+                  <Text style={[styles.previewValue, { color: Colors.textPrimary }]}>+15 XP</Text>
                 </View>
               </View>
             ) : (
-              <View style={styles.preview}>
+              <View style={[styles.preview, { backgroundColor: Colors.bg2 }]}>
                 <View style={styles.previewItem}>
                   <Ionicons name="flame" size={16} color={Colors.warning} />
-                  <Text style={styles.previewValue}>
+                  <Text style={[styles.previewValue, { color: Colors.textPrimary }]}>
                     {nextStreak === 1 ? 'Day 1 streak!' : `${nextStreak}d streak`}
                   </Text>
                 </View>
                 <View style={styles.previewItem}>
                   <Ionicons name="flash" size={16} color={Colors.accentBright} />
-                  <Text style={styles.previewValue}>+{xpPreview} XP{multiplier > 1 ? ` (${multiplier}×)` : ''}</Text>
+                  <Text style={[styles.previewValue, { color: Colors.textPrimary }]}>+{xpPreview} XP{multiplier > 1 ? ` (${multiplier}×)` : ''}</Text>
                 </View>
               </View>
             )}
 
-            <Text style={styles.label}>Add a note (optional)</Text>
+            <Text style={[styles.label, { color: Colors.textSecondary }]}>Add a note (optional)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
               value={note}
               onChangeText={setNote}
               placeholder="How did it go today?"
@@ -123,11 +123,11 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
               autoFocus
             />
 
-            <Text style={styles.quote}>"{quote}"</Text>
+            <Text style={[styles.quote, { color: Colors.textDisabled }]}>"{quote}"</Text>
 
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-                <Text style={styles.cancelText}>Cancel</Text>
+              <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={handleCancel}>
+                <Text style={[styles.cancelText, { color: Colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: goalColor }]} onPress={handleConfirm}>
                 <Ionicons name="checkmark" size={18} color="#fff" />
@@ -143,21 +143,21 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: OVERLAY_MID },
-  sheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderTopWidth: 1, borderColor: Colors.border },
-  handle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  backdrop: { ...StyleSheet.absoluteFill },
+  sheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderTopWidth: 1 },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   colorDot: { width: 12, height: 12, borderRadius: 6 },
-  goalName: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
-  preview: { flexDirection: 'row', gap: Spacing.lg, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md },
+  goalName: { fontSize: FontSize.lg, fontWeight: '700' },
+  preview: { flexDirection: 'row', gap: Spacing.lg, borderRadius: Radius.md, padding: Spacing.md },
   previewItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  previewValue: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
-  label: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
-  input: { backgroundColor: Colors.bg2, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, color: Colors.textPrimary, fontSize: FontSize.md, padding: Spacing.md, minHeight: 80, textAlignVertical: 'top' },
-  quote: { color: Colors.textDisabled, fontSize: FontSize.xs, fontStyle: 'italic', textAlign: 'center', paddingHorizontal: Spacing.md },
+  previewValue: { fontSize: FontSize.sm, fontWeight: '600' },
+  label: { fontSize: FontSize.sm, fontWeight: '600' },
+  input: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, padding: Spacing.md, minHeight: 80, textAlignVertical: 'top' },
+  quote: { fontSize: FontSize.xs, fontStyle: 'italic', textAlign: 'center', paddingHorizontal: Spacing.md },
   actions: { flexDirection: 'row', gap: Spacing.md },
-  cancelBtn: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  cancelText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
+  cancelBtn: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
+  cancelText: { fontSize: FontSize.md, fontWeight: '600' },
   confirmBtn: { flex: 2, borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
   confirmText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
 });

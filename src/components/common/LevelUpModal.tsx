@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing, OVERLAY_DARK } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { getLevelTier } from './ProfileShareCard';
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 const { width: W } = Dimensions.get('window');
 
 export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -47,11 +49,13 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   }, [visible]);
 
   const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] });
+  const overlayBg = isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE;
+  const flashColor = isLight ? Colors.bg2 : '#FFFFFF';
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
-        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: overlayBg }]}>
+        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
           <LinearGradient
             colors={[tier.color + '33', Colors.bg2, Colors.bg2]}
             style={styles.gradient}
@@ -60,7 +64,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
           {/* Glow ring */}
           <Animated.View style={[styles.glowRing, { borderColor: tier.color, opacity: glowOpacity }]} />
 
-          <Text style={styles.label}>LEVEL UP</Text>
+          <Text style={[styles.label, { color: Colors.textDisabled }]}>LEVEL UP</Text>
 
           <View style={[styles.iconCircle, { borderColor: tier.color, backgroundColor: tier.color + '22' }]}>
             <Ionicons name={tier.icon as any} size={48} color={tier.color} />
@@ -73,7 +77,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
           </View>
 
           <Text style={[styles.tierName, { color: tier.color }]}>{tier.title}</Text>
-          <Text style={styles.subtitle}>You've reached a new level!</Text>
+          <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>You've reached a new level!</Text>
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: tier.color }]}
@@ -84,9 +88,9 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
           </TouchableOpacity>
         </Animated.View>
 
-        {/* White flash overlay */}
+        {/* Flash overlay */}
         <Animated.View
-          style={[styles.flashOverlay, { opacity: flashAnim }]}
+          style={[styles.flashOverlay, { opacity: flashAnim, backgroundColor: flashColor }]}
           pointerEvents="none"
         />
       </Animated.View>
@@ -97,20 +101,17 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: OVERLAY_DARK,
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.xl,
     padding: Spacing.xl,
     width: '100%',
     alignItems: 'center',
     gap: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
   },
   gradient: {
@@ -130,10 +131,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#FFFFFF',
   },
   label: {
-    color: Colors.textDisabled,
     fontSize: FontSize.xs,
     fontWeight: '800',
     letterSpacing: 3,
@@ -166,7 +165,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   subtitle: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     textAlign: 'center',
   },

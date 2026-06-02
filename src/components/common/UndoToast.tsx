@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 
 interface Props {
   visible: boolean;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function UndoToast({ visible, message, onUndo, onDismiss, durationMs = 8000, topOffset = 80 }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const opacity = useRef(new Animated.Value(0)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -29,9 +31,18 @@ export default function UndoToast({ visible, message, onUndo, onDismiss, duratio
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.toast, { opacity, top: topOffset }]}>
-      <Text style={styles.message}>{message}</Text>
-      <TouchableOpacity onPress={() => { onUndo(); onDismiss(); }} style={styles.undoBtn}>
+    <Animated.View style={[
+      styles.toast,
+      {
+        opacity,
+        top: topOffset,
+        backgroundColor: Colors.bg2,
+        borderColor: Colors.border,
+        shadowColor: isLight ? Colors.textDisabled : Colors.bg0,
+      },
+    ]}>
+      <Text style={[styles.message, { color: Colors.textPrimary }]}>{message}</Text>
+      <TouchableOpacity onPress={() => { onUndo(); onDismiss(); }} style={[styles.undoBtn, { backgroundColor: Colors.accent }]}>
         <Text style={styles.undoText}>Undo</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -43,21 +54,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: Spacing.md,
     right: Spacing.md,
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: Colors.border,
     elevation: 8,
-    shadowColor: Colors.bg0,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
-  message: { color: Colors.textPrimary, fontSize: FontSize.sm, flex: 1 },
-  undoBtn: { backgroundColor: Colors.accent, borderRadius: Radius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, marginLeft: Spacing.md },
+  message: { fontSize: FontSize.sm, flex: 1 },
+  undoBtn: { borderRadius: Radius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, marginLeft: Spacing.md },
   undoText: { color: '#fff', fontSize: FontSize.sm, fontWeight: '700' },
 });

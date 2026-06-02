@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Dimensions
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { xpThresholdForLevel } from '../../logic/xpEngine';
 import { getLevelTier } from './ProfileShareCard';
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function LevelLadderModal({ visible, currentLevel, onClose }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const TOTAL_LEVELS = 55;
   const maxDisplay = Math.min(currentLevel + 5, TOTAL_LEVELS);
   const levels = Array.from({ length: maxDisplay }, (_, i) => i + 1);
@@ -42,12 +44,16 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+        <TouchableOpacity
+          style={[styles.backdrop, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}
+          activeOpacity={1}
+          onPress={onClose}
+        />
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.sheet, sheetStyle]}>
-            <View style={styles.handle} />
-            <Text style={styles.title}>Level Progression</Text>
-            <Text style={styles.subtitle}>Your journey to the top</Text>
+          <Animated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
+            <Text style={[styles.title, { color: Colors.textPrimary }]}>Level Progression</Text>
+            <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>Your journey to the top</Text>
             <View style={styles.listWrap}>
               <ScrollView
                 style={styles.scroll}
@@ -64,7 +70,8 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
                       key={lvl}
                       style={[
                         styles.levelRow,
-                        isCurrentLevel && styles.levelRowCurrent,
+                        { backgroundColor: Colors.bg2, borderColor: Colors.border },
+                        isCurrentLevel && { borderColor: Colors.accentBright, backgroundColor: Colors.accentDim + '55' },
                         !isUnlocked && styles.levelRowLocked,
                       ]}
                     >
@@ -72,12 +79,12 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
                         <Ionicons name={tier.icon as any} size={20} color={isUnlocked ? tier.color : Colors.textDisabled} />
                       </View>
                       <View style={styles.levelInfo}>
-                        <Text style={[styles.levelNum, isCurrentLevel && { color: Colors.accentBright }]}>
+                        <Text style={[styles.levelNum, { color: Colors.textPrimary }, isCurrentLevel && { color: Colors.accentBright }]}>
                           Level {lvl}{isCurrentLevel ? ' ← You' : ''}
                         </Text>
-                        <Text style={[styles.tierName, isUnlocked && { color: tier.color }]}>{tier.title}</Text>
+                        <Text style={[styles.tierName, { color: Colors.textSecondary }, isUnlocked && { color: tier.color }]}>{tier.title}</Text>
                       </View>
-                      <Text style={[styles.xpReq, !isUnlocked && { color: Colors.textDisabled }]}>
+                      <Text style={[styles.xpReq, { color: Colors.accentBright }, !isUnlocked && { color: Colors.textDisabled }]}>
                         {xpNeeded.toLocaleString()} XP
                       </Text>
                     </View>
@@ -86,14 +93,14 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
               </ScrollView>
               {currentLevel + 5 < TOTAL_LEVELS && (
                 <View style={styles.moreLevels}>
-                  <Text style={styles.moreLevelsText}>
+                  <Text style={[styles.moreLevelsText, { color: Colors.accentBright }]}>
                     · · · {TOTAL_LEVELS - Math.min(currentLevel + 5, TOTAL_LEVELS)} more levels await
                   </Text>
                 </View>
               )}
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <Text style={styles.closeBtnText}>Close</Text>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={onClose}>
+              <Text style={[styles.closeBtnText, { color: Colors.textSecondary }]}>Close</Text>
             </TouchableOpacity>
           </Animated.View>
         </GestureDetector>
@@ -104,24 +111,23 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, maxHeight: '80%', borderTopWidth: 1, borderColor: Colors.border },
-  handle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
-  title: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center' },
-  subtitle: { color: Colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center', marginBottom: Spacing.md },
+  backdrop: { ...StyleSheet.absoluteFill },
+  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, maxHeight: '80%', borderTopWidth: 1 },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
+  title: { fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center' },
+  subtitle: { fontSize: FontSize.sm, textAlign: 'center', marginBottom: Spacing.md },
   listWrap: { height: Math.floor(Dimensions.get('window').height * 0.45), position: 'relative' },
   scroll: { flex: 1 },
   scrollContent: { gap: Spacing.xs, paddingBottom: Spacing.xl },
-  levelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
-  levelRowCurrent: { borderColor: Colors.accentBright, backgroundColor: Colors.accentDim + '55' },
+  levelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1 },
   levelRowLocked: { opacity: 0.45 },
   levelIconWrap: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   levelInfo: { flex: 1 },
-  levelNum: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
-  tierName: { color: Colors.textSecondary, fontSize: FontSize.xs },
-  xpReq: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '600' },
+  levelNum: { fontSize: FontSize.sm, fontWeight: '700' },
+  tierName: { fontSize: FontSize.xs },
+  xpReq: { fontSize: FontSize.xs, fontWeight: '600' },
   moreLevels: { alignItems: 'center', paddingVertical: Spacing.sm },
-  moreLevelsText: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
-  closeBtn: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
-  closeBtnText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
+  moreLevelsText: { fontSize: FontSize.sm, fontWeight: '600' },
+  closeBtn: { borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.sm, borderWidth: 1 },
+  closeBtnText: { fontSize: FontSize.md, fontWeight: '600' },
 });

@@ -37,7 +37,7 @@ export default function StreakFlame({ streak, size = 44, children }: Props) {
 
   if (intensity === 0) return <>{children}</>;
 
-  const ringColor = streak >= 30 ? '#F97316' : streak >= 7 ? '#F59E0B' : '#FBD38D';
+  const ringColor = streak >= 30 ? '#F97316' : streak >= 7 ? '#F59E0B' : '#F59E0B';
   const maxScale = 1 + (intensity * 0.12);
 
   const ring1Scale = pulse1.interpolate({ inputRange: [0, 1], outputRange: [1, maxScale] });

@@ -5,7 +5,8 @@ import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import { useTodoXPStore } from '../store/todoXPStore';
@@ -21,20 +22,10 @@ import type { GoalCategory } from '../types';
 
 const W = Dimensions.get('window').width - Spacing.md * 2;
 
-const chartConfig = {
-  backgroundGradientFrom: Colors.bg1,
-  backgroundGradientTo: Colors.bg1,
-  color: (opacity = 1) => `rgba(168, 85, 247, ${Math.max(opacity, 0.85)})`,
-  labelColor: () => Colors.textSecondary,
-  strokeWidth: 3,
-  barPercentage: 0.6,
-  propsForBackgroundLines: { strokeDasharray: '', stroke: Colors.bg3 },
-  decimalPlaces: 0,
-};
-
 type FilterMode = 'all' | 'goal' | 'category';
 
 export default function StatsScreen() {
+  const { colors: Colors } = useColors();
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
   const todoXP = useTodoXPStore(s => s.totalXP);
@@ -42,6 +33,17 @@ export default function StatsScreen() {
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const [selectedGoalId, setSelectedGoalId] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<GoalCategory>('other');
+
+  const chartConfig = useMemo(() => ({
+    backgroundGradientFrom: Colors.bg1,
+    backgroundGradientTo: Colors.bg1,
+    color: (opacity = 1) => Colors.accentBright + Math.round(Math.max(opacity, 0.85) * 255).toString(16).padStart(2, '0'),
+    labelColor: () => Colors.textSecondary,
+    strokeWidth: 3,
+    barPercentage: 0.6,
+    propsForBackgroundLines: { strokeDasharray: '', stroke: Colors.bg3 },
+    decimalPlaces: 0,
+  }), [Colors]);
 
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
   const categoryStats = useMemo(() => getCategoryStats(goals, logs), [goals, logs]);
@@ -91,7 +93,7 @@ export default function StatsScreen() {
       ],
       legend: ['Mood', 'Energy'],
     };
-  }, [journalEntries]);
+  }, [journalEntries, Colors]);
 
   const hasMoodData = useMemo(() => journalEntries.length > 0, [journalEntries]);
 
@@ -231,11 +233,11 @@ export default function StatsScreen() {
           <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Filter by Goal</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
             <TouchableOpacity
-              style={[styles.filterBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, filterMode === 'all' && styles.filterBtnActive]}
+              style={[styles.filterBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, filterMode === 'all' && { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}
               onPress={selectAll}
               hitSlop={{ top: 4, bottom: 4 }}
             >
-              <Text style={[styles.filterText, { color: Colors.textSecondary }, filterMode === 'all' && styles.filterTextActive]}>All</Text>
+              <Text style={[styles.filterText, { color: Colors.textSecondary }, filterMode === 'all' && { color: Colors.accentBright }]}>All</Text>
             </TouchableOpacity>
             {activeGoals.map(g => (
               <TouchableOpacity
@@ -268,7 +270,7 @@ export default function StatsScreen() {
                       styles.filterBtn,
                       styles.categoryFilterBtn,
                       { backgroundColor: Colors.bg2, borderColor: Colors.border },
-                      filterMode === 'category' && selectedCategory === cat && styles.categoryFilterBtnActive,
+                      filterMode === 'category' && selectedCategory === cat && { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
                     ]}
                     onPress={() => selectCategory(cat)}
                     hitSlop={{ top: 4, bottom: 4 }}
@@ -281,7 +283,7 @@ export default function StatsScreen() {
                     <Text style={[
                       styles.filterText,
                       { color: Colors.textSecondary },
-                      filterMode === 'category' && selectedCategory === cat && styles.filterTextActive,
+                      filterMode === 'category' && selectedCategory === cat && { color: Colors.accentBright },
                     ]}>{CATEGORY_LABELS[cat]}</Text>
                   </TouchableOpacity>
                 ))}
@@ -477,11 +479,11 @@ const styles = StyleSheet.create({
   filterSection: { gap: Spacing.xs },
   filterRow: { flexGrow: 0 },
   filterBtn: { borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.xs },
-  filterBtnActive: { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
+  filterBtnActive: {},
   categoryFilterBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  categoryFilterBtnActive: { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
+  categoryFilterBtnActive: {},
   filterText: { fontSize: FontSize.sm },
-  filterTextActive: { color: Colors.accentBright },
+  filterTextActive: {},
   sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   chartCard: { borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },

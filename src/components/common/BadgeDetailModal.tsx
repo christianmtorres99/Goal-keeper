@@ -21,7 +21,8 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors, FontSize, Radius, Spacing, OVERLAY_DARK } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
 import { useBadgeStore } from '../../store/badgeStore';
 import { useGoalStore } from '../../store/goalStore';
@@ -161,6 +162,7 @@ function Particle({ index, total, color, rarity, trigger }: ParticleProps) {
 
 // ── Main modal component ─────────────────────────────────────────────
 export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalProps) {
+  const { colors: Colors, isLight } = useColors();
   const earnedBadges = useBadgeStore(s => s.earnedBadges);
   const goals = useGoalStore(s => s.goals);
 
@@ -284,7 +286,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={{ flex: 1, backgroundColor: OVERLAY_DARK, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE, alignItems: 'center', justifyContent: 'center' }}>
         <SafeAreaView style={{ width: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
           <View
             style={{

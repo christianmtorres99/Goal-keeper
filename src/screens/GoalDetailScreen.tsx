@@ -7,7 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
@@ -35,6 +36,7 @@ const BADGE_COLS = 4;
 const BADGE_SIZE = Math.floor((W - Spacing.md * (BADGE_COLS - 1)) / BADGE_COLS);
 
 export default function GoalDetailScreen() {
+  const { colors: Colors, isLight } = useColors();
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { goalId } = route.params;
@@ -57,7 +59,7 @@ export default function GoalDetailScreen() {
         </View>
       ),
     });
-  }, [goal, navigation]);
+  }, [goal, navigation, Colors.textPrimary]);
 
   // Past-day logging
   const [pastPickerVisible, setPastPickerVisible] = useState(false);
@@ -228,14 +230,14 @@ export default function GoalDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Goal header */}
-        <View style={[styles.heroCard, { borderColor: goal.color + '55' }]}>
+        <View style={[styles.heroCard, { backgroundColor: Colors.bg1, borderColor: goal.color + '55' }]}>
           <View style={styles.heroTop}>
             <View style={[styles.iconWrap, { backgroundColor: goal.color + '22' }]}>
               <Ionicons name={goal.icon as any} size={36} color={goal.color} />
             </View>
             <View style={styles.heroText}>
-              <Text style={styles.goalName}>{goal.name}</Text>
-              {goal.description ? <Text style={styles.goalDesc}>{goal.description}</Text> : null}
+              <Text style={[styles.goalName, { color: Colors.textPrimary }]}>{goal.name}</Text>
+              {goal.description ? <Text style={[styles.goalDesc, { color: Colors.textSecondary }]}>{goal.description}</Text> : null}
               <View style={styles.tagRow}>
                 <View style={[styles.typeBadge, { backgroundColor: goal.color + '22' }]}>
                   <Text style={[styles.typeText, { color: goal.color }]}>
@@ -244,7 +246,7 @@ export default function GoalDetailScreen() {
                 </View>
                 <View style={[styles.typeBadge, { backgroundColor: Colors.bg3 }]}>
                   <Ionicons name={require('../utils/categoryXP').CATEGORY_ICONS[goal.category] as any} size={10} color={Colors.textSecondary} />
-                  <Text style={styles.categoryText}>{goal.category}</Text>
+                  <Text style={[styles.categoryText, { color: Colors.textSecondary }]}>{goal.category}</Text>
                 </View>
               </View>
             </View>
@@ -261,10 +263,10 @@ export default function GoalDetailScreen() {
           {progressPercent !== null && (
             <View style={styles.milestoneSection}>
               <View style={styles.milestoneHeader}>
-                <Text style={styles.milestoneLabel}>Progress{goal.cycleCount > 0 ? ` · Cycle ${goal.cycleCount + 1}` : ''}</Text>
-                <Text style={styles.milestoneValue}>{goalLogs.length} / {goal.targetCount} {goal.unit ?? ''}</Text>
+                <Text style={[styles.milestoneLabel, { color: Colors.textSecondary }]}>Progress{goal.cycleCount > 0 ? ` · Cycle ${goal.cycleCount + 1}` : ''}</Text>
+                <Text style={[styles.milestoneValue, { color: Colors.textPrimary }]}>{goalLogs.length} / {goal.targetCount} {goal.unit ?? ''}</Text>
               </View>
-              <View style={styles.milestoneTrack}>
+              <View style={[styles.milestoneTrack, { backgroundColor: Colors.bg3 }]}>
                 <View style={[styles.milestoneFill, { width: `${progressPercent}%`, backgroundColor: goal.color }]} />
               </View>
             </View>
@@ -281,23 +283,23 @@ export default function GoalDetailScreen() {
             { label: 'Total Logs', value: goalLogs.length },
             { label: 'Total XP', value: totalXP },
           ].map(s => (
-            <View key={s.label} style={styles.statBox}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+            <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+              <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
+              <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
             </View>
           ))}
         </View>
 
         {grace.graceDayUsed && (
-          <View style={styles.graceCard}>
+          <View style={[styles.graceCard, { backgroundColor: Colors.warning + '22', borderColor: Colors.warning + '55' }]}>
             <Ionicons name="shield-checkmark" size={16} color={Colors.warning} />
-            <Text style={styles.graceText}>Grace day used — log today to maintain your streak!</Text>
+            <Text style={[styles.graceText, { color: Colors.warning }]}>Grace day used — log today to maintain your streak!</Text>
           </View>
         )}
 
         {/* Weekly chart */}
-        <Text style={styles.sectionLabel}>This Week</Text>
-        <View style={styles.chartCard}>
+        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>This Week</Text>
+        <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <BarChart
             data={weeklyData}
             width={W - Spacing.md * 2}
@@ -312,14 +314,14 @@ export default function GoalDetailScreen() {
         </View>
 
         {/* Heatmap */}
-        <Text style={styles.sectionLabel}>Activity Map</Text>
-        <View style={styles.chartCard}>
+        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Activity Map</Text>
+        <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
         {/* XP Growth */}
-        <Text style={styles.sectionLabel}>XP Growth (30 days)</Text>
-        <View style={styles.chartCard}>
+        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
+        <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <LineChart
             data={xpGrowthData}
             width={W - Spacing.md * 2}
@@ -335,18 +337,18 @@ export default function GoalDetailScreen() {
         </View>
 
         {/* Badge progress */}
-        <Text style={styles.sectionLabel}>Badges</Text>
+        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Badges</Text>
         {(nextBadgeProgress.streak || nextBadgeProgress.logs) && (
-          <View style={styles.badgeProgressCard}>
+          <View style={[styles.badgeProgressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             {nextBadgeProgress.streak && (
               <View style={styles.badgeProgressRow}>
                 <Ionicons name={nextBadgeProgress.streak.badge.icon as any} size={16} color={goal.color} />
                 <View style={styles.badgeProgressInfo}>
                   <View style={styles.badgeProgressHeader}>
-                    <Text style={styles.badgeProgressLabel}>{nextBadgeProgress.streak.badge.label}</Text>
-                    <Text style={styles.badgeProgressValue}>{nextBadgeProgress.streak.current}/{nextBadgeProgress.streak.badge.threshold}d</Text>
+                    <Text style={[styles.badgeProgressLabel, { color: Colors.textPrimary }]}>{nextBadgeProgress.streak.badge.label}</Text>
+                    <Text style={[styles.badgeProgressValue, { color: Colors.textSecondary }]}>{nextBadgeProgress.streak.current}/{nextBadgeProgress.streak.badge.threshold}d</Text>
                   </View>
-                  <View style={styles.badgeProgressTrack}>
+                  <View style={[styles.badgeProgressTrack, { backgroundColor: Colors.bg3 }]}>
                     <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.streak.pct * 100}%`, backgroundColor: goal.color }]} />
                   </View>
                 </View>
@@ -357,10 +359,10 @@ export default function GoalDetailScreen() {
                 <Ionicons name={nextBadgeProgress.logs.badge.icon as any} size={16} color={Colors.accentBright} />
                 <View style={styles.badgeProgressInfo}>
                   <View style={styles.badgeProgressHeader}>
-                    <Text style={styles.badgeProgressLabel}>{nextBadgeProgress.logs.badge.label}</Text>
-                    <Text style={styles.badgeProgressValue}>{nextBadgeProgress.logs.current}/{nextBadgeProgress.logs.badge.threshold} logs</Text>
+                    <Text style={[styles.badgeProgressLabel, { color: Colors.textPrimary }]}>{nextBadgeProgress.logs.badge.label}</Text>
+                    <Text style={[styles.badgeProgressValue, { color: Colors.textSecondary }]}>{nextBadgeProgress.logs.current}/{nextBadgeProgress.logs.badge.threshold} logs</Text>
                   </View>
-                  <View style={styles.badgeProgressTrack}>
+                  <View style={[styles.badgeProgressTrack, { backgroundColor: Colors.bg3 }]}>
                     <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.logs.pct * 100}%`, backgroundColor: Colors.accentBright }]} />
                   </View>
                 </View>
@@ -382,20 +384,20 @@ export default function GoalDetailScreen() {
 
         {/* Log history */}
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionLabel}>Recent Logs</Text>
-          <TouchableOpacity style={styles.pastDayBtn} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Recent Logs</Text>
+          <TouchableOpacity style={[styles.pastDayBtn, { backgroundColor: Colors.accentDim + '55', borderColor: Colors.accentBright + '44' }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
-            <Text style={styles.pastDayBtnText}>Log past day</Text>
+            <Text style={[styles.pastDayBtnText, { color: Colors.accentBright }]}>Log past day</Text>
           </TouchableOpacity>
         </View>
         {goalLogs.length === 0
-          ? <Text style={styles.noLogs}>No logs yet — start logging today!</Text>
+          ? <Text style={[styles.noLogs, { color: Colors.textDisabled }]}>No logs yet — start logging today!</Text>
           : [...goalLogs].reverse().slice(0, 30).map(log => (
-            <View key={log.id} style={styles.logRow}>
-              <Text style={styles.logDate}>{formatShortDate(log.logDate)}</Text>
-              <Text style={styles.logXP}>+{log.xpAwarded + log.bonusXp} XP</Text>
-              {log.bonusXp > 0 && <Text style={styles.logBonus}>+{log.bonusXp} bonus</Text>}
-              {log.note ? <Text style={styles.logNote} numberOfLines={1}>{log.note}</Text> : null}
+            <View key={log.id} style={[styles.logRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+              <Text style={[styles.logDate, { color: Colors.textSecondary }]}>{formatShortDate(log.logDate)}</Text>
+              <Text style={[styles.logXP, { color: Colors.accentBright }]}>+{log.xpAwarded + log.bonusXp} XP</Text>
+              {log.bonusXp > 0 && <Text style={[styles.logBonus, { color: Colors.success }]}>+{log.bonusXp} bonus</Text>}
+              {log.note ? <Text style={[styles.logNote, { color: Colors.textSecondary }]} numberOfLines={1}>{log.note}</Text> : null}
               <TouchableOpacity onPress={() => handleDeleteLog(log.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="trash-outline" size={14} color={Colors.textDisabled} />
               </TouchableOpacity>
@@ -404,14 +406,14 @@ export default function GoalDetailScreen() {
         }
 
         {/* Danger zone */}
-        <View style={styles.dangerZone}>
-          <TouchableOpacity style={styles.archiveBtn} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
+        <View style={[styles.dangerZone, { borderTopColor: Colors.bg3 }]}>
+          <TouchableOpacity style={[styles.archiveBtn, { borderColor: Colors.warning + '55' }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
             <Ionicons name="archive-outline" size={16} color={Colors.warning} />
-            <Text style={styles.archiveBtnText}>Archive Goal</Text>
+            <Text style={[styles.archiveBtnText, { color: Colors.warning }]}>Archive Goal</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+          <TouchableOpacity style={[styles.deleteBtn, { borderColor: Colors.danger + '55' }]} onPress={handleDelete}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-            <Text style={styles.deleteBtnText}>Delete Goal</Text>
+            <Text style={[styles.deleteBtnText, { color: Colors.danger }]}>Delete Goal</Text>
           </TouchableOpacity>
         </View>
 
@@ -432,10 +434,10 @@ export default function GoalDetailScreen() {
       <Modal visible={pastPickerVisible} transparent animationType="fade" onRequestClose={() => setPastPickerVisible(false)}>
         <View style={styles.pickerOverlay}>
           <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={() => setPastPickerVisible(false)} />
-          <View style={styles.pickerSheet}>
-            <View style={styles.pickerHandle} />
-            <Text style={styles.pickerTitle}>Log a Past Day</Text>
-            <Text style={styles.pickerSubtitle}>Tap a day you forgot to log</Text>
+          <View style={[styles.pickerSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <View style={[styles.pickerHandle, { backgroundColor: Colors.bg3 }]} />
+            <Text style={[styles.pickerTitle, { color: Colors.textPrimary }]}>Log a Past Day</Text>
+            <Text style={[styles.pickerSubtitle, { color: Colors.textSecondary }]}>Tap a day you forgot to log</Text>
             <FlatList
               data={pastDays}
               keyExtractor={d => d}
@@ -446,7 +448,7 @@ export default function GoalDetailScreen() {
                 const [, , dd] = dateStr.split('-');
                 return (
                   <TouchableOpacity
-                    style={[styles.dayCell, logged && { backgroundColor: goal.color + '33', borderColor: goal.color }]}
+                    style={[styles.dayCell, { backgroundColor: Colors.bg2, borderColor: Colors.border }, logged && { backgroundColor: goal.color + '33', borderColor: goal.color }]}
                     onPress={() => {
                       if (!logged) {
                         setPastPickerVisible(false);
@@ -455,14 +457,14 @@ export default function GoalDetailScreen() {
                     }}
                     disabled={logged}
                   >
-                    <Text style={[styles.dayCellNum, logged && { color: goal.color }]}>{parseInt(dd, 10)}</Text>
+                    <Text style={[styles.dayCellNum, { color: Colors.textPrimary }, logged && { color: goal.color }]}>{parseInt(dd, 10)}</Text>
                     {logged && <View style={[styles.dayCellDot, { backgroundColor: goal.color }]} />}
                   </TouchableOpacity>
                 );
               }}
             />
-            <TouchableOpacity style={styles.pickerCancelBtn} onPress={() => setPastPickerVisible(false)}>
-              <Text style={styles.pickerCancelText}>Cancel</Text>
+            <TouchableOpacity style={[styles.pickerCancelBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setPastPickerVisible(false)}>
+              <Text style={[styles.pickerCancelText, { color: Colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -488,66 +490,66 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   offscreen: { position: 'absolute', top: -9999, left: -9999 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  heroCard: { backgroundColor: Colors.bg1, borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
+  heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
   iconWrap: { width: 60, height: 60, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
   heroText: { flex: 1, gap: Spacing.xs },
-  goalName: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '700' },
-  goalDesc: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  goalName: { fontSize: FontSize.xl, fontWeight: '700' },
+  goalDesc: { fontSize: FontSize.sm },
   tagRow: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
   typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, alignSelf: 'flex-start', borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   typeText: { fontSize: FontSize.xs, fontWeight: '700' },
-  categoryText: { color: Colors.textSecondary, fontSize: FontSize.xs, textTransform: 'capitalize' },
+  categoryText: { fontSize: FontSize.xs, textTransform: 'capitalize' },
   heroActions: { flexDirection: 'row', gap: Spacing.xs },
   headerBtn: { padding: Spacing.sm },
   milestoneSection: { gap: Spacing.xs },
   milestoneHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  milestoneLabel: { color: Colors.textSecondary, fontSize: FontSize.sm },
-  milestoneValue: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
-  milestoneTrack: { height: 8, backgroundColor: Colors.bg3, borderRadius: Radius.full, overflow: 'hidden' },
+  milestoneLabel: { fontSize: FontSize.sm },
+  milestoneValue: { fontSize: FontSize.sm, fontWeight: '600' },
+  milestoneTrack: { height: 8, borderRadius: Radius.full, overflow: 'hidden' },
   milestoneFill: { height: '100%', borderRadius: Radius.full },
   statRow: { flexDirection: 'row', gap: Spacing.sm },
-  statBox: { flex: 1, backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  statValue: { color: Colors.accentBright, fontSize: FontSize.lg, fontWeight: '700' },
-  statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
-  graceCard: { backgroundColor: Colors.warning + '22', borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', gap: Spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.warning + '55' },
-  graceText: { color: Colors.warning, fontSize: FontSize.sm, flex: 1 },
-  sectionLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  chartCard: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
+  statValue: { fontSize: FontSize.lg, fontWeight: '700' },
+  statLabel: { fontSize: FontSize.xs },
+  graceCard: { borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', gap: Spacing.sm, alignItems: 'center', borderWidth: 1 },
+  graceText: { fontSize: FontSize.sm, flex: 1 },
+  sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  chartCard: { borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
-  badgeProgressCard: { backgroundColor: Colors.bg1, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  badgeProgressCard: { borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.md, borderWidth: 1 },
   badgeProgressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   badgeProgressInfo: { flex: 1, gap: Spacing.xs },
   badgeProgressHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  badgeProgressLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
-  badgeProgressValue: { color: Colors.textSecondary, fontSize: FontSize.xs },
-  badgeProgressTrack: { height: 6, backgroundColor: Colors.bg3, borderRadius: Radius.full, overflow: 'hidden' },
+  badgeProgressLabel: { fontSize: FontSize.sm, fontWeight: '600' },
+  badgeProgressValue: { fontSize: FontSize.xs },
+  badgeProgressTrack: { height: 6, borderRadius: Radius.full, overflow: 'hidden' },
   badgeProgressFill: { height: '100%', borderRadius: Radius.full },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pastDayBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingVertical: 4, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, backgroundColor: Colors.accentDim + '55', borderWidth: 1, borderColor: Colors.accentBright + '44' },
-  pastDayBtnText: { color: Colors.accentBright, fontSize: FontSize.xs, fontWeight: '600' },
-  noLogs: { color: Colors.textDisabled, fontStyle: 'italic' },
-  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, backgroundColor: Colors.bg1, borderRadius: Radius.md, marginBottom: 4, borderWidth: 1, borderColor: Colors.border },
-  logDate: { color: Colors.textSecondary, fontSize: FontSize.sm, width: 66 },
-  logXP: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '600' },
-  logBonus: { color: Colors.success, fontSize: FontSize.xs },
-  logNote: { color: Colors.textSecondary, fontSize: FontSize.sm, flex: 1 },
+  pastDayBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingVertical: 4, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, borderWidth: 1 },
+  pastDayBtnText: { fontSize: FontSize.xs, fontWeight: '600' },
+  noLogs: { fontStyle: 'italic' },
+  logRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md, borderRadius: Radius.md, marginBottom: 4, borderWidth: 1 },
+  logDate: { fontSize: FontSize.sm, width: 66 },
+  logXP: { fontSize: FontSize.sm, fontWeight: '600' },
+  logBonus: { fontSize: FontSize.xs },
+  logNote: { fontSize: FontSize.sm, flex: 1 },
   // Past-day picker styles
   pickerOverlay: { flex: 1, justifyContent: 'flex-end' },
-  pickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: Colors.bg0 + 'AA' },
-  pickerSheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderTopWidth: 1, borderColor: Colors.border },
-  pickerHandle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
-  pickerTitle: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
-  pickerSubtitle: { color: Colors.textSecondary, fontSize: FontSize.sm, marginBottom: Spacing.sm },
-  dayCell: { flex: 1, aspectRatio: 1, margin: 3, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  dayCellNum: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
+  pickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
+  pickerSheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderTopWidth: 1 },
+  pickerHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  pickerTitle: { fontSize: FontSize.lg, fontWeight: '700' },
+  pickerSubtitle: { fontSize: FontSize.sm, marginBottom: Spacing.sm },
+  dayCell: { flex: 1, aspectRatio: 1, margin: 3, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  dayCellNum: { fontSize: FontSize.sm, fontWeight: '600' },
   dayCellDot: { width: 5, height: 5, borderRadius: 3, marginTop: 2 },
-  pickerCancelBtn: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.sm },
-  pickerCancelText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
-  dangerZone: { gap: Spacing.sm, marginTop: Spacing.lg, borderTopWidth: 1, borderTopColor: Colors.bg3, paddingTop: Spacing.lg },
-  archiveBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.warning + '55' },
-  archiveBtnText: { color: Colors.warning, fontSize: FontSize.md },
-  deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.danger + '55' },
-  deleteBtnText: { color: Colors.danger, fontSize: FontSize.md },
+  pickerCancelBtn: { borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, marginTop: Spacing.sm },
+  pickerCancelText: { fontSize: FontSize.md, fontWeight: '600' },
+  dangerZone: { gap: Spacing.sm, marginTop: Spacing.lg, borderTopWidth: 1, paddingTop: Spacing.lg },
+  archiveBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
+  archiveBtnText: { fontSize: FontSize.md },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
+  deleteBtnText: { fontSize: FontSize.md },
 });

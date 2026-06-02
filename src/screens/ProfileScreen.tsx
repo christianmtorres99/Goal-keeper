@@ -10,7 +10,8 @@ import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
@@ -53,6 +54,7 @@ const SHARE_BG_COLORS_LIGHT = [
 ];
 
 export default function ProfileScreen() {
+  const { colors: Colors, isLight } = useColors();
   const navigation = useNavigation<Nav>();
   const systemScheme = useColorScheme();
   const colorMode = useThemeStore(s => s.colorMode);
@@ -137,7 +139,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+  }, [navigation, Colors.textPrimary]);
 
   const savePrefs = useCallback((f: SelectedFeature[], c: string) => {
     AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ features: f, bgColor: c }));
@@ -245,7 +247,7 @@ export default function ProfileScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.pickerRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }, sel && styles.pickerRowSelected, disabled && styles.pickerRowDisabled]}
+        style={[styles.pickerRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }, sel && { borderColor: Colors.accent, backgroundColor: Colors.accentDim }, disabled && styles.pickerRowDisabled]}
         onPress={() => !disabled && toggleFeature(kind, item.id)}
         activeOpacity={disabled ? 1 : 0.7}
       >
@@ -281,7 +283,7 @@ export default function ProfileScreen() {
           colors={[bgColor + 'DD', Colors.bg1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.heroCard}
+          style={[styles.heroCard, { borderColor: Colors.accentDim }]}
         >
           <View style={styles.heroHeader}>
             <TouchableOpacity
@@ -332,7 +334,7 @@ export default function ProfileScreen() {
               return (
                 <TouchableOpacity
                   key={idx}
-                  style={styles.featureSlotFilled}
+                  style={[styles.featureSlotFilled, { borderColor: Colors.accentDim, backgroundColor: Colors.accentDim }]}
                   onPress={() => setAndSaveFeatures(features.filter((_, i) => i !== idx))}
                 >
                   <View style={[styles.featureSlotRemoveBadge, { backgroundColor: Colors.bg3 }]}>
@@ -482,7 +484,7 @@ export default function ProfileScreen() {
             renderItem={renderPickerItem}
             contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing.xxl }}
           />
-          <TouchableOpacity style={styles.pickerDone} onPress={() => setPickerVisible(false)}>
+          <TouchableOpacity style={[styles.pickerDone, { backgroundColor: Colors.accent }]} onPress={() => setPickerVisible(false)}>
             <Text style={[styles.pickerDoneText, { color: Colors.textPrimary }]}>Done</Text>
           </TouchableOpacity>
         </SafeAreaView>
@@ -495,7 +497,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xxl },
 
-  heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1, borderColor: Colors.accentDim },
+  heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1 },
   heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   heroIconWrap: { width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   heroLevel: { fontSize: FontSize.xxl + 4, fontWeight: '800' },
@@ -507,7 +509,7 @@ const styles = StyleSheet.create({
   pickerSublabel: { fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
   featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
-  featureSlotFilled: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.accentDim, backgroundColor: Colors.accentDim, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
+  featureSlotFilled: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
   featureSlotLabel: { fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
   featureSlotEmpty: { fontSize: FontSize.xs },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
@@ -547,9 +549,8 @@ const styles = StyleSheet.create({
   pickerSubtitle: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
   pickerHeader: { fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, paddingVertical: Spacing.sm, marginTop: Spacing.sm },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.xs, borderWidth: 1 },
-  pickerRowSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentDim },
   pickerRowDisabled: { opacity: 0.4 },
   pickerLabel: { flex: 1, fontSize: FontSize.md },
-  pickerDone: { margin: Spacing.md, backgroundColor: Colors.accent, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
+  pickerDone: { margin: Spacing.md, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
   pickerDoneText: { fontSize: FontSize.lg, fontWeight: '700' },
 });

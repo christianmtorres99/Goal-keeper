@@ -66,3 +66,9 @@ export const FontSize = {
 
 export const OVERLAY_DARK = 'rgba(0,0,0,0.85)';
 export const OVERLAY_MID  = 'rgba(0,0,0,0.5)';
+
+// Mode-aware overlay variants
+export const OVERLAY_DARK_MODE  = 'rgba(0,0,0,0.75)';
+export const OVERLAY_LIGHT_MODE = 'rgba(0,0,0,0.35)';
+export const OVERLAY_MID_DARK   = 'rgba(0,0,0,0.5)';
+export const OVERLAY_MID_LIGHT  = 'rgba(0,0,0,0.2)';

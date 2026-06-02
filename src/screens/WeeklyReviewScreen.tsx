@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
@@ -17,6 +18,7 @@ interface Props {
 const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function WeeklyReviewScreen({ onClose }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const allGoals = useGoalStore(s => s.goals);
   const goals = useMemo(() => allGoals.filter(g => !g.isArchived), [allGoals]);
   const { logs, graceStates } = useLogStore();
@@ -73,19 +75,19 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: Colors.bg0 }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Weekly Review</Text>
+        <Text style={[styles.title, { color: Colors.textPrimary }]}>Weekly Review</Text>
         <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={10}>
           <Ionicons name="close" size={24} color={Colors.textSecondary} />
         </TouchableOpacity>
       </View>
-      <Text style={styles.dateRange}>{formatCompactDate(weekStart)} → {formatCompactDate(today)}</Text>
+      <Text style={[styles.dateRange, { color: Colors.textSecondary }]}>{formatCompactDate(weekStart)} → {formatCompactDate(today)}</Text>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* XP this week */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>XP Earned This Week</Text>
+        <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>XP Earned This Week</Text>
           <View style={styles.xpRow}>
-            <Text style={styles.xpBig}>{thisWeekXP}</Text>
+            <Text style={[styles.xpBig, { color: Colors.accentBright }]}>{thisWeekXP}</Text>
             {xpDiff !== 0 && (
               <View style={[styles.diffBadge, { backgroundColor: xpDiff > 0 ? Colors.success + '22' : Colors.danger + '22' }]}>
                 <Ionicons name={xpDiff > 0 ? 'arrow-up' : 'arrow-down'} size={12} color={xpDiff > 0 ? Colors.success : Colors.danger} />
@@ -96,16 +98,16 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
         </View>
 
         {/* Per-goal day grid */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Daily Consistency</Text>
+        <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Daily Consistency</Text>
           <View style={styles.dowRow}>
-            {DOW.map((d, i) => <Text key={i} style={styles.dowLabel}>{d}</Text>)}
+            {DOW.map((d, i) => <Text key={i} style={[styles.dowLabel, { color: Colors.textSecondary }]}>{d}</Text>)}
           </View>
           {goals.map(goal => {
             const loggedDays = new Set(weekLogs.filter(l => l.goalId === goal.id).map(l => l.logDate));
             return (
               <View key={goal.id} style={styles.goalDayRow}>
-                <Text style={styles.goalDayName} numberOfLines={1}>{goal.name}</Text>
+                <Text style={[styles.goalDayName, { color: Colors.textSecondary }]} numberOfLines={1}>{goal.name}</Text>
                 <View style={styles.dayDots}>
                   {weekDays.map(day => (
                     <View key={day} style={[styles.dayDot, { backgroundColor: loggedDays.has(day) ? goal.color : Colors.bg3 }]} />
@@ -118,36 +120,36 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
 
         {/* Top streak */}
         {topStreak.streak > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Best Streak</Text>
+          <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Best Streak</Text>
             <View style={styles.streakRow}>
               <Ionicons name="flame" size={24} color={Colors.warning} />
-              <Text style={styles.streakName}>{topStreak.name}</Text>
-              <Text style={styles.streakDays}>{topStreak.streak}d</Text>
+              <Text style={[styles.streakName, { color: Colors.textPrimary }]}>{topStreak.name}</Text>
+              <Text style={[styles.streakDays, { color: Colors.warning }]}>{topStreak.streak}d</Text>
             </View>
           </View>
         )}
 
         {/* New badges */}
         {newBadgesThisWeek.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Badges Earned This Week</Text>
+          <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Badges Earned This Week</Text>
             {newBadgesThisWeek.map((b, i) => b && (
               <View key={i} style={styles.badgeRow}>
                 <Ionicons name={b.icon as any} size={20} color={Colors.accentBright} />
-                <Text style={styles.badgeName}>{b.label}</Text>
+                <Text style={[styles.badgeName, { color: Colors.textPrimary }]}>{b.label}</Text>
               </View>
             ))}
           </View>
         )}
 
         {/* Motivation */}
-        <View style={[styles.card, styles.motivationCard]}>
-          <Text style={styles.motivation}>{getMotivation()}</Text>
+        <View style={[styles.card, styles.motivationCard, { backgroundColor: Colors.bg1, borderColor: Colors.accentDim }]}>
+          <Text style={[styles.motivation, { color: Colors.textPrimary }]}>{getMotivation()}</Text>
         </View>
 
-        <TouchableOpacity style={styles.closeFullBtn} onPress={onClose}>
-          <Text style={styles.closeFullText}>Close Review</Text>
+        <TouchableOpacity style={[styles.closeFullBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={onClose}>
+          <Text style={[styles.closeFullText, { color: Colors.textSecondary }]}>Close Review</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -157,29 +159,29 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, paddingTop: Spacing.xl },
-  title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
+  title: { fontSize: FontSize.xxl, fontWeight: '700' },
   closeBtn: { padding: Spacing.sm },
-  dateRange: { color: Colors.textSecondary, fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
+  dateRange: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  card: { backgroundColor: Colors.bg1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
-  cardLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  card: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
+  cardLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   xpRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  xpBig: { color: Colors.accentBright, fontSize: FontSize.xxxl, fontWeight: '800' },
+  xpBig: { fontSize: FontSize.xxxl, fontWeight: '800' },
   diffBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   diffText: { fontSize: FontSize.sm, fontWeight: '600' },
   dowRow: { flexDirection: 'row', paddingLeft: 118 },
-  dowLabel: { flex: 1, textAlign: 'center', color: Colors.textSecondary, fontSize: FontSize.xs },
+  dowLabel: { flex: 1, textAlign: 'center', fontSize: FontSize.xs },
   goalDayRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  goalDayName: { width: 110, color: Colors.textSecondary, fontSize: FontSize.xs },
+  goalDayName: { width: 110, fontSize: FontSize.xs },
   dayDots: { flex: 1, flexDirection: 'row', gap: Spacing.xs },
   dayDot: { flex: 1, height: 14, borderRadius: 3 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  streakName: { flex: 1, color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-  streakDays: { color: Colors.warning, fontSize: FontSize.xl, fontWeight: '800' },
+  streakName: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
+  streakDays: { fontSize: FontSize.xl, fontWeight: '800' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  badgeName: { color: Colors.textPrimary, fontSize: FontSize.md },
-  motivationCard: { borderColor: Colors.accentDim, borderWidth: 1 },
-  motivation: { color: Colors.textPrimary, fontSize: FontSize.md, textAlign: 'center', lineHeight: 22 },
-  closeFullBtn: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  closeFullText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
+  badgeName: { fontSize: FontSize.md },
+  motivationCard: { borderWidth: 1 },
+  motivation: { fontSize: FontSize.md, textAlign: 'center', lineHeight: 22 },
+  closeFullBtn: { borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
+  closeFullText: { fontSize: FontSize.md, fontWeight: '600' },
 });

@@ -5,12 +5,10 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../store/themeStore';
 import { THEMES, THEME_META, type ThemeName } from '../../constants/themes';
-import { Colors, Radius, Spacing, FontSize } from '../../constants/theme';
+import { Radius, Spacing, FontSize, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 
 type ColorMode = 'dark' | 'light' | 'system';
-
-// Use static Colors for the modal shell (always dark-themed base)
-// Theme color cards show their own palette as previews
 
 export default function ThemePickerModal({
   visible,
@@ -19,6 +17,7 @@ export default function ThemePickerModal({
   visible: boolean;
   onClose: () => void;
 }) {
+  const { colors: Colors, isLight } = useColors();
   const { activeTheme, setTheme, colorMode, setColorMode } = useThemeStore();
 
   const translateY = useSharedValue(0);
@@ -49,18 +48,22 @@ export default function ThemePickerModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+      <TouchableOpacity style={[styles.overlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]} activeOpacity={1} onPress={onClose}>
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.sheet, sheetStyle]}>
-            <View style={styles.handle} />
-            <Text style={styles.title}>App Theme</Text>
+          <Animated.View style={[styles.sheet, { backgroundColor: Colors.bg1 }, sheetStyle]}>
+            <View style={[styles.handle, { backgroundColor: Colors.border }]} />
+            <Text style={[styles.title, { color: Colors.textPrimary }]}>App Theme</Text>
 
             {/* Display Mode selector */}
             <View style={styles.modeRow}>
               {(['dark', 'light', 'system'] as const).map((m: ColorMode) => (
                 <TouchableOpacity
                   key={m}
-                  style={[styles.modeBtn, colorMode === m && styles.modeBtnActive]}
+                  style={[
+                    styles.modeBtn,
+                    { borderColor: Colors.border, backgroundColor: Colors.bg2 },
+                    colorMode === m && { borderColor: Colors.accent, backgroundColor: Colors.bg3 },
+                  ]}
                   onPress={() => setColorMode(m)}
                 >
                   <Ionicons
@@ -68,7 +71,7 @@ export default function ThemePickerModal({
                     size={16}
                     color={colorMode === m ? Colors.accent : Colors.textSecondary}
                   />
-                  <Text style={[styles.modeBtnText, colorMode === m && { color: Colors.accent }]}>
+                  <Text style={[styles.modeBtnText, { color: colorMode === m ? Colors.accent : Colors.textSecondary }]}>
                     {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'System'}
                   </Text>
                 </TouchableOpacity>
@@ -85,7 +88,6 @@ export default function ThemePickerModal({
                       key={key}
                       style={[
                         styles.card,
-                        isActive && styles.cardActive,
                         { borderColor: isActive ? meta.preview : Colors.border },
                       ]}
                       onPress={() => {
@@ -96,7 +98,7 @@ export default function ThemePickerModal({
                       <View style={[styles.preview, { backgroundColor: palette.bg1 }]}>
                         <View style={[styles.accentDot, { backgroundColor: meta.preview }]} />
                       </View>
-                      <Text style={styles.label}>{meta.label}</Text>
+                      <Text style={[styles.label, { color: Colors.textPrimary }]}>{meta.label}</Text>
                       {isActive && (
                         <Ionicons
                           name="checkmark-circle"
@@ -120,11 +122,9 @@ export default function ThemePickerModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.bg1,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     padding: Spacing.lg,
@@ -135,12 +135,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border,
     alignSelf: 'center',
     marginBottom: Spacing.xs,
   },
   title: {
-    color: Colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: '700',
     textAlign: 'center',
@@ -156,14 +154,10 @@ const styles = StyleSheet.create({
     aspectRatio: 0.85,
     borderRadius: Radius.lg,
     borderWidth: 2,
-    borderColor: Colors.border,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'flex-end',
     padding: Spacing.xs,
-  },
-  cardActive: {
-    borderWidth: 2,
   },
   preview: {
     position: 'absolute',
@@ -180,7 +174,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   label: {
-    color: Colors.textPrimary,
     fontSize: FontSize.xs - 1,
     fontWeight: '600',
     textAlign: 'center',
@@ -203,15 +196,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.bg2,
-  },
-  modeBtnActive: {
-    borderColor: Colors.accent,
-    backgroundColor: Colors.bg3,
   },
   modeBtnText: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     fontWeight: '600',
   },

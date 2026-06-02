@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import type { Quest } from '../../types';
 
 interface Props {
@@ -23,18 +24,19 @@ const QUEST_ICONS: Record<Quest['type'], string> = {
 export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }: Props) {
   if (quests.length === 0) return null;
 
+  const { colors: Colors } = useColors();
   const [expanded, setExpanded] = useState(true);
   const allDone = quests.every(q => q.completed);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Ionicons name="list-outline" size={16} color={Colors.accentBright} />
-          <Text style={styles.headerTitle}>Daily Quests</Text>
+          <Text style={[styles.headerTitle, { color: Colors.textPrimary }]}>Daily Quests</Text>
         </View>
         <View style={styles.headerRight}>
-          <Text style={styles.headerXP}>
+          <Text style={[styles.headerXP, { color: Colors.accentBright }]}>
             {totalEarned}/{totalAvailable} XP
           </Text>
           <TouchableOpacity onPress={() => setExpanded(e => !e)} hitSlop={12}>
@@ -44,9 +46,9 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
       </View>
 
       {expanded && allDone && (
-        <View style={styles.allDoneBanner}>
+        <View style={[styles.allDoneBanner, { backgroundColor: Colors.success + '18' }]}>
           <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
-          <Text style={styles.allDoneText}>All quests complete! Come back tomorrow.</Text>
+          <Text style={[styles.allDoneText, { color: Colors.success }]}>All quests complete! Come back tomorrow.</Text>
         </View>
       )}
 
@@ -58,12 +60,21 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
 }
 
 const QuestRow = React.memo(function QuestRow({ quest }: { quest: Quest }) {
+  const { colors: Colors } = useColors();
   const progress = Math.min(quest.progress / quest.target, 1);
   const icon = QUEST_ICONS[quest.type] ?? 'star-outline';
 
   return (
-    <View style={[styles.questRow, quest.completed && styles.questRowDone]}>
-      <View style={[styles.questIcon, quest.completed && styles.questIconDone]}>
+    <View style={[
+      styles.questRow,
+      { backgroundColor: Colors.bg2, borderColor: Colors.border },
+      quest.completed && { borderColor: Colors.success + '44', backgroundColor: Colors.success + '0A' },
+    ]}>
+      <View style={[
+        styles.questIcon,
+        { backgroundColor: Colors.accentDim },
+        quest.completed && { backgroundColor: Colors.success + '22' },
+      ]}>
         <Ionicons
           name={quest.completed ? 'checkmark' : (icon as any)}
           size={16}
@@ -72,22 +83,30 @@ const QuestRow = React.memo(function QuestRow({ quest }: { quest: Quest }) {
       </View>
       <View style={styles.questBody}>
         <View style={styles.questTopRow}>
-          <Text style={[styles.questDesc, quest.completed && styles.questDescDone]} numberOfLines={1}>
+          <Text style={[
+            styles.questDesc,
+            { color: Colors.textPrimary },
+            quest.completed && { color: Colors.textDisabled },
+          ]} numberOfLines={1}>
             {quest.description}
           </Text>
-          <Text style={[styles.questXP, quest.completed && styles.questXPDone]}>
+          <Text style={[
+            styles.questXP,
+            { color: Colors.accentBright },
+            quest.completed && { color: Colors.success },
+          ]}>
             +{quest.xpReward} XP
           </Text>
         </View>
         {!quest.completed && quest.target > 1 && (
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-            <Text style={styles.progressLabel}>{quest.progress}/{quest.target}</Text>
+          <View style={[styles.progressTrack, { backgroundColor: Colors.bg3 }]}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: Colors.accentBright }]} />
+            <Text style={[styles.progressLabel, { color: Colors.textDisabled }]}>{quest.progress}/{quest.target}</Text>
           </View>
         )}
         {!quest.completed && quest.target === 1 && (
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <View style={[styles.progressTrack, { backgroundColor: Colors.bg3 }]}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%`, backgroundColor: Colors.accentBright }]} />
           </View>
         )}
       </View>
@@ -97,12 +116,10 @@ const QuestRow = React.memo(function QuestRow({ quest }: { quest: Quest }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     gap: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -120,14 +137,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   headerTitle: {
-    color: Colors.textPrimary,
     fontSize: FontSize.sm,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   headerXP: {
-    color: Colors.accentBright,
     fontSize: FontSize.sm,
     fontWeight: '700',
   },
@@ -135,12 +150,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
-    backgroundColor: Colors.success + '18',
     borderRadius: Radius.sm,
     padding: Spacing.sm,
   },
   allDoneText: {
-    color: Colors.success,
     fontSize: FontSize.xs,
     fontWeight: '600',
   },
@@ -148,27 +161,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.sm,
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  questRowDone: {
-    borderColor: Colors.success + '44',
-    backgroundColor: Colors.success + '0A',
   },
   questIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.accentDim,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
-  },
-  questIconDone: {
-    backgroundColor: Colors.success + '22',
   },
   questBody: {
     flex: 1,
@@ -181,39 +184,28 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   questDesc: {
-    color: Colors.textPrimary,
     fontSize: FontSize.sm,
     fontWeight: '600',
     flex: 1,
   },
-  questDescDone: {
-    color: Colors.textDisabled,
-  },
   questXP: {
-    color: Colors.accentBright,
     fontSize: FontSize.xs,
     fontWeight: '700',
   },
-  questXPDone: {
-    color: Colors.success,
-  },
   progressTrack: {
     height: 4,
-    backgroundColor: Colors.bg3,
     borderRadius: 2,
     overflow: 'hidden',
     position: 'relative',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: Colors.accentBright,
     borderRadius: 2,
   },
   progressLabel: {
     position: 'absolute',
     right: 0,
     top: -12,
-    color: Colors.textDisabled,
     fontSize: 9,
   },
 });

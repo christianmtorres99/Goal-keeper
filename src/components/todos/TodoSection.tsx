@@ -15,7 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { useTodoStore } from '../../store/todoStore';
 import type { Todo, SubItem } from '../../types';
 import { todayString, formatTime12h } from '../../utils/dateUtils';
@@ -28,6 +29,7 @@ interface AddTodoModalProps {
 }
 
 function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
+  const { colors: Colors, isLight } = useColors();
   const { addTodo } = useTodoStore();
   const [title, setTitle] = useState('');
   const [dueDate, setDueDate] = useState<string | undefined>(undefined);
@@ -98,7 +100,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <Animated.View
-        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', opacity: backdropOpacity }]}
+        style={[StyleSheet.absoluteFill, { backgroundColor: isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK, opacity: backdropOpacity }]}
         pointerEvents="none"
       />
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
@@ -128,17 +130,17 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
             ].map(opt => (
               <TouchableOpacity
                 key={opt.label}
-                style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, dueDate === opt.value && styles.dateBtnActive]}
+                style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, dueDate === opt.value && { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}
                 onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
               >
-                <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && styles.dateBtnTextActive]}>
+                <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && { color: Colors.accentBright, fontWeight: '600' }]}>
                   {opt.label}
                 </Text>
               </TouchableOpacity>
             ))}
             {dueDate && dueDate !== today && dueDate !== tomorrow && (
-              <View style={[styles.dateBtn, styles.dateBtnActive]}>
-                <Text style={styles.dateBtnTextActive}>{dueDate}</Text>
+              <View style={[styles.dateBtn, { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}>
+                <Text style={{ color: Colors.accentBright, fontWeight: '600' }}>{dueDate}</Text>
               </View>
             )}
             {dueDate && (
@@ -189,7 +191,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
           </ScrollView>
 
           <TouchableOpacity
-            style={[styles.saveBtn, !title.trim() && styles.saveBtnDisabled]}
+            style={[styles.saveBtn, { backgroundColor: Colors.accent }, !title.trim() && styles.saveBtnDisabled]}
             onPress={handleSave}
             disabled={!title.trim()}
           >
@@ -208,6 +210,7 @@ interface SubItemRowProps {
 }
 
 function SubItemRow({ subItem, onToggle }: SubItemRowProps) {
+  const { colors: Colors } = useColors();
   return (
     <TouchableOpacity style={styles.subItemCheckRow} onPress={onToggle} activeOpacity={0.7}>
       <Ionicons
@@ -215,7 +218,7 @@ function SubItemRow({ subItem, onToggle }: SubItemRowProps) {
         size={18}
         color={subItem.checked ? Colors.success : Colors.textDisabled}
       />
-      <Text style={[styles.subItemCheckText, { color: Colors.textPrimary }, subItem.checked && styles.strikethrough]}>
+      <Text style={[styles.subItemCheckText, { color: Colors.textPrimary }, subItem.checked && { textDecorationLine: 'line-through', color: Colors.textDisabled }]}>
         {subItem.title}
       </Text>
     </TouchableOpacity>
@@ -233,6 +236,7 @@ interface TodoCardProps {
 }
 
 function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMorePress }: TodoCardProps) {
+  const { colors: Colors } = useColors();
   const [expanded, setExpanded] = useState(false);
 
   const completedCount = todo.subItems.filter(s => s.checked).length;
@@ -252,7 +256,7 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
 
         {/* Content */}
         <View style={styles.todoContent}>
-          <Text style={[styles.todoTitle, { color: Colors.textPrimary }, todo.completed && styles.strikethrough]} numberOfLines={2}>
+          <Text style={[styles.todoTitle, { color: Colors.textPrimary }, todo.completed && { textDecorationLine: 'line-through', color: Colors.textDisabled }]} numberOfLines={2}>
             {todo.title}
           </Text>
           <View style={styles.todoMeta}>
@@ -304,6 +308,7 @@ function TodoCard({ todo, onComplete, onToggleSub, onDelete, onReschedule, onMor
 
 // ── Main TodoSection ──────────────────────────────────────────────────────────
 export default function TodoSection() {
+  const { colors: Colors, isLight } = useColors();
   const { todos, completeTodo, toggleSubItem, deleteTodo, rescheduleTodo, updateTodo } = useTodoStore();
   const [expanded, setExpanded] = useState(true);
   const [addVisible, setAddVisible] = useState(false);
@@ -424,7 +429,7 @@ export default function TodoSection() {
         animationType="slide"
         onRequestClose={() => setActionTodo(null)}
       >
-        <TouchableOpacity style={styles.actionBackdrop} activeOpacity={1} onPress={() => setActionTodo(null)} />
+        <TouchableOpacity style={[styles.actionBackdrop, { backgroundColor: isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK }]} activeOpacity={1} onPress={() => setActionTodo(null)} />
         <View style={[styles.actionSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <View style={[styles.actionHandle, { backgroundColor: Colors.border }]} />
           <Text style={[styles.actionTitle, { color: Colors.textSecondary }]} numberOfLines={1}>{actionTodo?.title}</Text>
@@ -448,7 +453,7 @@ export default function TodoSection() {
 
       {/* Edit modal */}
       <Modal visible={!!editingTodo} transparent animationType="fade" onRequestClose={() => setEditingTodo(null)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.editOverlay}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.editOverlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
           <View style={[styles.editCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <Text style={[styles.editTitle, { color: Colors.textPrimary }]}>Edit Task</Text>
             <TextInput
@@ -557,7 +562,6 @@ const styles = StyleSheet.create({
   },
   strikethrough: {
     textDecorationLine: 'line-through',
-    color: Colors.textDisabled,
   },
   todoMeta: {
     flexDirection: 'row',
@@ -644,17 +648,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  dateBtnActive: {
-    backgroundColor: Colors.accentDim,
-    borderColor: Colors.accent,
-  },
+  dateBtnActive: {},
   dateBtnText: {
     fontSize: FontSize.sm,
   },
-  dateBtnTextActive: {
-    color: Colors.accentBright,
-    fontWeight: '600',
-  },
+  dateBtnTextActive: {},
   timeInput: {
     borderRadius: Radius.md,
     padding: Spacing.sm,
@@ -689,7 +687,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
   },
   saveBtn: {
-    backgroundColor: Colors.accent,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     alignItems: 'center',
@@ -705,7 +702,6 @@ const styles = StyleSheet.create({
   // Action sheet
   actionBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   actionSheet: {
     position: 'absolute',
@@ -747,7 +743,6 @@ const styles = StyleSheet.create({
   // Edit modal
   editOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,

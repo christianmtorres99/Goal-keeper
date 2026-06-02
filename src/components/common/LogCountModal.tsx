@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing, OVERLAY_MID } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 
 interface Props {
   visible: boolean;
@@ -15,15 +16,14 @@ interface Props {
 }
 
 export default function LogCountModal({ visible, goalName, goalColor, targetCount, unit, todayTotal, onConfirm, onCancel }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const [countText, setCountText] = useState('');
   const [note, setNote] = useState('');
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
-      Animated.timing(backdropOpacity, {
-        toValue: 1, duration: 280, useNativeDriver: true,
-      }).start();
+      Animated.timing(backdropOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
     } else {
       backdropOpacity.setValue(0);
       setCountText('');
@@ -48,28 +48,30 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
     onCancel();
   };
 
+  const backdropColor = isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK;
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
-        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: OVERLAY_MID, opacity: backdropOpacity }]} pointerEvents="none" />
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor, opacity: backdropOpacity }]} pointerEvents="none" />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleCancel} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
+        <View style={[styles.sheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
           <View style={styles.header}>
             <View style={[styles.colorDot, { backgroundColor: goalColor }]} />
-            <Text style={styles.goalName}>{goalName}</Text>
+            <Text style={[styles.goalName, { color: Colors.textPrimary }]}>{goalName}</Text>
           </View>
 
           <View style={styles.progressSection}>
-            <Text style={styles.progressLabel}>Today: {todayTotal.toLocaleString()} / {targetCount.toLocaleString()} {unit}</Text>
-            <View style={styles.progressBar}>
+            <Text style={[styles.progressLabel, { color: Colors.textSecondary }]}>Today: {todayTotal.toLocaleString()} / {targetCount.toLocaleString()} {unit}</Text>
+            <View style={[styles.progressBar, { backgroundColor: Colors.bg3 }]}>
               <View style={[styles.progressFill, { width: `${Math.min(100, (todayTotal / targetCount) * 100)}%` as any, backgroundColor: goalColor }]} />
             </View>
           </View>
 
-          <Text style={styles.label}>How much did you do?</Text>
+          <Text style={[styles.label, { color: Colors.textSecondary }]}>How much did you do?</Text>
           <TextInput
-            style={styles.countInput}
+            style={[styles.countInput, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
             value={countText}
             onChangeText={setCountText}
             placeholder={`Enter ${unit || 'amount'}`}
@@ -79,8 +81,8 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
           />
 
           {countValue > 0 && (
-            <View style={styles.preview}>
-              <Text style={styles.previewText}>
+            <View style={[styles.preview, { backgroundColor: Colors.bg2 }]}>
+              <Text style={[styles.previewText, { color: Colors.textPrimary }]}>
                 New total: {newTotal.toLocaleString()} / {targetCount.toLocaleString()} {unit}
                 {' '}({Math.round(progressPct)}%)
               </Text>
@@ -88,7 +90,7 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
           )}
 
           <TextInput
-            style={styles.noteInput}
+            style={[styles.noteInput, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
             value={note}
             onChangeText={setNote}
             placeholder="Add a note (optional)"
@@ -98,8 +100,8 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
           />
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={handleCancel}>
+              <Text style={[styles.cancelText, { color: Colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.confirmBtn, { backgroundColor: countValue > 0 ? goalColor : Colors.bg3 }]}
@@ -118,23 +120,23 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: Colors.bg1, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderTopWidth: 1, borderColor: Colors.border },
-  handle: { width: 40, height: 4, backgroundColor: Colors.bg3, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  sheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderTopWidth: 1 },
+  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   colorDot: { width: 12, height: 12, borderRadius: 6 },
-  goalName: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+  goalName: { fontSize: FontSize.lg, fontWeight: '700' },
   progressSection: { gap: Spacing.xs },
-  progressLabel: { color: Colors.textSecondary, fontSize: FontSize.sm },
-  progressBar: { height: 6, backgroundColor: Colors.bg3, borderRadius: 3, overflow: 'hidden' },
+  progressLabel: { fontSize: FontSize.sm },
+  progressBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },
-  label: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
-  countInput: { backgroundColor: Colors.bg2, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, color: Colors.textPrimary, fontSize: FontSize.xxxl, fontWeight: '700', padding: Spacing.md, textAlign: 'center' },
-  preview: { backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center' },
-  previewText: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
-  noteInput: { backgroundColor: Colors.bg2, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, color: Colors.textPrimary, fontSize: FontSize.md, padding: Spacing.md, minHeight: 60, textAlignVertical: 'top' },
+  label: { fontSize: FontSize.sm, fontWeight: '600' },
+  countInput: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.xxxl, fontWeight: '700', padding: Spacing.md, textAlign: 'center' },
+  preview: { borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center' },
+  previewText: { fontSize: FontSize.sm, fontWeight: '600' },
+  noteInput: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, padding: Spacing.md, minHeight: 60, textAlignVertical: 'top' },
   actions: { flexDirection: 'row', gap: Spacing.md },
-  cancelBtn: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  cancelText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
+  cancelBtn: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
+  cancelText: { fontSize: FontSize.md, fontWeight: '600' },
   confirmBtn: { flex: 2, borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
   confirmText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
 });

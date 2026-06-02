@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -17,10 +16,10 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useJournalStore } from '../store/journalStore';
 import { useBadgeStore } from '../store/badgeStore';
-import { useThemeStore } from '../store/themeStore';
 import { computeJournalStreak } from '../utils/journalUtils';
 import DrawingCanvas from '../components/journal/DrawingCanvas';
 import { todayString, formatDisplayDate, addDays } from '../utils/dateUtils';
@@ -29,20 +28,12 @@ import type { DrawingPath, JournalEntry } from '../types';
 type Tab = 'write' | 'draw' | 'stats';
 
 const MOOD_EMOJIS = ['😔', '😕', '😐', '🙂', '😄'];
-const PEN_COLORS = [
-  { label: 'White',  value: '#F1F5F9' },
-  { label: 'Purple', value: '#A855F7' },
-  { label: 'Red',    value: '#EF4444' },
-  { label: 'Blue',   value: '#38BDF8' },
-  { label: 'Green',  value: '#10B981' },
-  { label: 'Yellow', value: '#F59E0B' },
-  { label: 'Black',  value: '#1E293B' },
-];
 const PEN_SIZES = [2, 4, 8];
 
-const PAPER_BG    = '#111111';
-const PAPER_LINE  = '#1A1A1A';
-const PAPER_TEXT = '#E8D9C0';
+const PAPER_BG_DARK   = '#111111';
+const PAPER_LINE_DARK = '#1A1A1A';
+const PAPER_BG_LIGHT  = '#FEFEFE';
+const PAPER_LINE_LIGHT = '#E5E7EB';
 const LINE_H = FontSize.md * 1.8;
 
 // ── Plain-text extraction helper ──────────────────────────────────────────────
@@ -74,21 +65,27 @@ export default function JournalScreen() {
   const [energy, setEnergy] = useState(todayEntry?.energy ?? 3);
   const [text, setText] = useState(() => todayEntry ? extractPlainText(todayEntry.textContent) : '');
   const [drawingPaths, setDrawingPaths] = useState<DrawingPath[]>(todayEntry?.drawingData ?? []);
-  const [penColor, setPenColor] = useState(PEN_COLORS[0].value);
+  const [penColor, setPenColor] = useState('#F1F5F9');
   const [penSize, setPenSize] = useState(1);
   const [saving, setSaving] = useState(false);
 
   const isSavingRef = useRef(false);
 
-  // Light/dark mode
-  const colorMode = useThemeStore(s => s.colorMode);
-  const systemScheme = useColorScheme();
-  const effectiveMode = colorMode === 'system' ? (systemScheme ?? 'dark') : colorMode;
-  const isLight = effectiveMode === 'light';
+  const { colors: Colors, isLight } = useColors();
 
-  const paperBg      = isLight ? '#FEFEFE' : PAPER_BG;
-  const paperLine    = isLight ? '#E5E7EB' : PAPER_LINE;
-  const paperTextColor = isLight ? '#1A1A2E' : (PAPER_TEXT ?? '#E8D9C0');
+  const paperBg        = isLight ? PAPER_BG_LIGHT : PAPER_BG_DARK;
+  const paperLine      = isLight ? PAPER_LINE_LIGHT : PAPER_LINE_DARK;
+  const paperTextColor = isLight ? '#1A1A2E' : '#E8D9C0';
+
+  const penColors = useMemo(() => [
+    { label: 'White', value: isLight ? '#374151' : '#F1F5F9' },
+    { label: 'Purple', value: '#A855F7' },
+    { label: 'Red',    value: '#EF4444' },
+    { label: 'Blue',   value: '#38BDF8' },
+    { label: 'Green',  value: '#10B981' },
+    { label: 'Yellow', value: '#F59E0B' },
+    { label: 'Black',  value: isLight ? '#0F172A' : '#CBD5E1' },
+  ], [isLight]);
 
   const isDirty = useMemo(() => {
     const originalText = todayEntry ? extractPlainText(todayEntry.textContent) : '';
@@ -109,6 +106,11 @@ export default function JournalScreen() {
       setDrawingPaths(todayEntry.drawingData);
     }
   }, [todayEntry?.id]);
+
+  // Reset pen to first color when light/dark mode switches to avoid invisible ink
+  useEffect(() => {
+    setPenColor(penColors[0].value);
+  }, [isLight]);
 
   // Unsaved changes guard
   useEffect(() => {
@@ -201,7 +203,7 @@ export default function JournalScreen() {
       {/* Tab switcher */}
       <View style={[styles.tabRow, { backgroundColor: Colors.bg1, borderBottomColor: Colors.border }]}>
         {(['write', 'draw', 'stats'] as Tab[]).map(t => (
-          <TouchableOpacity key={t} style={[styles.tab, tab === t && styles.tabActive]} onPress={() => switchTab(t)}>
+          <TouchableOpacity key={t} style={[styles.tab, tab === t && { borderBottomWidth: 2, borderBottomColor: Colors.accent }]} onPress={() => switchTab(t)}>
             <Text style={[styles.tabText, { color: Colors.textSecondary }, tab === t && { color: Colors.accentBright, fontWeight: '700' }]}>
               {t === 'write' ? 'Write' : t === 'draw' ? 'Draw' : 'Stats'}
             </Text>
@@ -316,8 +318,8 @@ export default function JournalScreen() {
           </View>
           <View style={[styles.drawToolbar, { borderTopColor: Colors.border, backgroundColor: Colors.bg1 }]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.colorScroll} contentContainerStyle={styles.colorScrollContent}>
-              {PEN_COLORS.map(c => (
-                <TouchableOpacity key={c.value} style={[styles.colorSwatch, { backgroundColor: c.value }, penColor === c.value && styles.swatchSelected]} onPress={() => setPenColor(c.value)} />
+              {penColors.map(c => (
+                <TouchableOpacity key={c.value} style={[styles.colorSwatch, { backgroundColor: c.value }, penColor === c.value && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]} onPress={() => setPenColor(c.value)} />
               ))}
             </ScrollView>
             <View style={[styles.sizeBtns, { backgroundColor: Colors.bg2 }]}>
@@ -408,7 +410,6 @@ const styles = StyleSheet.create({
 
   tabRow: { flexDirection: 'row', borderBottomWidth: 1 },
   tab: { flex: 1, paddingVertical: Spacing.sm, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: Colors.accent },
   tabText: { fontSize: FontSize.md, fontWeight: '500' },
 
   // Journal header (mood/energy/date)
@@ -466,7 +467,6 @@ const styles = StyleSheet.create({
   colorScroll: { flex: 1 },
   colorScrollContent: { paddingHorizontal: 4 },
   colorSwatch: { width: 30, height: 30, borderRadius: Radius.full, marginRight: Spacing.xs, borderWidth: 2, borderColor: 'transparent' },
-  swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] },
   sizeBtns: { flexDirection: 'row', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.xs },
   sizeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.sm },
   sizeDot: {},

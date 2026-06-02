@@ -10,7 +10,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import type { Goal, Log, StreakInfo } from '../../types';
 import { getPlayerStats, getStreakMultiplier } from '../../logic/xpEngine';
 import { sumXP } from '../../utils/xpUtils';
@@ -94,6 +95,7 @@ interface Props {
 }
 
 export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble, animateSignal }: Props) {
+  const { colors: Colors } = useColors();
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
   const baseLoggedToday = isAlreadyLoggedToday(logs);
@@ -222,6 +224,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
 
   const xpLabel = `+${Math.round(BASE_LOG_XP * multiplier)} XP`;
 
+  const doneBtnStyle = loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count';
+
   return (
     <Pressable
       style={[
@@ -248,29 +252,33 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           </View>
           <View style={styles.topRight}>
             {isDailyDouble && (
-              <View style={styles.doubleBadge}>
+              <View style={[styles.doubleBadge, { backgroundColor: Colors.warning + '22', borderColor: Colors.warning + '44' }]}>
                 <Text style={[styles.doubleText, { color: Colors.warning }]}>2× ⭐</Text>
               </View>
             )}
             {graceUsed && !isAtRisk && (
-              <View style={styles.graceBadge}>
+              <View style={[styles.graceBadge, { backgroundColor: Colors.warning + '18' }]}>
                 <Ionicons name="shield-checkmark" size={11} color={Colors.warning} />
                 <Text style={[styles.graceBadgeText, { color: Colors.warning }]}>Grace</Text>
               </View>
             )}
             {isAtRisk && (
-              <View style={styles.atRiskBadge}>
+              <View style={[styles.atRiskBadge, { backgroundColor: Colors.warning + '22' }]}>
                 <Ionicons name="warning" size={11} color={Colors.warning} />
                 <Text style={[styles.atRiskText, { color: Colors.warning }]}>Log today!</Text>
               </View>
             )}
-            <View style={[styles.streakBadge, streakInfo.currentStreak === 0 && styles.streakBadgeInactive]}>
+            <View style={[styles.streakBadge, { backgroundColor: Colors.bg3 }, streakInfo.currentStreak === 0 && { backgroundColor: Colors.bg3 + '88' }]}>
               <Ionicons
                 name="flame"
                 size={14}
                 color={streakInfo.currentStreak > 0 ? Colors.warning : Colors.textDisabled}
               />
-              <Text style={[styles.streakText, streakInfo.currentStreak === 0 && styles.streakTextInactive]}>
+              <Text style={[
+                styles.streakText,
+                { color: Colors.warning },
+                streakInfo.currentStreak === 0 && { color: Colors.textDisabled, fontWeight: '600' },
+              ]}>
                 {streakDisplay}
               </Text>
             </View>
@@ -288,7 +296,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
 
         {goal.type === 'count' && goal.targetCount && (
           <View style={styles.countProgressWrapper}>
-            <Text style={styles.countProgressText}>
+            <Text style={[styles.countProgressText, { color: Colors.textSecondary }]}>
               {todayCountTotal.toLocaleString()} / {goal.targetCount.toLocaleString()} {goal.unit ?? ''}
             </Text>
             <View style={[styles.countProgressBar, { backgroundColor: Colors.bg3 }]}>
@@ -304,7 +312,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
             <Text style={[styles.multiplier, { color: Colors.accentBright, backgroundColor: Colors.accentDim }]}>{multiplier}× XP</Text>
           )}
           {goal.type === 'milestone' && goal.targetCount && (
-            <Text style={styles.milestoneText}>
+            <Text style={[styles.milestoneText, { color: Colors.textSecondary }]}>
               {logs.length}/{goal.targetCount} {goal.unit ?? ''}
             </Text>
           )}
@@ -347,20 +355,20 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
                   style={[
                     styles.logBtn,
                     { backgroundColor: Colors.accent },
-                    loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' && styles.logBtnDone,
+                    doneBtnStyle && { backgroundColor: Colors.success + '22', borderWidth: 1, borderColor: Colors.success + '55' },
                   ]}
                   onPress={handleLog}
-                  disabled={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count'}
+                  disabled={doneBtnStyle}
                 >
                   <Ionicons
-                    name={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' ? 'checkmark-circle' : 'add'}
+                    name={doneBtnStyle ? 'checkmark-circle' : 'add'}
                     size={18}
-                    color={loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' ? Colors.success : Colors.textPrimary}
+                    color={doneBtnStyle ? Colors.success : Colors.textPrimary}
                   />
                   <Text style={[
                     styles.logBtnText,
                     { color: Colors.textPrimary },
-                    loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count' && styles.logBtnTextDone,
+                    doneBtnStyle && { color: Colors.success },
                   ]}>
                     {goal.type === 'count' ? (countGoalComplete ? 'Done' : 'Add') : goal.allowMultiplePerDay ? 'Log' : loggedToday ? 'Done' : 'Log'}
                   </Text>
@@ -381,26 +389,24 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     flexDirection: 'row',
   },
-  cardAtRisk: { borderColor: Colors.warning + '66' },
+  cardAtRisk: {},
   cardDragging: { opacity: 0.9, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   body: { flex: 1, padding: Spacing.md, gap: Spacing.sm },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
   name: { fontSize: FontSize.md, fontWeight: '600', flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
+  atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   atRiskText: { fontSize: 10, fontWeight: '700' },
-  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.warning + '18', borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
+  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   graceBadgeText: { fontSize: 10, fontWeight: '600' },
-  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: Colors.bg3, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
-  streakBadgeInactive: { backgroundColor: Colors.bg3 + '88' },
-  streakText: { color: Colors.warning, fontSize: FontSize.sm, fontWeight: '700' },
-  streakTextInactive: { color: Colors.textDisabled, fontWeight: '600' },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  streakText: { fontSize: FontSize.sm, fontWeight: '700' },
   nextBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   nextBadgeText: { fontSize: 11, fontWeight: '600' },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   multiplier: { fontSize: FontSize.xs, fontWeight: '700', borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
-  milestoneText: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  milestoneText: { fontSize: FontSize.sm },
 
   // Log button animation wrapper
   logBtnWrapper: {
@@ -427,16 +433,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  logBtnDone: { backgroundColor: Colors.success + '22', borderWidth: 1, borderColor: Colors.success + '55' },
   logBtnText: { fontSize: FontSize.sm, fontWeight: '700' },
-  logBtnTextDone: { color: Colors.success },
   dragHandle: { marginLeft: Spacing.xs },
   restDayBadge: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   restDayText: { fontSize: FontSize.sm },
-  doubleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.warning + '22', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1, borderColor: Colors.warning + '44' },
+  doubleBadge: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1 },
   doubleText: { fontSize: 10, fontWeight: '800' },
   countProgressWrapper: { gap: 4, marginTop: 4 },
-  countProgressText: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  countProgressText: { fontSize: FontSize.xs },
   countProgressBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
   countProgressFill: { height: '100%', borderRadius: 2 },
 });

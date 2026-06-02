@@ -11,7 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
 import { getPlayerStats } from '../logic/xpEngine';
@@ -29,21 +30,26 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SkillTrack'>;
 const SCREEN_W = Dimensions.get('window').width;
 const HEATMAP_W = SCREEN_W - Spacing.md * 4;
 
-const CATEGORY_COLORS: Record<string, string> = {
+const CATEGORY_COLORS_STATIC: Record<string, string> = {
   creative: '#EC4899',
   physical: '#F97316',
   learning: '#3B82F6',
-  wellness: Colors.success,
-  other: Colors.accentBright,
 };
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function SkillTrackScreen({ route }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const { category, goalId } = route.params;
   const navigation = useNavigation();
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
+
+  const CATEGORY_COLORS: Record<string, string> = {
+    ...CATEGORY_COLORS_STATIC,
+    wellness: Colors.success,
+    other: Colors.accentBright,
+  };
 
   const catColor = CATEGORY_COLORS[category] ?? Colors.accentBright;
   const catLabel = getCategoryDisplayLabel(goals, category);
@@ -138,15 +144,15 @@ export default function SkillTrackScreen({ route }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero header */}
-        <View style={[styles.heroCard, { borderColor: catColor + '44' }]}>
+        <View style={[styles.heroCard, { borderColor: catColor + '44', backgroundColor: Colors.bg1 }]}>
           <View style={styles.heroTop}>
             <View style={[styles.heroIcon, { backgroundColor: catColor + '22', borderColor: catColor + '55' }]}>
               <Ionicons name={catIcon as any} size={32} color={catColor} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.heroCategory}>{catLabel}</Text>
+              <Text style={[styles.heroCategory, { color: Colors.textPrimary }]}>{catLabel}</Text>
               <Text style={[styles.heroLevel, { color: catColor }]}>Level {playerStats.level}</Text>
-              <Text style={styles.heroXP}>{totalXP.toLocaleString()} XP total</Text>
+              <Text style={[styles.heroXP, { color: Colors.textSecondary }]}>{totalXP.toLocaleString()} XP total</Text>
             </View>
             <View style={[styles.levelBadge, { backgroundColor: catColor + '22', borderColor: catColor + '55' }]}>
               <Text style={[styles.levelBadgeText, { color: catColor }]}>Lv {playerStats.level}</Text>
@@ -158,18 +164,18 @@ export default function SkillTrackScreen({ route }: Props) {
         {/* Stats row */}
         <View style={styles.statsRow}>
           {statsRow.map(s => (
-            <View key={s.label} style={styles.statBox}>
+            <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
               <Text style={[styles.statValue, { color: catColor }]}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
             </View>
           ))}
         </View>
 
         {/* Heatmap */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Activity (Last 13 Weeks)</Text>
+        <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Activity (Last 13 Weeks)</Text>
           {catLogs.length === 0 ? (
-            <Text style={styles.emptyHint}>No logs yet in this category.</Text>
+            <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>No logs yet in this category.</Text>
           ) : (
             <HeatmapGrid logs={catLogs} goalColor={catColor} days={91} containerWidth={HEATMAP_W} />
           )}
@@ -177,15 +183,15 @@ export default function SkillTrackScreen({ route }: Props) {
 
         {/* Goals in this category */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Goals</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Goals</Text>
           {goalStats.map(({ goal, logCount, streak }) => (
-            <View key={goal.id} style={styles.goalRow}>
+            <View key={goal.id} style={[styles.goalRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
               <View style={[styles.goalIcon, { backgroundColor: goal.color + '22' }]}>
                 <Ionicons name={goal.icon as any} size={20} color={goal.color} />
               </View>
               <View style={styles.goalInfo}>
-                <Text style={styles.goalName} numberOfLines={1}>{goal.name}</Text>
-                <Text style={styles.goalMeta}>{logCount} log{logCount !== 1 ? 's' : ''}</Text>
+                <Text style={[styles.goalName, { color: Colors.textPrimary }]} numberOfLines={1}>{goal.name}</Text>
+                <Text style={[styles.goalMeta, { color: Colors.textSecondary }]}>{logCount} log{logCount !== 1 ? 's' : ''}</Text>
               </View>
               <View style={styles.goalStreakWrap}>
                 <StreakFlame streak={streak.currentStreak} size={30}>
@@ -200,14 +206,16 @@ export default function SkillTrackScreen({ route }: Props) {
         </View>
 
         {/* Insights */}
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Insights</Text>
+        <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Insights</Text>
           <View style={styles.insightGrid}>
             <InsightTile
               icon="calendar-outline"
               label="30-day log rate"
               value={`${logRate30}%`}
               color={catColor}
+              bg2={Colors.bg2}
+              textSecondary={Colors.textSecondary}
             />
             {mostActiveDow && (
               <InsightTile
@@ -215,6 +223,8 @@ export default function SkillTrackScreen({ route }: Props) {
                 label="Most active day"
                 value={mostActiveDow.name}
                 color={catColor}
+                bg2={Colors.bg2}
+                textSecondary={Colors.textSecondary}
               />
             )}
             <InsightTile
@@ -222,12 +232,16 @@ export default function SkillTrackScreen({ route }: Props) {
               label="Total XP"
               value={totalXP > 0 ? `${totalXP.toLocaleString()}` : '0'}
               color={catColor}
+              bg2={Colors.bg2}
+              textSecondary={Colors.textSecondary}
             />
             <InsightTile
               icon="trophy-outline"
               label="Goals tracked"
               value={`${catGoals.length}`}
               color={catColor}
+              bg2={Colors.bg2}
+              textSecondary={Colors.textSecondary}
             />
           </View>
         </View>
@@ -237,12 +251,12 @@ export default function SkillTrackScreen({ route }: Props) {
   );
 }
 
-function InsightTile({ icon, label, value, color }: { icon: string; label: string; value: string; color: string }) {
+function InsightTile({ icon, label, value, color, bg2, textSecondary }: { icon: string; label: string; value: string; color: string; bg2: string; textSecondary: string }) {
   return (
-    <View style={[styles.insightTile, { borderColor: color + '33' }]}>
+    <View style={[styles.insightTile, { borderColor: color + '33', backgroundColor: bg2 }]}>
       <Ionicons name={icon as any} size={20} color={color} />
       <Text style={[styles.insightValue, { color }]}>{value}</Text>
-      <Text style={styles.insightLabel}>{label}</Text>
+      <Text style={[styles.insightLabel, { color: textSecondary }]}>{label}</Text>
     </View>
   );
 }
@@ -252,7 +266,6 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
 
   heroCard: {
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.xl,
     padding: Spacing.md,
     gap: Spacing.sm,
@@ -267,9 +280,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
   },
-  heroCategory: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800' },
+  heroCategory: { fontSize: FontSize.xl, fontWeight: '800' },
   heroLevel: { fontSize: FontSize.sm, fontWeight: '700' },
-  heroXP: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  heroXP: { fontSize: FontSize.xs },
   levelBadge: {
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.sm,
@@ -282,36 +295,30 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: {
     flex: 1,
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   statValue: { fontSize: FontSize.lg, fontWeight: '700' },
-  statLabel: { color: Colors.textSecondary, fontSize: 10, textAlign: 'center' },
+  statLabel: { fontSize: 10, textAlign: 'center' },
 
   card: {
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     gap: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   cardLabel: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  emptyHint: { color: Colors.textDisabled, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.md },
+  emptyHint: { fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.md },
 
   section: { gap: Spacing.sm },
   sectionLabel: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -321,11 +328,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.bg1,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   goalIcon: {
     width: 40,
@@ -335,8 +340,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   goalInfo: { flex: 1 },
-  goalName: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-  goalMeta: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  goalName: { fontSize: FontSize.md, fontWeight: '600' },
+  goalMeta: { fontSize: FontSize.xs },
   goalStreakWrap: { alignItems: 'center', gap: 2 },
   goalStreak: { fontSize: FontSize.xs, fontWeight: '700' },
 
@@ -344,7 +349,6 @@ const styles = StyleSheet.create({
   insightTile: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     alignItems: 'center',
@@ -352,5 +356,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   insightValue: { fontSize: FontSize.lg, fontWeight: '800' },
-  insightLabel: { color: Colors.textSecondary, fontSize: FontSize.xs, textAlign: 'center' },
+  insightLabel: { fontSize: FontSize.xs, textAlign: 'center' },
 });

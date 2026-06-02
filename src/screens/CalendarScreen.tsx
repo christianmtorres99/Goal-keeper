@@ -6,7 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path as SvgPath } from 'react-native-svg';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
 import { useJournalStore } from '../store/journalStore';
@@ -29,6 +30,7 @@ const MOOD_EMOJIS = ['😔', '😕', '😐', '🙂', '😄'];
 const THUMB_SIZE = 80;
 
 export default function CalendarScreen() {
+  const { colors: Colors } = useColors();
   const navigation = useNavigation<NavProp>();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -280,7 +282,7 @@ export default function CalendarScreen() {
           <Text style={[styles.statsTitle, { color: Colors.textSecondary }]}>Month Stats</Text>
 
           {/* Progress bar */}
-          <View style={[styles.progressCard, { backgroundColor: Colors.bg1 }]}>
+          <View style={[styles.progressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <View style={styles.progressHeader}>
               <Text style={[styles.progressText, { color: Colors.textPrimary }]}>{loggedDayCount} / {elapsedDays} days logged</Text>
               <Text style={[styles.progressPct, { color: completionPct >= 80 ? Colors.success : completionPct >= 50 ? Colors.warning : Colors.textSecondary }]}>
@@ -356,7 +358,7 @@ export default function CalendarScreen() {
 
           {/* Goal legend */}
           {activeGoals.length > 0 && (
-            <View style={[styles.legendCard, { backgroundColor: Colors.bg1 }]}>
+            <View style={[styles.legendCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
               <Text style={[styles.legendTitle, { color: Colors.textSecondary }]}>Goals</Text>
               <View style={styles.legendRow}>
                 {activeGoals.map(g => (
@@ -379,7 +381,7 @@ export default function CalendarScreen() {
           onPress={() => setSelectedDay(null)}
         />
         <View style={styles.centeredModalWrap}>
-          <View style={[styles.centeredModal, { backgroundColor: Colors.bg1 }]}>
+          <View style={[styles.centeredModal, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <View style={[styles.sheetHandle, { backgroundColor: Colors.bg3 }]} />
             <Text style={[styles.sheetDate, { color: Colors.textPrimary }]}>
               {selectedDay ? formatDisplayDate(selectedDay) : ''}
@@ -494,8 +496,9 @@ export default function CalendarScreen() {
 function StatCard({ icon, iconColor, label, value, sub }: {
   icon: string; iconColor: string; label: string; value: string; sub: string;
 }) {
+  const { colors: Colors } = useColors();
   return (
-    <View style={[styles.statCard, { backgroundColor: Colors.bg1 }]}>
+    <View style={[styles.statCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
       <Ionicons name={icon as any} size={16} color={iconColor} />
       <Text style={[styles.statValue, { color: Colors.textPrimary }]} numberOfLines={1}>{value}</Text>
       <Text style={[styles.statLabel, { color: Colors.textPrimary }]}>{label}</Text>
@@ -529,7 +532,7 @@ const styles = StyleSheet.create({
   statsSection: { padding: Spacing.md, gap: Spacing.md },
   statsTitle: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  progressCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  progressCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressText: { fontSize: FontSize.md, fontWeight: '600' },
   progressPct: { fontSize: FontSize.lg, fontWeight: '800' },
@@ -537,12 +540,12 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 8, borderRadius: 4 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1, borderColor: Colors.border },
+  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1 },
   statValue: { fontSize: FontSize.lg, fontWeight: '800' },
   statLabel: { fontSize: FontSize.xs, fontWeight: '600' },
   statSub: { fontSize: FontSize.xs - 1 },
 
-  legendCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  legendCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   legendTitle: { fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -553,7 +556,7 @@ const styles = StyleSheet.create({
 
   // Day modal
   centeredModalWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.lg },
-  centeredModal: { borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', maxHeight: '75%', gap: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  centeredModal: { borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', maxHeight: '75%', gap: Spacing.md, borderWidth: 1 },
   centeredModalScroll: { flexGrow: 0 },
   centeredModalContent: { gap: Spacing.md },
   sheetHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },

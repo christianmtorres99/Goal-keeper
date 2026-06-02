@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
 import { requestNotificationPermissions, scheduleGoalReminder, cancelGoalReminder } from '../utils/notifications';
@@ -60,6 +61,7 @@ const parseTime24 = (t: string) => {
 };
 
 export default function AddGoalScreen() {
+  const { colors: Colors, isLight } = useColors();
   const { width: winW } = useWindowDimensions();
   const iconBtnSize = Math.floor((winW - Spacing.md * 2 - Spacing.sm * 5) / 6);
 
@@ -167,9 +169,9 @@ export default function AddGoalScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-        <Text style={styles.label}>Goal Name *</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Goal Name *</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
           value={name}
           onChangeText={setName}
           placeholder="e.g. DJ every day, Read books..."
@@ -177,9 +179,9 @@ export default function AddGoalScreen() {
           maxLength={50}
         />
 
-        <Text style={styles.label}>Description (optional)</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Description (optional)</Text>
         <TextInput
-          style={[styles.input, styles.multiline]}
+          style={[styles.input, styles.multiline, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
           value={description}
           onChangeText={setDescription}
           placeholder="What's this goal about?"
@@ -188,37 +190,37 @@ export default function AddGoalScreen() {
           numberOfLines={3}
         />
 
-        <Text style={styles.label}>Type</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Type</Text>
         <View style={styles.typeRow}>
           <TouchableOpacity
-            style={[styles.typeCard, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
             onPress={() => setGoalType('habit')}
             activeOpacity={0.7}
           >
             <Ionicons name="repeat" size={22} color={goalType === 'habit' ? selectedColor : Colors.textSecondary} />
-            <Text style={[styles.typeCardTitle, goalType === 'habit' && { color: selectedColor }]}>Habit</Text>
-            <Text style={styles.typeCardSub}>Daily check-in</Text>
+            <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'habit' && { color: selectedColor }]}>Habit</Text>
+            <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Daily check-in</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.typeCard, goalType === 'count' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'count' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
             onPress={() => setGoalType('count')}
             activeOpacity={0.7}
           >
             <Ionicons name="stats-chart" size={22} color={goalType === 'count' ? selectedColor : Colors.textSecondary} />
-            <Text style={[styles.typeCardTitle, goalType === 'count' && { color: selectedColor }]}>Count</Text>
-            <Text style={styles.typeCardSub}>Daily target (steps, pages, etc.)</Text>
+            <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'count' && { color: selectedColor }]}>Count</Text>
+            <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Daily target (steps, pages, etc.)</Text>
           </TouchableOpacity>
         </View>
 
         {goalType === 'count' && (
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.label}>Target Count</Text>
-              <TextInput style={[styles.input, { marginTop: 4 }]} value={targetCount} onChangeText={setTargetCount} placeholder="10" placeholderTextColor={Colors.textDisabled} keyboardType="number-pad" />
+              <Text style={[styles.label, { color: Colors.textSecondary }]}>Target Count</Text>
+              <TextInput style={[styles.input, { marginTop: 4, backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]} value={targetCount} onChangeText={setTargetCount} placeholder="10" placeholderTextColor={Colors.textDisabled} keyboardType="number-pad" />
             </View>
             <View style={[styles.flex1, { marginLeft: Spacing.md }]}>
-              <Text style={styles.label}>Unit (optional)</Text>
-              <TextInput style={[styles.input, { marginTop: 4 }]} value={unit} onChangeText={setUnit} placeholder="songs, pages..." placeholderTextColor={Colors.textDisabled} />
+              <Text style={[styles.label, { color: Colors.textSecondary }]}>Unit (optional)</Text>
+              <TextInput style={[styles.input, { marginTop: 4, backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]} value={unit} onChangeText={setUnit} placeholder="songs, pages..." placeholderTextColor={Colors.textDisabled} />
             </View>
           </View>
         )}
@@ -226,29 +228,29 @@ export default function AddGoalScreen() {
         {goalType === 'habit' && (
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.label}>Multiple Logs Per Day</Text>
-              <Text style={styles.sublabel}>Allow logging this goal more than once daily</Text>
+              <Text style={[styles.label, { color: Colors.textSecondary }]}>Multiple Logs Per Day</Text>
+              <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>Allow logging this goal more than once daily</Text>
             </View>
             <Switch value={allowMultiple} onValueChange={setAllowMultiple} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
           </View>
         )}
 
-        <Text style={styles.label}>Category</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Category</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
           {CATEGORIES.map(cat => (
             <TouchableOpacity
               key={cat}
-              style={[styles.categoryBtn, category === cat && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+              style={[styles.categoryBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, category === cat && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
               onPress={() => setCategory(cat)}
             >
               <Ionicons name={CATEGORY_ICONS[cat] as any} size={16} color={category === cat ? selectedColor : Colors.textSecondary} />
-              <Text style={[styles.categoryText, category === cat && { color: selectedColor }]}>{CATEGORY_LABELS[cat]}</Text>
+              <Text style={[styles.categoryText, { color: Colors.textSecondary }, category === cat && { color: selectedColor }]}>{CATEGORY_LABELS[cat]}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
         {category === 'other' && (
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
             placeholder='Give it a name (e.g. "Finance", "Cooking")'
             placeholderTextColor={Colors.textDisabled}
             value={customCategoryLabel}
@@ -257,8 +259,8 @@ export default function AddGoalScreen() {
           />
         )}
 
-        <Text style={styles.label}>Difficulty</Text>
-        <Text style={styles.sublabel}>Harder goals earn more XP per log</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Difficulty</Text>
+        <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>Harder goals earn more XP per log</Text>
         <View style={styles.difficultyRow}>
           {(['easy', 'medium', 'hard', 'extreme'] as GoalDifficulty[]).map(d => {
             const mult = DIFFICULTY_MULTIPLIERS[d];
@@ -268,30 +270,30 @@ export default function AddGoalScreen() {
             return (
               <TouchableOpacity
                 key={d}
-                style={[styles.diffBtn, sel && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+                style={[styles.diffBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, sel && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
                 onPress={() => setDifficulty(d)}
               >
                 <Ionicons name={icons[d] as any} size={16} color={sel ? selectedColor : Colors.textSecondary} />
-                <Text style={[styles.diffLabel, sel && { color: selectedColor }]}>{labels[d]}</Text>
-                <Text style={[styles.diffMult, sel && { color: selectedColor }]}>{mult}×</Text>
+                <Text style={[styles.diffLabel, { color: Colors.textSecondary }, sel && { color: selectedColor }]}>{labels[d]}</Text>
+                <Text style={[styles.diffMult, { color: Colors.textDisabled }, sel && { color: selectedColor }]}>{mult}×</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <Text style={styles.label}>Color</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Color</Text>
         <View style={styles.colorRow}>
           {COLORS.map(color => (
-            <TouchableOpacity key={color} style={[styles.colorSwatch, { backgroundColor: color }, selectedColor === color && styles.swatchSelected]} onPress={() => setSelectedColor(color)} />
+            <TouchableOpacity key={color} style={[styles.colorSwatch, { backgroundColor: color }, selectedColor === color && [styles.swatchSelected, { borderColor: Colors.textPrimary }]]} onPress={() => setSelectedColor(color)} />
           ))}
         </View>
 
-        <Text style={styles.label}>Icon</Text>
+        <Text style={[styles.label, { color: Colors.textSecondary }]}>Icon</Text>
         <View style={styles.iconGrid}>
           {ICONS.map(icon => (
             <TouchableOpacity
               key={icon}
-              style={[styles.iconBtn, { width: iconBtnSize, height: iconBtnSize }, selectedIcon === icon && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+              style={[styles.iconBtn, { width: iconBtnSize, height: iconBtnSize, backgroundColor: Colors.bg2, borderColor: Colors.border }, selectedIcon === icon && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
               onPress={() => setSelectedIcon(icon)}
             >
               <Ionicons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : Colors.textSecondary} />
@@ -301,44 +303,44 @@ export default function AddGoalScreen() {
 
         <View style={styles.row}>
           <View style={styles.flex1}>
-            <Text style={styles.label}>Daily Reminder</Text>
-            <Text style={styles.sublabel}>{reminderEnabled ? `Notify at ${formatTime12h(reminderTime24)}` : 'No reminder'}</Text>
+            <Text style={[styles.label, { color: Colors.textSecondary }]}>Daily Reminder</Text>
+            <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>{reminderEnabled ? `Notify at ${formatTime12h(reminderTime24)}` : 'No reminder'}</Text>
           </View>
           <Switch value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
         </View>
 
         {reminderEnabled && (
-          <View style={styles.timePickerRow}>
+          <View style={[styles.timePickerRow, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
             {/* Hour */}
             <View style={styles.timeUnit}>
               <TouchableOpacity onPress={() => setRHour(h => h === 12 ? 1 : h + 1)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
-              <Text style={styles.timeDigit}>{String(rHour).padStart(2, '0')}</Text>
+              <Text style={[styles.timeDigit, { color: Colors.textPrimary }]}>{String(rHour).padStart(2, '0')}</Text>
               <TouchableOpacity onPress={() => setRHour(h => h === 1 ? 12 : h - 1)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.timeColon}>:</Text>
+            <Text style={[styles.timeColon, { color: Colors.textPrimary }]}>:</Text>
             {/* Minute */}
             <View style={styles.timeUnit}>
               <TouchableOpacity onPress={() => setRMinute(m => (m + 1) % 60)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
-              <Text style={styles.timeDigit}>{String(rMinute).padStart(2, '0')}</Text>
+              <Text style={[styles.timeDigit, { color: Colors.textPrimary }]}>{String(rMinute).padStart(2, '0')}</Text>
               <TouchableOpacity onPress={() => setRMinute(m => (m - 1 + 60) % 60)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
             {/* AM/PM */}
-            <TouchableOpacity style={styles.ampmBtn} onPress={() => setRIsPM(p => !p)}>
-              <Text style={styles.ampmText}>{rIsPM ? 'PM' : 'AM'}</Text>
+            <TouchableOpacity style={[styles.ampmBtn, { backgroundColor: Colors.accent }]} onPress={() => setRIsPM(p => !p)}>
+              <Text style={[styles.ampmText, { color: Colors.textPrimary }]}>{rIsPM ? 'PM' : 'AM'}</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveBtnText}>{editingId ? 'Save Changes' : 'Create Goal'}</Text>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.accent }]} onPress={handleSave}>
+          <Text style={[styles.saveBtnText, { color: Colors.textPrimary }]}>{editingId ? 'Save Changes' : 'Create Goal'}</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -351,36 +353,36 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  label: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  sublabel: { color: Colors.textDisabled, fontSize: FontSize.sm, marginTop: 2 },
-  input: { backgroundColor: Colors.bg2, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, color: Colors.textPrimary, fontSize: FontSize.md, padding: Spacing.md },
+  label: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sublabel: { fontSize: FontSize.sm, marginTop: 2 },
+  input: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, padding: Spacing.md },
   multiline: { height: 80, textAlignVertical: 'top' },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   flex1: { flex: 1 },
   typeRow: { flexDirection: 'row', gap: Spacing.sm },
-  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 2, borderColor: Colors.border, minHeight: 44 },
-  typeCardTitle: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '700' },
-  typeCardSub: { color: Colors.textDisabled, fontSize: FontSize.xs, textAlign: 'center' },
+  typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, borderWidth: 2, minHeight: 44 },
+  typeCardTitle: { fontSize: FontSize.md, fontWeight: '700' },
+  typeCardSub: { fontSize: FontSize.xs, textAlign: 'center' },
   categoryRow: { flexGrow: 0 },
-  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border, marginRight: Spacing.sm },
-  categoryText: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
+  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.sm },
+  categoryText: { fontSize: FontSize.sm, fontWeight: '600' },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   colorSwatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: 'transparent' },
-  swatchSelected: { borderColor: Colors.textPrimary, transform: [{ scale: 1.15 }] },
+  swatchSelected: { transform: [{ scale: 1.15 }] },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  iconBtn: { borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  saveBtn: { backgroundColor: Colors.accent, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md },
-  saveBtnText: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+  iconBtn: { borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  saveBtn: { borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md },
+  saveBtnText: { fontSize: FontSize.lg, fontWeight: '700' },
   // 12hr time picker
-  timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.bg2, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
+  timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1 },
   timeUnit: { alignItems: 'center', gap: Spacing.xs },
   timeArrow: { padding: Spacing.sm },
-  timeDigit: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700', minWidth: 42, textAlign: 'center' },
-  timeColon: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700', marginBottom: 8 },
-  ampmBtn: { backgroundColor: Colors.accent, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-  ampmText: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+  timeDigit: { fontSize: FontSize.xxl, fontWeight: '700', minWidth: 42, textAlign: 'center' },
+  timeColon: { fontSize: FontSize.xxl, fontWeight: '700', marginBottom: 8 },
+  ampmBtn: { borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  ampmText: { fontSize: FontSize.md, fontWeight: '700' },
   difficultyRow: { flexDirection: 'row', gap: Spacing.sm },
-  diffBtn: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.md, backgroundColor: Colors.bg2, borderWidth: 1, borderColor: Colors.border },
-  diffLabel: { color: Colors.textSecondary, fontSize: FontSize.xs, fontWeight: '700' },
-  diffMult: { color: Colors.textDisabled, fontSize: FontSize.xs, fontWeight: '600' },
+  diffBtn: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1 },
+  diffLabel: { fontSize: FontSize.xs, fontWeight: '700' },
+  diffMult: { fontSize: FontSize.xs, fontWeight: '600' },
 });

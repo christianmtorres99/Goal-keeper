@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import type { PlayerStats } from '../../types';
 
 interface Props {
@@ -10,21 +11,22 @@ interface Props {
 }
 
 export default function XPBar({ stats, compact }: Props) {
+  const { colors: Colors } = useColors();
   const { level, xpIntoLevel, xpForNextLevel, progressPercent } = stats;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.levelBadge}>
-          <Text style={styles.levelText}>Lv {level}</Text>
+        <View style={[styles.levelBadge, { backgroundColor: Colors.accentDim }]}>
+          <Text style={[styles.levelText, { color: Colors.accentBright }]}>Lv {level}</Text>
         </View>
         {!compact && (
-          <Text style={styles.xpText}>
+          <Text style={[styles.xpText, { color: Colors.textSecondary }]}>
             {xpIntoLevel} / {xpForNextLevel} XP
           </Text>
         )}
       </View>
-      <View style={styles.track}>
+      <View style={[styles.track, { backgroundColor: Colors.bg3 }]}>
         <LinearGradient
           colors={Colors.xpGradient}
           start={{ x: 0, y: 0 }}
@@ -40,16 +42,14 @@ const styles = StyleSheet.create({
   container: { gap: Spacing.xs },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   levelBadge: {
-    backgroundColor: Colors.accentDim,
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
   },
-  levelText: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700' },
-  xpText: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  levelText: { fontSize: FontSize.sm, fontWeight: '700' },
+  xpText: { fontSize: FontSize.sm },
   track: {
     height: 8,
-    backgroundColor: Colors.bg3,
     borderRadius: Radius.full,
     overflow: 'hidden',
   },

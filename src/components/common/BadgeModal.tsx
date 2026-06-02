@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import type { BadgeDefinition } from '../../types';
 import type { LogEvent } from '../../store/logStore';
 import { getEventTitle, getEventSubtitle } from '../../utils/motivationUtils';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function BadgeModal({ badges, bonusXP, events = [], visible, onClose }: Props) {
+  const { colors: Colors, isLight } = useColors();
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -35,34 +37,34 @@ export default function BadgeModal({ badges, bonusXP, events = [], visible, onCl
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
-        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
-          <Text style={styles.title}>{title}</Text>
+      <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
+        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: Colors.accentDim }]}>
+          <Text style={[styles.title, { color: Colors.textPrimary }]}>{title}</Text>
 
           {subtitle && (
-            <Text style={styles.subtitle}>{subtitle}</Text>
+            <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>{subtitle}</Text>
           )}
 
           {badges.map(badge => (
-            <View key={badge.id} style={styles.badgeRow}>
-              <View style={styles.badgeIconWrap}>
+            <View key={badge.id} style={[styles.badgeRow, { backgroundColor: Colors.bg3 }]}>
+              <View style={[styles.badgeIconWrap, { backgroundColor: Colors.accentDim }]}>
                 <Ionicons name={badge.icon as any} size={22} color={Colors.accentBright} />
               </View>
               <View style={styles.badgeText}>
-                <Text style={styles.badgeName}>{badge.label}</Text>
-                <Text style={styles.badgeDesc}>{badge.description}</Text>
+                <Text style={[styles.badgeName, { color: Colors.textPrimary }]}>{badge.label}</Text>
+                <Text style={[styles.badgeDesc, { color: Colors.textSecondary }]}>{badge.description}</Text>
               </View>
             </View>
           ))}
 
           {bonusXP > 0 && (
-            <View style={styles.bonusRow}>
+            <View style={[styles.bonusRow, { backgroundColor: Colors.accentDim }]}>
               <Ionicons name="flash" size={18} color={Colors.accentBright} />
-              <Text style={styles.bonusXP}>+{bonusXP} Bonus XP</Text>
+              <Text style={[styles.bonusXP, { color: Colors.accentBright }]}>+{bonusXP} Bonus XP</Text>
             </View>
           )}
 
-          <TouchableOpacity style={styles.button} onPress={onClose} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.button, { backgroundColor: Colors.accent }]} onPress={onClose} activeOpacity={0.8}>
             <Text style={styles.buttonText}>Let's go!</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -74,29 +76,24 @@ export default function BadgeModal({ badges, bonusXP, events = [], visible, onCl
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.bg2,
     borderRadius: Radius.xl,
     padding: Spacing.xl,
     width: '100%',
     alignItems: 'center',
     gap: Spacing.md,
     borderWidth: 1.5,
-    borderColor: Colors.accentDim,
   },
   title: {
-    color: Colors.textPrimary,
     fontSize: FontSize.xl,
     fontWeight: '800',
     textAlign: 'center',
   },
   subtitle: {
-    color: Colors.textSecondary,
     fontSize: FontSize.sm,
     textAlign: 'center',
     lineHeight: 20,
@@ -107,7 +104,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
     width: '100%',
-    backgroundColor: Colors.bg3,
     borderRadius: Radius.md,
     padding: Spacing.md,
   },
@@ -115,25 +111,22 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.accentDim,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: { flex: 1 },
-  badgeName: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-  badgeDesc: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
+  badgeName: { fontSize: FontSize.md, fontWeight: '700' },
+  badgeDesc: { fontSize: FontSize.sm, marginTop: 2 },
   bonusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.accentDim,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
-  bonusXP: { color: Colors.accentBright, fontSize: FontSize.lg, fontWeight: '800' },
+  bonusXP: { fontSize: FontSize.lg, fontWeight: '800' },
   button: {
-    backgroundColor: Colors.accent,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,

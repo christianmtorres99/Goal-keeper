@@ -8,7 +8,8 @@ import * as Haptics from 'expo-haptics';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Colors, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, Radius, Spacing } from '../constants/theme';
+import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import type { LogEvent } from '../store/logStore';
@@ -51,6 +52,7 @@ const WEEKLY_REVIEW_KEY = 'weeklyReviewLastShown';
 const TAB_BAR_HEIGHT = 56;
 
 export default function HomeScreen() {
+  const { colors: Colors, isLight } = useColors();
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const goals = useGoalStore(s => s.goals);
@@ -425,7 +427,7 @@ export default function HomeScreen() {
                     <Ionicons name="archive-outline" size={20} color={Colors.textSecondary} />
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddGoal', {})}>
+                <TouchableOpacity style={[styles.addBtn, { backgroundColor: Colors.accent }]} onPress={() => navigation.navigate('AddGoal', {})}>
                   <Ionicons name="add" size={24} color={Colors.textPrimary} />
                 </TouchableOpacity>
               </View>
@@ -454,7 +456,7 @@ export default function HomeScreen() {
 
             <TodoSection />
 
-            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }, allDone && styles.sectionLabelDone]}>
+            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }, allDone && { color: Colors.success }]}>
               {allDone
                 ? `Perfect day — ${todayLogged.size}/${activeGoals.length} logged`
                 : `Today — ${todayLogged.size}/${activeGoals.length} logged`}
@@ -567,9 +569,9 @@ const styles = StyleSheet.create({
   date: { fontSize: FontSize.sm },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   iconBtn: { padding: Spacing.sm },
-  addBtn: { backgroundColor: Colors.accent, borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   xpCaption: { fontSize: FontSize.xs },
   sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  sectionLabelDone: { color: Colors.success },
+  sectionLabelDone: {},
 });

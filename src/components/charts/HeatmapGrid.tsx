@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Colors } from '../../constants/theme';
+import { useColors } from '../../hooks/useColors';
 import { todayString, addDays } from '../../utils/dateUtils';
 import type { Log } from '../../types';
 
@@ -17,6 +17,7 @@ const DOW_W = 18;
 const GAP = 2;
 
 export default function HeatmapGrid({ logs, goalColor, days = 91, containerWidth }: Props) {
+  const { colors: Colors } = useColors();
   const color = goalColor ?? Colors.accent;
   const numCols = Math.ceil(days / 7);
 
@@ -68,7 +69,7 @@ export default function HeatmapGrid({ logs, goalColor, days = 91, containerWidth
       {/* Month labels */}
       <View style={{ height: 14, marginBottom: 3, marginLeft: DOW_W, position: 'relative' }}>
         {monthLabels.map((m, i) => (
-          <Text key={i} style={[s.month, { position: 'absolute', left: m.col * colStep }]}>
+          <Text key={i} style={[s.month, { position: 'absolute', left: m.col * colStep, color: Colors.textSecondary }]}>
             {m.label}
           </Text>
         ))}
@@ -81,7 +82,7 @@ export default function HeatmapGrid({ logs, goalColor, days = 91, containerWidth
         <View style={{ width: DOW_W, gap: GAP }}>
           {DOW_LABELS.map((d, i) => (
             <View key={i} style={{ height: cellSize, justifyContent: 'center' }}>
-              <Text style={s.dow}>{d}</Text>
+              <Text style={[s.dow, { color: Colors.textSecondary }]}>{d}</Text>
             </View>
           ))}
         </View>
@@ -118,6 +119,6 @@ export default function HeatmapGrid({ logs, goalColor, days = 91, containerWidth
 }
 
 const s = StyleSheet.create({
-  month: { color: Colors.textSecondary, fontSize: 9 },
-  dow: { color: Colors.textSecondary, fontSize: 8 },
+  month: { fontSize: 9 },
+  dow: { fontSize: 8 },
 });
