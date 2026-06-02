@@ -5,6 +5,7 @@ on:
     branches:
       - claude/goal-tracking-app-QiCgn
       - claude/project-overview-planning-kXME1
+      - claude/project-familiarization-XUrOV
 
 jobs:
   build:
