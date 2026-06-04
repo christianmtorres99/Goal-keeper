@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Alert, Switch, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, Alert, Switch, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedPressable from '../components/common/AnimatedPressable';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
@@ -169,7 +170,7 @@ export default function AddGoalScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Goal Name *</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Goal Name *</Text>
         <TextInput
           style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
           value={name}
@@ -179,7 +180,7 @@ export default function AddGoalScreen() {
           maxLength={50}
         />
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Description (optional)</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Description (optional)</Text>
         <TextInput
           style={[styles.input, styles.multiline, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
           value={description}
@@ -190,36 +191,36 @@ export default function AddGoalScreen() {
           numberOfLines={3}
         />
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Type</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Type</Text>
         <View style={styles.typeRow}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
             onPress={() => setGoalType('habit')}
-            activeOpacity={0.7}
+
           >
             <Ionicons name="repeat" size={22} color={goalType === 'habit' ? selectedColor : Colors.textSecondary} />
             <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'habit' && { color: selectedColor }]}>Habit</Text>
             <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Daily check-in</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </AnimatedPressable>
+          <AnimatedPressable
             style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'count' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
             onPress={() => setGoalType('count')}
-            activeOpacity={0.7}
+
           >
             <Ionicons name="stats-chart" size={22} color={goalType === 'count' ? selectedColor : Colors.textSecondary} />
             <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'count' && { color: selectedColor }]}>Count</Text>
             <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Daily target (steps, pages, etc.)</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
         {goalType === 'count' && (
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={[styles.label, { color: Colors.textSecondary }]}>Target Count</Text>
+              <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Target Count</Text>
               <TextInput style={[styles.input, { marginTop: 4, backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]} value={targetCount} onChangeText={setTargetCount} placeholder="10" placeholderTextColor={Colors.textDisabled} keyboardType="number-pad" />
             </View>
             <View style={[styles.flex1, { marginLeft: Spacing.md }]}>
-              <Text style={[styles.label, { color: Colors.textSecondary }]}>Unit (optional)</Text>
+              <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Unit (optional)</Text>
               <TextInput style={[styles.input, { marginTop: 4, backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]} value={unit} onChangeText={setUnit} placeholder="songs, pages..." placeholderTextColor={Colors.textDisabled} />
             </View>
           </View>
@@ -228,24 +229,24 @@ export default function AddGoalScreen() {
         {goalType === 'habit' && (
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={[styles.label, { color: Colors.textSecondary }]}>Multiple Logs Per Day</Text>
+              <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Multiple Logs Per Day</Text>
               <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>Allow logging this goal more than once daily</Text>
             </View>
             <Switch value={allowMultiple} onValueChange={setAllowMultiple} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
           </View>
         )}
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Category</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Category</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
           {CATEGORIES.map(cat => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={cat}
               style={[styles.categoryBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, category === cat && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
               onPress={() => setCategory(cat)}
             >
               <Ionicons name={CATEGORY_ICONS[cat] as any} size={16} color={category === cat ? selectedColor : Colors.textSecondary} />
               <Text style={[styles.categoryText, { color: Colors.textSecondary }, category === cat && { color: selectedColor }]}>{CATEGORY_LABELS[cat]}</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </ScrollView>
         {category === 'other' && (
@@ -259,7 +260,7 @@ export default function AddGoalScreen() {
           />
         )}
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Difficulty</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Difficulty</Text>
         <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>Harder goals earn more XP per log</Text>
         <View style={styles.difficultyRow}>
           {(['easy', 'medium', 'hard', 'extreme'] as GoalDifficulty[]).map(d => {
@@ -268,7 +269,7 @@ export default function AddGoalScreen() {
             const icons = { easy: 'leaf-outline', medium: 'flash-outline', hard: 'flame-outline', extreme: 'rocket-outline' };
             const sel = difficulty === d;
             return (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={d}
                 style={[styles.diffBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, sel && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
                 onPress={() => setDifficulty(d)}
@@ -276,34 +277,34 @@ export default function AddGoalScreen() {
                 <Ionicons name={icons[d] as any} size={16} color={sel ? selectedColor : Colors.textSecondary} />
                 <Text style={[styles.diffLabel, { color: Colors.textSecondary }, sel && { color: selectedColor }]}>{labels[d]}</Text>
                 <Text style={[styles.diffMult, { color: Colors.textDisabled }, sel && { color: selectedColor }]}>{mult}×</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             );
           })}
         </View>
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Color</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Color</Text>
         <View style={styles.colorRow}>
           {COLORS.map(color => (
-            <TouchableOpacity key={color} style={[styles.colorSwatch, { backgroundColor: color }, selectedColor === color && [styles.swatchSelected, { borderColor: Colors.textPrimary }]]} onPress={() => setSelectedColor(color)} />
+            <AnimatedPressable key={color} style={[styles.colorSwatch, { backgroundColor: color }, selectedColor === color && [styles.swatchSelected, { borderColor: Colors.textPrimary }]]} onPress={() => setSelectedColor(color)} />
           ))}
         </View>
 
-        <Text style={[styles.label, { color: Colors.textSecondary }]}>Icon</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Icon</Text>
         <View style={styles.iconGrid}>
           {ICONS.map(icon => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={icon}
               style={[styles.iconBtn, { width: iconBtnSize, height: iconBtnSize, backgroundColor: Colors.bg2, borderColor: Colors.border }, selectedIcon === icon && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
               onPress={() => setSelectedIcon(icon)}
             >
               <Ionicons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : Colors.textSecondary} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
 
         <View style={styles.row}>
           <View style={styles.flex1}>
-            <Text style={[styles.label, { color: Colors.textSecondary }]}>Daily Reminder</Text>
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Daily Reminder</Text>
             <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>{reminderEnabled ? `Notify at ${formatTime12h(reminderTime24)}` : 'No reminder'}</Text>
           </View>
           <Switch value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
@@ -313,35 +314,35 @@ export default function AddGoalScreen() {
           <View style={[styles.timePickerRow, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
             {/* Hour */}
             <View style={styles.timeUnit}>
-              <TouchableOpacity onPress={() => setRHour(h => h === 12 ? 1 : h + 1)} style={styles.timeArrow} hitSlop={8}>
+              <AnimatedPressable onPress={() => setRHour(h => h === 12 ? 1 : h + 1)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPressable>
               <Text style={[styles.timeDigit, { color: Colors.textPrimary }]}>{String(rHour).padStart(2, '0')}</Text>
-              <TouchableOpacity onPress={() => setRHour(h => h === 1 ? 12 : h - 1)} style={styles.timeArrow} hitSlop={8}>
+              <AnimatedPressable onPress={() => setRHour(h => h === 1 ? 12 : h - 1)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
             <Text style={[styles.timeColon, { color: Colors.textPrimary }]}>:</Text>
             {/* Minute */}
             <View style={styles.timeUnit}>
-              <TouchableOpacity onPress={() => setRMinute(m => (m + 1) % 60)} style={styles.timeArrow} hitSlop={8}>
+              <AnimatedPressable onPress={() => setRMinute(m => (m + 1) % 60)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-up" size={16} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPressable>
               <Text style={[styles.timeDigit, { color: Colors.textPrimary }]}>{String(rMinute).padStart(2, '0')}</Text>
-              <TouchableOpacity onPress={() => setRMinute(m => (m - 1 + 60) % 60)} style={styles.timeArrow} hitSlop={8}>
+              <AnimatedPressable onPress={() => setRMinute(m => (m - 1 + 60) % 60)} style={styles.timeArrow} hitSlop={8}>
                 <Ionicons name="chevron-down" size={16} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
             {/* AM/PM */}
-            <TouchableOpacity style={[styles.ampmBtn, { backgroundColor: Colors.accent }]} onPress={() => setRIsPM(p => !p)}>
+            <AnimatedPressable style={[styles.ampmBtn, { backgroundColor: Colors.accent }]} onPress={() => setRIsPM(p => !p)}>
               <Text style={[styles.ampmText, { color: Colors.textPrimary }]}>{rIsPM ? 'PM' : 'AM'}</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         )}
 
-        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.accent }]} onPress={handleSave}>
+        <AnimatedPressable style={[styles.saveBtn, { backgroundColor: Colors.accent }]} onPress={handleSave}>
           <Text style={[styles.saveBtnText, { color: Colors.textPrimary }]}>{editingId ? 'Save Changes' : 'Create Goal'}</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
       </ScrollView>
       </KeyboardAvoidingView>

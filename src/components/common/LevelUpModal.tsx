@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { FontSize, FontFamily, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
@@ -17,15 +17,34 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   const { colors: Colors, isLight } = useColors();
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const levelAnim = useRef(new Animated.Value(newLevel - 1));
+  const [displayLevel, setDisplayLevel] = useState(newLevel - 1);
 
   const tier = getLevelTier(newLevel);
 
   useEffect(() => {
     if (visible) {
+      levelAnim.current.setValue(newLevel - 1);
+      setDisplayLevel(newLevel - 1);
+
+      const id = levelAnim.current.addListener(({ value }) => {
+        setDisplayLevel(Math.round(value));
+      });
+
       Animated.parallel([
         Animated.spring(scaleAnim, { toValue: 1, tension: 20, friction: 3, useNativeDriver: true }),
         Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(levelAnim.current, {
+          toValue: newLevel,
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
       ]).start();
+
+      return () => {
+        levelAnim.current.removeListener(id);
+      };
     } else {
       scaleAnim.setValue(0.5);
       opacityAnim.setValue(0);
@@ -37,9 +56,9 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
       <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: overlayBg }]}>
-        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
+        <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: tier.color, borderWidth: 1.5 }]}>
           <LinearGradient
-            colors={[hexAlpha(tier.color, 0.20), Colors.bg2, Colors.bg2]}
+            colors={[hexAlpha(tier.color, 0.35), Colors.bg2, Colors.bg2]}
             style={styles.gradient}
           />
 
@@ -52,7 +71,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
           <View style={styles.levelRow}>
             <Text style={[styles.oldLevel, { color: Colors.textDisabled }]}>{oldLevel}</Text>
             <Ionicons name="arrow-forward" size={20} color={Colors.textSecondary} style={{ marginHorizontal: 8 }} />
-            <Text style={[styles.newLevel, { color: tier.color }]}>{newLevel}</Text>
+            <Text style={[styles.newLevel, { color: tier.color }]}>{displayLevel}</Text>
           </View>
 
           <Text style={[styles.tierName, { color: tier.color }]}>{tier.title}</Text>

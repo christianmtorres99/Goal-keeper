@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,7 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path as SvgPath } from 'react-native-svg';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
+import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -207,13 +208,13 @@ export default function CalendarScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
+          <AnimatedPressable onPress={prevMonth} style={styles.arrow}>
             <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
-          </TouchableOpacity>
+          </AnimatedPressable>
           <Text style={[styles.monthTitle, { color: Colors.textPrimary }]}>{getMonthName(month)} {year}</Text>
-          <TouchableOpacity onPress={nextMonth} style={styles.arrow}>
+          <AnimatedPressable onPress={nextMonth} style={styles.arrow}>
             <Ionicons name="chevron-forward" size={22} color={Colors.textPrimary} />
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
         <EmptyState icon="calendar-outline" title="Nothing logged yet" subtitle="Log your first goal to begin." />
       </SafeAreaView>
@@ -224,13 +225,13 @@ export default function CalendarScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       {/* Fixed header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={prevMonth} style={styles.arrow}>
+        <AnimatedPressable onPress={prevMonth} style={styles.arrow}>
           <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={[styles.monthTitle, { color: Colors.textPrimary }]}>{getMonthName(month)} {year}</Text>
-        <TouchableOpacity onPress={nextMonth} style={styles.arrow}>
+        <AnimatedPressable onPress={nextMonth} style={styles.arrow}>
           <Ionicons name="chevron-forward" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       {/* Fixed DOW labels */}
@@ -253,7 +254,7 @@ export default function CalendarScreen() {
             const isPerfect = activeGoals.length > 0 && goalIds.length >= activeGoals.length;
             const isInteractive = !isFuture && (goalIds.length > 0 || hasJournal);
             return (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={dateStr}
                 style={[
                   styles.cell,
@@ -262,7 +263,6 @@ export default function CalendarScreen() {
                 ]}
                 onPress={() => isInteractive ? setSelectedDay(dateStr) : null}
                 disabled={!isInteractive}
-                activeOpacity={0.7}
               >
                 <Text style={[
                   styles.dayNum,
@@ -283,7 +283,7 @@ export default function CalendarScreen() {
                     <View style={[styles.dot, styles.journalDot, { backgroundColor: Colors.accentBright, borderColor: Colors.bg0 }]} />
                   )}
                 </View>
-              </TouchableOpacity>
+              </AnimatedPressable>
             );
           })}
         </View>
@@ -387,9 +387,8 @@ export default function CalendarScreen() {
 
       {/* Day detail modal */}
       <Modal visible={!!selectedDay} transparent animationType="fade" onRequestClose={() => setSelectedDay(null)}>
-        <TouchableOpacity
+        <Pressable
           style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
-          activeOpacity={1}
           onPress={() => setSelectedDay(null)}
         />
         <View style={styles.centeredModalWrap}>
@@ -431,9 +430,8 @@ export default function CalendarScreen() {
 
               {/* Journal entry section */}
               {selectedDayJournal && (
-                <TouchableOpacity
+                <AnimatedPressable
                   style={[styles.journalSection, { backgroundColor: Colors.bg2, borderColor: Colors.accentDim }]}
-                  activeOpacity={0.8}
                   onPress={() => {
                     setSelectedDay(null);
                     navigation.navigate('Journal', { date: selectedDay! });
@@ -493,7 +491,7 @@ export default function CalendarScreen() {
                       )}
                     </View>
                   </View>
-                </TouchableOpacity>
+                </AnimatedPressable>
               )}
             </ScrollView>
           </View>
@@ -540,7 +538,7 @@ const styles = StyleSheet.create({
 
   // Stats section
   statsSection: { padding: Spacing.md, gap: Spacing.md },
-  statsTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  statsTitle: { ...TextStyle.label },
 
   progressCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -551,12 +549,12 @@ const styles = StyleSheet.create({
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1 },
-  statValue: { fontSize: FontSize.lg, fontFamily: FontFamily.extraBold },
-  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
+  statLabel: { ...TextStyle.label },
   statSub: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular },
 
   legendCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
-  legendTitle: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  legendTitle: { ...TextStyle.label },
   legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },

@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -39,9 +40,9 @@ interface BadgeDetailModalProps {
 function particleCount(rarity: BadgeRarity): number {
   switch (rarity) {
     case 'legendary': return 20;
-    case 'rare':      return 16;
-    case 'uncommon':  return 12;
-    case 'common':    return 12;
+    case 'rare':      return 14;
+    case 'uncommon':  return 10;
+    case 'common':    return 6;
   }
 }
 
@@ -169,6 +170,9 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
   const rarity: BadgeRarity = def?.rarity ?? 'common';
   const rarityColor = RARITY_COLORS[rarity] ?? Colors.textDisabled;
   const numParticles = particleCount(rarity);
+  const particleColor = rarity === 'common'
+    ? hexAlpha(Colors.textSecondary, 0.8)
+    : rarityColor;
 
   // Goal name lookup
   const goalName = earnedBadge?.goalId
@@ -211,6 +215,9 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
       statusBarTranslucent
     >
       <View style={{ flex: 1, backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE, alignItems: 'center', justifyContent: 'center' }}>
+        {(rarity === 'rare' || rarity === 'legendary') && (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: hexAlpha(rarityColor, 0.06) }]} />
+        )}
         <SafeAreaView style={{ width: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
           <View
             style={{
@@ -233,7 +240,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
                   key={i}
                   index={i}
                   total={numParticles}
-                  color={rarityColor}
+                  color={particleColor}
                   rarity={rarity}
                   trigger={jsTrigger}
                 />

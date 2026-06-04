@@ -66,10 +66,10 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
 ];
 
 export const RARITY_COLORS: Record<string, string> = {
-  common:    '#6B7280',
-  uncommon:  '#22C55E',
-  rare:      '#6366F1',
-  legendary: '#F59E0B',
+  common:    '#6E7689',
+  uncommon:  '#1EAE5A',
+  rare:      '#6460E8',
+  legendary: '#E58E10',
 };
 
 export const RARITY_LABELS: Record<string, string> = {
@@ -80,8 +80,8 @@ export const RARITY_LABELS: Record<string, string> = {
 };
 
 export const RARITY_BG: Record<string, string> = {
-  common:    'rgba(107, 114, 128, 0.15)',
-  uncommon:  'rgba(5, 46, 22, 0.4)',
-  rare:      'rgba(99, 102, 241, 0.18)',
-  legendary: 'rgba(251, 191, 36, 0.15)',
+  common:    'rgba(110,118,137,0.15)',
+  uncommon:  'rgba(30,174,90,0.15)',
+  rare:      'rgba(100,96,232,0.15)',
+  legendary: 'rgba(229,142,16,0.15)',
 };

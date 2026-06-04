@@ -8,8 +8,9 @@ import * as Haptics from 'expo-haptics';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
+import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import type { LogEvent } from '../store/logStore';
@@ -20,7 +21,7 @@ import { useTodoStore } from '../store/todoStore';
 import { useTodoXPStore } from '../store/todoXPStore';
 import { useRestDayStore } from '../store/restDayStore';
 import { useJournalStore } from '../store/journalStore';
-import { computeStreakWithGrace } from '../logic/streakEngine';
+import { computeStreakWithGrace, isAlreadyLoggedToday } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import { todayString, getWeekStart } from '../utils/dateUtils';
@@ -365,6 +366,20 @@ export default function HomeScreen() {
   const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
   const greeting = allDone ? 'All done today' : getTimeGreeting();
 
+  const dailyProgressCount = useMemo(() => {
+    const today = todayString();
+    return activeGoals.filter(goal => {
+      const goalLogs = logs.filter(l => l.goalId === goal.id);
+      if (goal.type === 'count') {
+        const total = logs
+          .filter(l => l.goalId === goal.id && l.logDate === today)
+          .reduce((sum, l) => sum + ((l as any).count ?? 1), 0);
+        return goal.targetCount ? total >= goal.targetCount : total > 0;
+      }
+      return isAlreadyLoggedToday(goalLogs);
+    }).length;
+  }, [activeGoals, logs]);
+
   const todayStr = todayString();
   const countModalGoal = countModalGoalId ? goals.find(g => g.id === countModalGoalId) : null;
   const todayCountTotal = countModalGoalId
@@ -382,7 +397,7 @@ export default function HomeScreen() {
       })()
     : null;
 
-  const renderItem = useCallback(({ item: goal, drag, isActive }: RenderItemParams<Goal>) => {
+  const renderItem = useCallback(({ item: goal, drag, isActive, getIndex }: RenderItemParams<Goal>) => {
     const goalLogs = logs.filter(l => l.goalId === goal.id);
     const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
     const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
@@ -398,6 +413,7 @@ export default function HomeScreen() {
           isDragging={isActive}
           isDailyDouble={goal.id === dailyDoubleGoalId}
           animateSignal={animateSignals[goal.id]}
+          index={getIndex() ?? 0}
           dragHandle={
             <TouchableOpacity onLongPress={drag} delayLongPress={250} hitSlop={12} style={{ padding: 4 }}>
               <Ionicons name="reorder-two" size={22} color={Colors.textSecondary} />
@@ -409,7 +425,7 @@ export default function HomeScreen() {
   }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId]);
 
   // Render a non-draggable GoalCard for logged goals
-  const renderLoggedGoal = useCallback((goal: Goal) => {
+  const renderLoggedGoal = useCallback((goal: Goal, index: number) => {
     const goalLogs = logs.filter(l => l.goalId === goal.id);
     const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
     const streakInfo = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
@@ -423,6 +439,7 @@ export default function HomeScreen() {
         onLog={() => handleLogPress(goal.id)}
         isDailyDouble={goal.id === dailyDoubleGoalId}
         animateSignal={animateSignals[goal.id]}
+        index={index}
       />
     );
   }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId, animateSignals]);
@@ -443,20 +460,23 @@ export default function HomeScreen() {
                 <Text style={[styles.date, { color: Colors.textSecondary }]}>{todayLabel}</Text>
               </View>
               <View style={styles.headerActions}>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Journal')}>
+                <View style={[styles.progressChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.13) }]}>
+                  <Text style={[styles.progressChipText, { color: Colors.accentBright }]}>{dailyProgressCount} / {activeGoals.length}</Text>
+                </View>
+                <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('Journal')}>
                   <Ionicons name="journal-outline" size={20} color={Colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
+                </AnimatedPressable>
+                <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
                   <Ionicons name="stats-chart" size={20} color={Colors.textSecondary} />
-                </TouchableOpacity>
+                </AnimatedPressable>
                 {hasArchived && (
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('ArchivedGoals')}>
+                  <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('ArchivedGoals')}>
                     <Ionicons name="archive-outline" size={20} color={Colors.textSecondary} />
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 )}
-                <TouchableOpacity style={[styles.addBtn, { backgroundColor: Colors.accent }]} onPress={() => navigation.navigate('AddGoal', {})}>
+                <AnimatedPressable scale={0.9} style={[styles.addBtn, { backgroundColor: Colors.accent }]} onPress={() => navigation.navigate('AddGoal', {})}>
                   <Ionicons name="add" size={24} color={Colors.textPrimary} />
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             </View>
 
@@ -625,6 +645,8 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   iconBtn: { padding: Spacing.sm },
   addBtn: { borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  progressChip: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+  progressChipText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   xpCaption: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },

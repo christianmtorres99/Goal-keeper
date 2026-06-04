@@ -76,6 +76,20 @@ export function hexAlpha(hex: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+export const CardStyle = {
+  hero:      { borderRadius: Radius.xl,  padding: Spacing.xl  },
+  primary:   { borderRadius: Radius.lg,  padding: Spacing.md  },
+  secondary: { borderRadius: Radius.md,  padding: Spacing.sm  },
+};
+
+export const TextStyle = {
+  display: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold, letterSpacing: -0.5 },
+  heading: { fontSize: FontSize.xxl,  fontFamily: FontFamily.bold },
+  title:   { fontSize: FontSize.xl,   fontFamily: FontFamily.bold },
+  label:   { fontSize: FontSize.sm,   fontFamily: FontFamily.semiBold, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
+  caption: { fontSize: FontSize.xs,   fontFamily: FontFamily.regular },
+};
+
 export const OVERLAY_DARK = 'rgba(0,0,0,0.85)';
 export const OVERLAY_MID  = 'rgba(0,0,0,0.5)';
 

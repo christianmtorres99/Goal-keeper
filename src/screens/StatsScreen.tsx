@@ -1,11 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
+import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -234,15 +235,15 @@ export default function StatsScreen() {
         <View style={styles.filterSection}>
           <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Filter by Goal</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.filterBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, filterMode === 'all' && { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}
               onPress={selectAll}
               hitSlop={{ top: 4, bottom: 4 }}
             >
               <Text style={[styles.filterText, { color: Colors.textSecondary }, filterMode === 'all' && { color: Colors.accentBright }]}>All</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
             {activeGoals.map(g => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={g.id}
                 style={[
                   styles.filterBtn,
@@ -257,7 +258,7 @@ export default function StatsScreen() {
                   { color: Colors.textSecondary },
                   filterMode === 'goal' && selectedGoalId === g.id && { color: g.color },
                 ]}>{g.name}</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </ScrollView>
 
@@ -266,7 +267,7 @@ export default function StatsScreen() {
               <Text style={[styles.sectionLabel, { color: Colors.textSecondary, marginTop: Spacing.sm }]}>Filter by Category</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
                 {activeCategories.map(cat => (
-                  <TouchableOpacity
+                  <AnimatedPressable
                     key={cat}
                     style={[
                       styles.filterBtn,
@@ -287,7 +288,7 @@ export default function StatsScreen() {
                       { color: Colors.textSecondary },
                       filterMode === 'category' && selectedCategory === cat && { color: Colors.accentBright },
                     ]}>{CATEGORY_LABELS[cat]}</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 ))}
               </ScrollView>
             </>
@@ -476,8 +477,8 @@ const styles = StyleSheet.create({
   title: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold },
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
-  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
-  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
+  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.8 },
   filterSection: { gap: Spacing.xs },
   filterRow: { flexGrow: 0 },
   filterBtn: { borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.xs },
@@ -486,7 +487,7 @@ const styles = StyleSheet.create({
   categoryFilterBtnActive: {},
   filterText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   filterTextActive: {},
-  sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { ...TextStyle.label },
   chartCard: { borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   noData: { textAlign: 'center', padding: Spacing.xl, fontFamily: FontFamily.regular },

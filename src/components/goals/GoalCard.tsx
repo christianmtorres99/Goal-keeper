@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,6 +11,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FontSize, FontFamily, hexAlpha, Radius, Spacing } from '../../constants/theme';
+import { Elevation } from '../../constants/elevation';
+import { Spring, Timing, Stagger } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 import type { Goal, Log, StreakInfo } from '../../types';
 import { getPlayerStats, getStreakMultiplier } from '../../logic/xpEngine';
@@ -18,6 +20,7 @@ import { sumXP } from '../../utils/xpUtils';
 import XPBar from '../common/XPBar';
 import { isAlreadyLoggedToday } from '../../logic/streakEngine';
 import StreakFlame from '../common/StreakFlame';
+import AnimatedPressable from '../common/AnimatedPressable';
 import { useLogStore } from '../../store/logStore';
 import { useRestDayStore } from '../../store/restDayStore';
 import { todayString } from '../../utils/dateUtils';
@@ -35,9 +38,10 @@ interface Props {
   dragHandle?: React.ReactNode;
   isDailyDouble?: boolean;
   animateSignal?: number;
+  index?: number;
 }
 
-export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble, animateSignal }: Props) {
+export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble, animateSignal, index = 0 }: Props) {
   const { colors: Colors, isLight } = useColors();
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
@@ -94,6 +98,20 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const xpOpacity = useSharedValue(0);
   const xpTranslateY = useSharedValue(0);
 
+  // Stagger entrance
+  const enterY = useSharedValue(16);
+  const enterOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    enterY.value = withDelay(index * Stagger.item, withSpring(0, Spring.snappy));
+    enterOpacity.value = withDelay(index * Stagger.item, withTiming(1, { duration: Timing.fast }));
+  }, []);
+
+  const enterStyle = useAnimatedStyle(() => ({
+    opacity: enterOpacity.value,
+    transform: [{ translateY: enterY.value }],
+  }));
+
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
   }));
@@ -109,8 +127,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const triggerLogAnimation = useCallback(() => {
     buttonScale.value = withSequence(
       withTiming(0.9, { duration: 80 }),
-      withSpring(1.05, { damping: 6, stiffness: 300 }),
-      withSpring(1.0, { damping: 12, stiffness: 200 })
+      withSpring(1.05, Spring.bouncy),
+      withSpring(1.0, Spring.snappy)
     );
     xpTranslateY.value = 0;
     xpOpacity.value = 1;
@@ -131,159 +149,180 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const xpLabel = `+${Math.round(BASE_LOG_XP * multiplier)} XP`;
   const doneBtnStyle = loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count';
 
+  const streakIsHot = streakInfo.currentStreak >= 7;
+  const streakIsLong = streakInfo.currentStreak >= 30;
+
   return (
-    <Pressable
-      style={[
-        styles.card,
-        isAtRisk && styles.cardAtRisk,
-        isDragging && styles.cardDragging,
-        {
-          backgroundColor: Colors.bg1,
-          borderLeftWidth: 3,
-          borderLeftColor: isAtRisk ? Colors.warning : goal.color,
-          borderWidth: 1,
-          borderColor: Colors.border,
-        },
-      ]}
-      onPress={onPress}
-    >
-      <View style={styles.body}>
-        <View style={styles.topRow}>
-          <View style={styles.iconName}>
-            <StreakFlame streak={streakInfo.currentStreak} size={34}>
-              <Ionicons name={goal.icon as any} size={22} color={goal.color} />
-            </StreakFlame>
-            <Text style={[styles.name, { color: Colors.textPrimary }]} numberOfLines={2}>{goal.name}</Text>
-          </View>
-          <View style={styles.topRight}>
-            {isDailyDouble && (
-              <View style={[styles.doubleBadge, { backgroundColor: hexAlpha(Colors.warning, 0.13), borderColor: hexAlpha(Colors.warning, 0.27) }]}>
-                <Text style={[styles.doubleText, { color: Colors.warning }]}>2×</Text>
+    <Animated.View style={enterStyle}>
+      <AnimatedPressable
+        scale={0.98}
+        onPress={onPress}
+        style={[
+          styles.card,
+          isDragging && styles.cardDragging,
+          isDragging && Elevation.high,
+          {
+            backgroundColor: Colors.bg1,
+            borderWidth: 1,
+            borderColor: isAtRisk ? hexAlpha(Colors.warning, 0.40) : Colors.border,
+          },
+        ]}
+      >
+        {/* Color wash */}
+        <View
+          pointerEvents="none"
+          style={[styles.colorWash, {
+            backgroundColor: hexAlpha(isAtRisk ? Colors.warning : goal.color, 0.07),
+            borderTopLeftRadius: Radius.lg,
+            borderTopRightRadius: Radius.lg,
+          }]}
+        />
+
+        <View style={styles.body}>
+          <View style={styles.topRow}>
+            <View style={styles.iconName}>
+              <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.15) }]}>
+                <Ionicons name={goal.icon as any} size={20} color={goal.color} />
               </View>
-            )}
-            {graceUsed && !isAtRisk && (
-              <View style={[styles.graceBadge, { backgroundColor: hexAlpha(Colors.warning, 0.09) }]}>
-                <Ionicons name="shield-checkmark" size={11} color={Colors.warning} />
-                <Text style={[styles.graceBadgeText, { color: Colors.warning }]}>Grace</Text>
-              </View>
-            )}
-            {isAtRisk && (
-              <View style={[styles.atRiskBadge, { backgroundColor: hexAlpha(Colors.warning, 0.13) }]}>
-                <Ionicons name="warning" size={11} color={Colors.warning} />
-                <Text style={[styles.atRiskText, { color: Colors.warning }]}>Log today!</Text>
-              </View>
-            )}
-            <View style={[styles.streakBadge, { backgroundColor: Colors.bg3 }, streakInfo.currentStreak === 0 && { backgroundColor: Colors.bg3 + '88' }]}>
-              <Ionicons
-                name="flame"
-                size={14}
-                color={streakInfo.currentStreak > 0 ? Colors.warning : Colors.textDisabled}
-              />
-              <Text style={[
-                styles.streakText,
-                { color: Colors.warning },
-                streakInfo.currentStreak === 0 && { color: Colors.textDisabled },
+              <Text style={[styles.name, { color: Colors.textPrimary }]} numberOfLines={2}>{goal.name}</Text>
+            </View>
+            <View style={styles.topRight}>
+              {isDailyDouble && (
+                <View style={[styles.doubleBadge, { backgroundColor: hexAlpha(Colors.warning, 0.13), borderColor: hexAlpha(Colors.warning, 0.27) }]}>
+                  <Text style={[styles.doubleText, { color: Colors.warning }]}>2×</Text>
+                </View>
+              )}
+              {graceUsed && !isAtRisk && (
+                <View style={[styles.graceBadge, { backgroundColor: hexAlpha(Colors.warning, 0.09) }]}>
+                  <Ionicons name="shield-checkmark" size={11} color={Colors.warning} />
+                  <Text style={[styles.graceBadgeText, { color: Colors.warning }]}>Grace</Text>
+                </View>
+              )}
+              {isAtRisk && (
+                <View style={[styles.atRiskBadge, { backgroundColor: hexAlpha(Colors.warning, 0.13) }]}>
+                  <Ionicons name="warning" size={11} color={Colors.warning} />
+                  <Text style={[styles.atRiskText, { color: Colors.warning }]}>Log today!</Text>
+                </View>
+              )}
+              <View style={[
+                styles.streakBadge,
+                { backgroundColor: streakIsHot ? hexAlpha(Colors.warning, 0.13) : Colors.bg3 },
+                streakIsLong && Elevation.low,
               ]}>
-                {streakDisplay}
+                <StreakFlame streak={streakInfo.currentStreak} size={18} />
+                <Text style={[
+                  styles.streakText,
+                  { color: streakInfo.currentStreak > 0 ? Colors.warning : Colors.textDisabled },
+                ]}>
+                  {streakDisplay}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <XPBar stats={stats} compact />
+
+          {nextBadgeLabel && (
+            <View style={styles.nextBadgeRow}>
+              <Ionicons name="flash" size={10} color={Colors.accentBright} />
+              <Text style={[styles.nextBadgeText, { color: Colors.accentBright }]}>{nextBadgeLabel}</Text>
+            </View>
+          )}
+
+          {goal.type === 'count' && goal.targetCount && (
+            <View style={styles.countProgressWrapper}>
+              <Text style={[styles.countProgressText, { color: Colors.textSecondary }]}>
+                {todayCountTotal.toLocaleString()} / {goal.targetCount.toLocaleString()} {goal.unit ?? ''}
               </Text>
+              <View style={[styles.countProgressBar, { backgroundColor: Colors.bg3 }]}>
+                <Animated.View style={[styles.countProgressFill, progressFillStyle, {
+                  backgroundColor: countGoalComplete ? Colors.success : goal.color,
+                }]} />
+              </View>
             </View>
+          )}
+
+          <View style={styles.bottomRow}>
+            {multiplier > 1 && (
+              <Text style={[styles.multiplier, { color: Colors.accentBright, backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>{multiplier}× XP</Text>
+            )}
+            {goal.type === 'milestone' && goal.targetCount && (
+              <Text style={[styles.milestoneText, { color: Colors.textSecondary }]}>
+                {logs.length}/{goal.targetCount} {goal.unit ?? ''}
+              </Text>
+            )}
+            <View style={{ flex: 1 }} />
+
+            {isRestDay ? (
+              <View style={[styles.restDayBadge, { backgroundColor: Colors.accentDim }]}>
+                <Text style={[styles.restDayText, { color: Colors.textSecondary }]}>Rest Day</Text>
+              </View>
+            ) : (
+              <View style={styles.logBtnWrapper}>
+                <Animated.Text style={[styles.xpFloat, { color: Colors.accentBright }, animatedXPStyle]} pointerEvents="none">
+                  {xpLabel}
+                </Animated.Text>
+                <Animated.View style={animatedButtonStyle}>
+                  <AnimatedPressable
+                    scale={0.92}
+                    style={[
+                      styles.logBtn,
+                      { backgroundColor: Colors.accent },
+                      doneBtnStyle && { backgroundColor: hexAlpha(Colors.success, 0.13), borderWidth: 1, borderColor: hexAlpha(Colors.success, 0.33) },
+                    ]}
+                    onPress={handleLog}
+                    disabled={doneBtnStyle}
+                  >
+                    <Ionicons
+                      name={doneBtnStyle ? 'checkmark-circle' : 'add'}
+                      size={18}
+                      color={doneBtnStyle ? Colors.success : Colors.textPrimary}
+                    />
+                    <Text style={[
+                      styles.logBtnText,
+                      { color: Colors.textPrimary },
+                      doneBtnStyle && { color: Colors.success },
+                    ]}>
+                      {goal.type === 'count' ? (countGoalComplete ? 'Done' : 'Add') : goal.allowMultiplePerDay ? 'Log' : loggedToday ? 'Done' : 'Log'}
+                    </Text>
+                  </AnimatedPressable>
+                </Animated.View>
+              </View>
+            )}
+
+            {dragHandle && <View style={styles.dragHandle}>{dragHandle}</View>}
           </View>
         </View>
-
-        <XPBar stats={stats} compact />
-
-        {nextBadgeLabel && (
-          <View style={styles.nextBadgeRow}>
-            <Ionicons name="flash" size={10} color={Colors.accentBright} />
-            <Text style={[styles.nextBadgeText, { color: Colors.accentBright }]}>{nextBadgeLabel}</Text>
-          </View>
-        )}
-
-        {goal.type === 'count' && goal.targetCount && (
-          <View style={styles.countProgressWrapper}>
-            <Text style={[styles.countProgressText, { color: Colors.textSecondary }]}>
-              {todayCountTotal.toLocaleString()} / {goal.targetCount.toLocaleString()} {goal.unit ?? ''}
-            </Text>
-            <View style={[styles.countProgressBar, { backgroundColor: Colors.bg3 }]}>
-              <Animated.View style={[styles.countProgressFill, progressFillStyle, {
-                backgroundColor: countGoalComplete ? Colors.success : goal.color,
-              }]} />
-            </View>
-          </View>
-        )}
-
-        <View style={styles.bottomRow}>
-          {multiplier > 1 && (
-            <Text style={[styles.multiplier, { color: Colors.accentBright, backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>{multiplier}× XP</Text>
-          )}
-          {goal.type === 'milestone' && goal.targetCount && (
-            <Text style={[styles.milestoneText, { color: Colors.textSecondary }]}>
-              {logs.length}/{goal.targetCount} {goal.unit ?? ''}
-            </Text>
-          )}
-          <View style={{ flex: 1 }} />
-
-          {isRestDay ? (
-            <View style={[styles.restDayBadge, { backgroundColor: Colors.accentDim }]}>
-              <Text style={[styles.restDayText, { color: Colors.textSecondary }]}>Rest Day</Text>
-            </View>
-          ) : (
-            <View style={styles.logBtnWrapper}>
-              <Animated.Text style={[styles.xpFloat, { color: Colors.accentBright }, animatedXPStyle]} pointerEvents="none">
-                {xpLabel}
-              </Animated.Text>
-              <Animated.View style={animatedButtonStyle}>
-                <TouchableOpacity
-                  style={[
-                    styles.logBtn,
-                    { backgroundColor: Colors.accent },
-                    doneBtnStyle && { backgroundColor: hexAlpha(Colors.success, 0.13), borderWidth: 1, borderColor: hexAlpha(Colors.success, 0.33) },
-                  ]}
-                  onPress={handleLog}
-                  disabled={doneBtnStyle}
-                >
-                  <Ionicons
-                    name={doneBtnStyle ? 'checkmark-circle' : 'add'}
-                    size={18}
-                    color={doneBtnStyle ? Colors.success : Colors.textPrimary}
-                  />
-                  <Text style={[
-                    styles.logBtnText,
-                    { color: Colors.textPrimary },
-                    doneBtnStyle && { color: Colors.success },
-                  ]}>
-                    {goal.type === 'count' ? (countGoalComplete ? 'Done' : 'Add') : goal.allowMultiplePerDay ? 'Log' : loggedToday ? 'Done' : 'Log'}
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-          )}
-
-          {dragHandle && <View style={styles.dragHandle}>{dragHandle}</View>}
-        </View>
-      </View>
-    </Pressable>
+      </AnimatedPressable>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     borderRadius: Radius.lg,
-    flexDirection: 'row',
+    overflow: 'hidden',
   },
-  cardAtRisk: {},
-  cardDragging: { opacity: 0.9, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  cardDragging: { opacity: 0.9 },
+  colorWash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+  },
   body: { flex: 1, padding: 12, gap: 6 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
+  iconWrap: { width: 42, height: 42, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   atRiskText: { fontSize: 10, fontFamily: FontFamily.bold },
   graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   graceBadgeText: { fontSize: 10, fontFamily: FontFamily.semiBold },
-  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
-  streakText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  streakText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
   nextBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   nextBadgeText: { fontSize: 11, fontFamily: FontFamily.semiBold },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
@@ -298,7 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FontFamily.semiBold,
   },
-  logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
+  logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2 },
   logBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   dragHandle: { marginLeft: Spacing.xs },
   restDayBadge: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },

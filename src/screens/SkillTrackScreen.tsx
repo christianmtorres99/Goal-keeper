@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -173,7 +173,7 @@ export default function SkillTrackScreen({ route }: Props) {
 
         {/* Heatmap */}
         <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Activity (Last 13 Weeks)</Text>
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity (Last 13 Weeks)</Text>
           {catLogs.length === 0 ? (
             <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>No logs yet in this category.</Text>
           ) : (
@@ -183,7 +183,7 @@ export default function SkillTrackScreen({ route }: Props) {
 
         {/* Goals in this category */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Goals</Text>
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Goals</Text>
           {goalStats.map(({ goal, logCount, streak }) => (
             <View key={goal.id} style={[styles.goalRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
               <View style={[styles.goalIcon, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
@@ -194,9 +194,7 @@ export default function SkillTrackScreen({ route }: Props) {
                 <Text style={[styles.goalMeta, { color: Colors.textSecondary }]}>{logCount} log{logCount !== 1 ? 's' : ''}</Text>
               </View>
               <View style={styles.goalStreakWrap}>
-                <StreakFlame streak={streak.currentStreak} size={30}>
-                  <Ionicons name="flame" size={14} color={streak.currentStreak > 0 ? Colors.warning : Colors.textDisabled} />
-                </StreakFlame>
+                <StreakFlame streak={streak.currentStreak} size={30} />
                 <Text style={[styles.goalStreak, { color: streak.currentStreak > 0 ? Colors.warning : Colors.textDisabled }]}>
                   {streak.currentStreak}d
                 </Text>
@@ -207,7 +205,7 @@ export default function SkillTrackScreen({ route }: Props) {
 
         {/* Insights */}
         <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Insights</Text>
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Insights</Text>
           <View style={styles.insightGrid}>
             <InsightTile
               icon="calendar-outline"
@@ -300,7 +298,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  statValue: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
   statLabel: { fontSize: 10, textAlign: 'center' },
 
   card: {
@@ -355,6 +353,6 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     borderWidth: 1,
   },
-  insightValue: { fontSize: FontSize.lg, fontFamily: FontFamily.extraBold },
+  insightValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
   insightLabel: { fontSize: FontSize.xs, textAlign: 'center' },
 });

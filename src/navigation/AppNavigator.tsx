@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { FontFamily } from '../constants/theme';
+import { Spring } from '../constants/motion';
 import { useColors } from '../hooks/useColors';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -36,6 +38,27 @@ export type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
+function TabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (focused) {
+      scale.value = withSequence(
+        withSpring(1.28, Spring.bouncy),
+        withSpring(1, Spring.snappy)
+      );
+    }
+  }, [focused]);
+
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={style}>
+      <Ionicons name={name as any} size={22} color={color} />
+    </Animated.View>
+  );
+}
+
 function TabNavigator() {
   const { colors: Colors } = useColors();
   const insets = useSafeAreaInsets();
@@ -55,13 +78,14 @@ function TabNavigator() {
         tabBarInactiveTintColor: Colors.textSecondary,
         tabBarLabelStyle: { fontSize: 11, fontFamily: FontFamily.regular },
         tabBarIcon: ({ color, focused }) => {
-          const icons: Record<string, string> = {
-            Home: focused ? 'home' : 'home-outline',
-            Calendar: focused ? 'calendar' : 'calendar-outline',
-            Stats: focused ? 'bar-chart' : 'bar-chart-outline',
-            Profile: focused ? 'trophy' : 'trophy-outline',
+          const icons: Record<string, [string, string]> = {
+            Home:     ['home',       'home-outline'],
+            Calendar: ['calendar',   'calendar-outline'],
+            Stats:    ['bar-chart',  'bar-chart-outline'],
+            Profile:  ['trophy',     'trophy-outline'],
           };
-          return <Ionicons name={icons[route.name] as any} size={22} color={color} />;
+          const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
+          return <TabIcon name={focused ? active : inactive} color={color} focused={focused} />;
         },
       })}
     >
@@ -69,16 +93,16 @@ function TabNavigator() {
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="Stats" component={StatsScreen} />
       <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            title: 'Profile',
-            headerShown: true,
-            headerTitleAlign: 'center',
-            headerStyle: { backgroundColor: Colors.bg1 },
-            headerTintColor: Colors.textPrimary,
-          }}
-        />
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: 'Profile',
+          headerShown: true,
+          headerTitleAlign: 'center',
+          headerStyle: { backgroundColor: Colors.bg1 },
+          headerTintColor: Colors.textPrimary,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -92,7 +116,7 @@ export default function AppNavigator() {
         headerTintColor: Colors.textPrimary,
         headerTitleStyle: { fontFamily: FontFamily.bold },
         contentStyle: { backgroundColor: Colors.bg0 },
-        animation: 'fade',
+        animation: 'slide_from_right',
       }}
     >
       <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />

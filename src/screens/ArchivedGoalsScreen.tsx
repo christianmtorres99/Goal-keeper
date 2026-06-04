@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
+import AnimatedPressable from '../components/common/AnimatedPressable';
 
 export default function ArchivedGoalsScreen() {
   const { colors: Colors } = useColors();
@@ -39,13 +40,13 @@ export default function ArchivedGoalsScreen() {
               <Text style={[styles.name, { color: Colors.textPrimary }]}>{goal.name}</Text>
               <Text style={[styles.meta, { color: Colors.textSecondary }]}>{goal.type} · archived {goal.createdAt}</Text>
             </View>
-            <TouchableOpacity style={[styles.restoreBtn, { backgroundColor: hexAlpha(Colors.success, 0.13) }]} onPress={() => restoreGoal(goal.id)}>
+            <AnimatedPressable style={[styles.restoreBtn, { backgroundColor: hexAlpha(Colors.success, 0.13) }]} onPress={() => restoreGoal(goal.id)}>
               <Ionicons name="refresh" size={16} color={Colors.success} />
               <Text style={[styles.restoreText, { color: Colors.success }]}>Restore</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(goal.id, goal.name)}>
+            </AnimatedPressable>
+            <AnimatedPressable style={styles.deleteBtn} onPress={() => handleDelete(goal.id, goal.name)}>
               <Ionicons name="trash-outline" size={18} color={Colors.danger} />
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         )}
       />

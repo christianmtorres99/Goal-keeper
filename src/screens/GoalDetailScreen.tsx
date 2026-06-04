@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, useRef, useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -21,6 +21,7 @@ import { BADGE_DEFINITIONS } from '../constants/badges';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { todayString, addDays, formatShortDate, formatCompactDate, dateFromString } from '../utils/dateUtils';
 
+import AnimatedPressable from '../components/common/AnimatedPressable';
 import XPBar from '../components/common/XPBar';
 import BadgeItem from '../components/common/BadgeItem';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
@@ -251,12 +252,12 @@ export default function GoalDetailScreen() {
               </View>
             </View>
             <View style={styles.heroActions}>
-              <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
+              <AnimatedPressable onPress={handleShare} style={styles.headerBtn}>
                 <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('AddGoal', { goalId })} style={styles.headerBtn}>
+              </AnimatedPressable>
+              <AnimatedPressable onPress={() => navigation.navigate('AddGoal', { goalId })} style={styles.headerBtn}>
                 <Ionicons name="create-outline" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           </View>
 
@@ -298,7 +299,7 @@ export default function GoalDetailScreen() {
         )}
 
         {/* Weekly chart */}
-        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>This Week</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>This Week</Text>
         <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <BarChart
             data={weeklyData}
@@ -314,13 +315,13 @@ export default function GoalDetailScreen() {
         </View>
 
         {/* Heatmap */}
-        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Activity Map</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity Map</Text>
         <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
         {/* XP Growth */}
-        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
         <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <LineChart
             data={xpGrowthData}
@@ -337,7 +338,7 @@ export default function GoalDetailScreen() {
         </View>
 
         {/* Badge progress */}
-        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Badges</Text>
+        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Badges</Text>
         {(nextBadgeProgress.streak || nextBadgeProgress.logs) && (
           <View style={[styles.badgeProgressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             {nextBadgeProgress.streak && (
@@ -384,11 +385,11 @@ export default function GoalDetailScreen() {
 
         {/* Log history */}
         <View style={styles.sectionRow}>
-          <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Recent Logs</Text>
-          <TouchableOpacity style={[styles.pastDayBtn, { backgroundColor: hexAlpha(Colors.accentDim, 0.33), borderColor: hexAlpha(Colors.accentBright, 0.27) }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Recent Logs</Text>
+          <AnimatedPressable style={[styles.pastDayBtn, { backgroundColor: hexAlpha(Colors.accentDim, 0.33), borderColor: hexAlpha(Colors.accentBright, 0.27) }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
             <Text style={[styles.pastDayBtnText, { color: Colors.accentBright }]}>Log past day</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
         {goalLogs.length === 0
           ? <Text style={[styles.noLogs, { color: Colors.textDisabled }]}>No logs yet — start logging today!</Text>
@@ -398,23 +399,23 @@ export default function GoalDetailScreen() {
               <Text style={[styles.logXP, { color: Colors.accentBright }]}>+{log.xpAwarded + log.bonusXp} XP</Text>
               {log.bonusXp > 0 && <Text style={[styles.logBonus, { color: Colors.success }]}>+{log.bonusXp} bonus</Text>}
               {log.note ? <Text style={[styles.logNote, { color: Colors.textSecondary }]} numberOfLines={1}>{log.note}</Text> : null}
-              <TouchableOpacity onPress={() => handleDeleteLog(log.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <AnimatedPressable onPress={() => handleDeleteLog(log.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="trash-outline" size={14} color={Colors.textDisabled} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           ))
         }
 
         {/* Danger zone */}
         <View style={[styles.dangerZone, { borderTopColor: Colors.bg3 }]}>
-          <TouchableOpacity style={[styles.archiveBtn, { borderColor: hexAlpha(Colors.warning, 0.33) }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
+          <AnimatedPressable style={[styles.archiveBtn, { borderColor: hexAlpha(Colors.warning, 0.33) }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
             <Ionicons name="archive-outline" size={16} color={Colors.warning} />
             <Text style={[styles.archiveBtnText, { color: Colors.warning }]}>Archive Goal</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.deleteBtn, { borderColor: hexAlpha(Colors.danger, 0.33) }]} onPress={handleDelete}>
+          </AnimatedPressable>
+          <AnimatedPressable style={[styles.deleteBtn, { borderColor: hexAlpha(Colors.danger, 0.33) }]} onPress={handleDelete}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
             <Text style={[styles.deleteBtnText, { color: Colors.danger }]}>Delete Goal</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
       </ScrollView>
@@ -433,7 +434,7 @@ export default function GoalDetailScreen() {
       {/* Past-day picker modal */}
       <Modal visible={pastPickerVisible} transparent animationType="fade" onRequestClose={() => setPastPickerVisible(false)}>
         <View style={styles.pickerOverlay}>
-          <TouchableOpacity style={styles.pickerBackdrop} activeOpacity={1} onPress={() => setPastPickerVisible(false)} />
+          <AnimatedPressable style={styles.pickerBackdrop} onPress={() => setPastPickerVisible(false)} />
           <View style={[styles.pickerSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <View style={[styles.pickerHandle, { backgroundColor: Colors.bg3 }]} />
             <Text style={[styles.pickerTitle, { color: Colors.textPrimary }]}>Log a Past Day</Text>
@@ -447,7 +448,7 @@ export default function GoalDetailScreen() {
                 const logged = goalLogs.some(l => l.logDate === dateStr);
                 const [, , dd] = dateStr.split('-');
                 return (
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={[styles.dayCell, { backgroundColor: Colors.bg2, borderColor: Colors.border }, logged && { backgroundColor: hexAlpha(goal.color, 0.20), borderColor: goal.color }]}
                     onPress={() => {
                       if (!logged) {
@@ -459,13 +460,13 @@ export default function GoalDetailScreen() {
                   >
                     <Text style={[styles.dayCellNum, { color: Colors.textPrimary }, logged && { color: goal.color }]}>{parseInt(dd, 10)}</Text>
                     {logged && <View style={[styles.dayCellDot, { backgroundColor: goal.color }]} />}
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 );
               }}
             />
-            <TouchableOpacity style={[styles.pickerCancelBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setPastPickerVisible(false)}>
+            <AnimatedPressable style={[styles.pickerCancelBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setPastPickerVisible(false)}>
               <Text style={[styles.pickerCancelText, { color: Colors.textSecondary }]}>Cancel</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
       </Modal>
@@ -510,7 +511,7 @@ const styles = StyleSheet.create({
   milestoneFill: { height: '100%', borderRadius: Radius.full },
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
-  statValue: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
   statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   graceCard: { borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', gap: Spacing.sm, alignItems: 'center', borderWidth: 1 },
   graceText: { fontSize: FontSize.sm, flex: 1, fontFamily: FontFamily.regular },
