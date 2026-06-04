@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, Modal, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { FontSize, FontFamily, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import AnimatedPressable from './AnimatedPressable';
 import { useColors } from '../../hooks/useColors';
 import { getLevelTier } from './ProfileShareCard';
 
@@ -76,13 +77,13 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 
           <Text style={[styles.tierName, { color: tier.color }]}>{tier.title}</Text>
 
-          <TouchableOpacity
+          <AnimatedPressable
+            scale={0.97}
             style={[styles.button, { backgroundColor: tier.color }]}
             onPress={onClose}
-            activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Continue</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </Animated.View>
 
       </Animated.View>

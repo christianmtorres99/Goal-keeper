@@ -299,7 +299,10 @@ export default function GoalDetailScreen() {
         )}
 
         {/* Weekly chart */}
-        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>This Week</Text>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>This Week</Text>
+        </View>
         <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <BarChart
             data={weeklyData}
@@ -315,13 +318,19 @@ export default function GoalDetailScreen() {
         </View>
 
         {/* Heatmap */}
-        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity Map</Text>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity Map</Text>
+        </View>
         <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
         </View>
 
         {/* XP Growth */}
-        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
+        </View>
         <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <LineChart
             data={xpGrowthData}
@@ -338,7 +347,10 @@ export default function GoalDetailScreen() {
         </View>
 
         {/* Badge progress */}
-        <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Badges</Text>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Badges</Text>
+        </View>
         {(nextBadgeProgress.streak || nextBadgeProgress.logs) && (
           <View style={[styles.badgeProgressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             {nextBadgeProgress.streak && (
@@ -511,11 +523,13 @@ const styles = StyleSheet.create({
   milestoneFill: { height: '100%', borderRadius: Radius.full },
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
-  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
-  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
+  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, textAlign: 'center' },
   graceCard: { borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', gap: Spacing.sm, alignItems: 'center', borderWidth: 1 },
   graceText: { fontSize: FontSize.sm, flex: 1, fontFamily: FontFamily.regular },
   sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sectionAccentBar: { width: 3, height: 16, borderRadius: Radius.full },
   chartCard: { borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
   badgeProgressCard: { borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.md, borderWidth: 1 },

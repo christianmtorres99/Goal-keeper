@@ -172,7 +172,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
         <View
           pointerEvents="none"
           style={[styles.colorWash, {
-            backgroundColor: hexAlpha(isAtRisk ? Colors.warning : goal.color, 0.07),
+            backgroundColor: hexAlpha(isAtRisk ? Colors.warning : goal.color, 0.10),
             borderTopLeftRadius: Radius.lg,
             borderTopRightRadius: Radius.lg,
           }]}
@@ -209,7 +209,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
                 { backgroundColor: streakIsHot ? hexAlpha(Colors.warning, 0.13) : Colors.bg3 },
                 streakIsLong && Elevation.low,
               ]}>
-                <StreakFlame streak={streakInfo.currentStreak} size={18} />
+                <StreakFlame streak={streakInfo.currentStreak} size={20} />
                 <Text style={[
                   styles.streakText,
                   { color: streakInfo.currentStreak > 0 ? Colors.warning : Colors.textDisabled },
@@ -309,22 +309,22 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 60,
+    height: 56,
   },
-  body: { flex: 1, padding: 12, gap: 6 },
+  body: { flex: 1, padding: Spacing.md, gap: Spacing.xs },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
   iconWrap: { width: 42, height: 42, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
+  atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   atRiskText: { fontSize: 10, fontFamily: FontFamily.bold },
-  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
+  graceBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
   graceBadgeText: { fontSize: 10, fontFamily: FontFamily.semiBold },
-  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   streakText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
-  nextBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  nextBadgeText: { fontSize: 11, fontFamily: FontFamily.semiBold },
+  nextBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  nextBadgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   multiplier: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
   milestoneText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },

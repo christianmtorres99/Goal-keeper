@@ -1,5 +1,12 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Modal, FlatList, Dimensions, useColorScheme } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,7 +18,8 @@ import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
+import { Spring, Timing, Stagger } from '../constants/motion';
 import { useColors } from '../hooks/useColors';
 import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
@@ -78,6 +86,27 @@ export default function ProfileScreen() {
 
   const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
+
+  // Section reveal animations
+  const revealY0 = useSharedValue(12);
+  const revealOp0 = useSharedValue(0);
+  const revealY1 = useSharedValue(12);
+  const revealOp1 = useSharedValue(0);
+  const revealY2 = useSharedValue(12);
+  const revealOp2 = useSharedValue(0);
+
+  useEffect(() => {
+    revealY0.value = withSpring(0, Spring.snappy);
+    revealOp0.value = withTiming(1, { duration: Timing.fast });
+    revealY1.value = withDelay(Stagger.section, withSpring(0, Spring.snappy));
+    revealOp1.value = withDelay(Stagger.section, withTiming(1, { duration: Timing.fast }));
+    revealY2.value = withDelay(Stagger.section * 2, withSpring(0, Spring.snappy));
+    revealOp2.value = withDelay(Stagger.section * 2, withTiming(1, { duration: Timing.fast }));
+  }, []);
+
+  const reveal0 = useAnimatedStyle(() => ({ opacity: revealOp0.value, transform: [{ translateY: revealY0.value }] }));
+  const reveal1 = useAnimatedStyle(() => ({ opacity: revealOp1.value, transform: [{ translateY: revealY1.value }] }));
+  const reveal2 = useAnimatedStyle(() => ({ opacity: revealOp2.value, transform: [{ translateY: revealY2.value }] }));
 
   const totalXP = useMemo(() => sumXP(logs) + todoXP, [logs, todoXP]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
@@ -207,7 +236,10 @@ export default function ProfileScreen() {
 
   const renderBadgeSection = (title: string, badges: typeof BADGE_DEFINITIONS) => (
     <View key={title} style={styles.section}>
-      <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
+        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>{title}</Text>
+      </View>
       <View style={styles.badgeGrid}>
         {badges.map(def => (
           <AnimatedPressable
@@ -288,6 +320,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero card */}
+        <Animated.View style={reveal0}>
         <LinearGradient
           colors={[bgColor + 'DD', Colors.bg1]}
           start={{ x: 0, y: 0 }}
@@ -302,19 +335,17 @@ export default function ProfileScreen() {
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </AnimatedPressable>
             <AnimatedPressable style={{ flex: 1, gap: 4 }} onPress={() => setLevelLadderVisible(true)}>
-              <Text style={[styles.heroLevel, { color: tier.color }]}>Level {playerStats.level}</Text>
+              <Text style={[styles.heroLevel, { color: tier.color }]}>{playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
               <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP total</Text>
               <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
             </AnimatedPressable>
-            <View style={{ gap: Spacing.xl }}>
-              <AnimatedPressable style={styles.shareBtn} onPress={handleShare}>
-                <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
-              </AnimatedPressable>
-            </View>
+            <AnimatedPressable style={[styles.shareBtn, { alignSelf: 'flex-start' }]} onPress={handleShare}>
+              <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+            </AnimatedPressable>
           </View>
           <View style={{ width: '100%' }}>
-            <XPBar stats={playerStats} />
+            <XPBar stats={playerStats} hideLevel />
           </View>
 
           {/* 3 feature slots */}
@@ -369,26 +400,33 @@ export default function ProfileScreen() {
             </View>
           </View>
         </LinearGradient>
+        </Animated.View>
 
         {/* Stats row */}
-        <View style={styles.statRow}>
-          {[
-            { label: 'Total Logs', value: logs.length },
-            { label: 'Best Streak', value: longestStreak + 'd' },
-            { label: 'Badges', value: `${totalEarned}/${totalBadges}` },
-            { label: 'Goals', value: goals.filter(g => !g.isArchived).length },
-          ].map(s => (
-            <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
-              <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
+        <Animated.View style={reveal1}>
+          <View style={styles.statRow}>
+            {[
+              { label: 'Total Logs', value: logs.length },
+              { label: 'Best Streak', value: longestStreak + 'd' },
+              { label: 'Badges', value: `${totalEarned}/${totalBadges}` },
+              { label: 'Goals', value: goals.filter(g => !g.isArchived).length },
+            ].map(s => (
+              <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border, borderTopWidth: 2, borderTopColor: hexAlpha(Colors.accentBright, 0.50) }]}>
+                <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
+                <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+        </Animated.View>
 
         {/* Skill Tracks */}
+        <Animated.View style={reveal2}>
         {activeCategories.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Skill Tracks</Text>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
+              <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Skill Tracks</Text>
+            </View>
             <View style={styles.skillGrid}>
               {activeCategories.map(cat => {
                 const cs = categoryStats[cat]!;
@@ -454,6 +492,7 @@ export default function ProfileScreen() {
             </View>
           </View>
         )}
+        </Animated.View>
 
         {renderBadgeSection('Streak Badges', streakBadges)}
         {renderBadgeSection('Log Count Badges', logBadges)}
@@ -531,11 +570,13 @@ const styles = StyleSheet.create({
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
-  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
-  statLabel: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
+  statLabel: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular, textAlign: 'center' },
 
   section: { gap: Spacing.sm },
-  sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sectionAccentBar: { width: 3, height: 16, borderRadius: Radius.full },
+  sectionLabel: { ...TextStyle.label },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: BADGE_GAP },
 
   skillGrid: { gap: Spacing.sm },

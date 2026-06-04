@@ -6,12 +6,21 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
+import { Spring, Timing, Stagger } from '../constants/motion';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -139,29 +148,58 @@ export default function SkillTrackScreen({ route }: Props) {
     { label: 'Days Logged', value: uniqueDaysLogged },
   ];
 
+  // Section reveal animations
+  const revealY0 = useSharedValue(12);
+  const revealOp0 = useSharedValue(0);
+  const revealY1 = useSharedValue(12);
+  const revealOp1 = useSharedValue(0);
+  const revealY2 = useSharedValue(12);
+  const revealOp2 = useSharedValue(0);
+
+  useEffect(() => {
+    revealY0.value = withSpring(0, Spring.snappy);
+    revealOp0.value = withTiming(1, { duration: Timing.fast });
+    revealY1.value = withDelay(Stagger.section, withSpring(0, Spring.snappy));
+    revealOp1.value = withDelay(Stagger.section, withTiming(1, { duration: Timing.fast }));
+    revealY2.value = withDelay(Stagger.section * 2, withSpring(0, Spring.snappy));
+    revealOp2.value = withDelay(Stagger.section * 2, withTiming(1, { duration: Timing.fast }));
+  }, []);
+
+  const reveal0 = useAnimatedStyle(() => ({ opacity: revealOp0.value, transform: [{ translateY: revealY0.value }] }));
+  const reveal1 = useAnimatedStyle(() => ({ opacity: revealOp1.value, transform: [{ translateY: revealY1.value }] }));
+  const reveal2 = useAnimatedStyle(() => ({ opacity: revealOp2.value, transform: [{ translateY: revealY2.value }] }));
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero header */}
-        <View style={[styles.heroCard, { borderColor: hexAlpha(catColor, 0.27), backgroundColor: Colors.bg1 }]}>
+        <Animated.View style={reveal0}>
+        <LinearGradient
+          colors={[hexAlpha(catColor, 0.14), Colors.bg1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={[styles.heroCard, { borderColor: hexAlpha(catColor, 0.27) }]}
+        >
           <View style={styles.heroTop}>
             <View style={[styles.heroIcon, { backgroundColor: hexAlpha(catColor, 0.13), borderColor: hexAlpha(catColor, 0.33) }]}>
-              <Ionicons name={catIcon as any} size={32} color={catColor} />
+              <Ionicons name={catIcon as any} size={38} color={catColor} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.heroCategory, { color: Colors.textPrimary }]}>{catLabel}</Text>
-              <Text style={[styles.heroLevel, { color: catColor }]}>Level {playerStats.level}</Text>
+              <Text style={[styles.heroLevel, { color: catColor }]}>{playerStats.level}</Text>
               <Text style={[styles.heroXP, { color: Colors.textSecondary }]}>{totalXP.toLocaleString()} XP total</Text>
             </View>
             <View style={[styles.levelBadge, { backgroundColor: hexAlpha(catColor, 0.13), borderColor: hexAlpha(catColor, 0.33) }]}>
               <Text style={[styles.levelBadgeText, { color: catColor }]}>Lv {playerStats.level}</Text>
             </View>
           </View>
-          <XPBar stats={playerStats} />
-        </View>
+          <XPBar stats={playerStats} hideLevel />
+        </LinearGradient>
+        </Animated.View>
 
-        {/* Stats row */}
+        {/* Stats row + Heatmap */}
+        <Animated.View style={[styles.sectionBlock, reveal1]}>
         <View style={styles.statsRow}>
           {statsRow.map(s => (
             <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
@@ -173,17 +211,26 @@ export default function SkillTrackScreen({ route }: Props) {
 
         {/* Heatmap */}
         <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity (Last 13 Weeks)</Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: catColor }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity (Last 13 Weeks)</Text>
+          </View>
           {catLogs.length === 0 ? (
             <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>No logs yet in this category.</Text>
           ) : (
             <HeatmapGrid logs={catLogs} goalColor={catColor} days={91} containerWidth={HEATMAP_W} />
           )}
         </View>
+        </Animated.View>
 
+        {/* Goals + Insights */}
+        <Animated.View style={[styles.sectionBlock, reveal2]}>
         {/* Goals in this category */}
         <View style={styles.section}>
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Goals</Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: catColor }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Goals</Text>
+          </View>
           {goalStats.map(({ goal, logCount, streak }) => (
             <View key={goal.id} style={[styles.goalRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
               <View style={[styles.goalIcon, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
@@ -243,6 +290,7 @@ export default function SkillTrackScreen({ route }: Props) {
             />
           </View>
         </View>
+        </Animated.View>
 
       </ScrollView>
     </SafeAreaView>
@@ -279,7 +327,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   heroCategory: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
-  heroLevel: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
+  heroLevel: { fontSize: FontSize.xxl, fontFamily: FontFamily.extraBold },
   heroXP: { fontSize: FontSize.xs },
   levelBadge: {
     borderRadius: Radius.md,
@@ -287,8 +335,14 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderWidth: 1,
     alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   levelBadgeText: { fontSize: FontSize.md, fontFamily: FontFamily.extraBold },
+
+  sectionBlock: { gap: Spacing.md },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sectionAccentBar: { width: 3, height: 16, borderRadius: Radius.full },
 
   statsRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: {
@@ -298,7 +352,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
   statLabel: { fontSize: 10, textAlign: 'center' },
 
   card: {
@@ -316,12 +370,6 @@ const styles = StyleSheet.create({
   emptyHint: { fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.md },
 
   section: { gap: Spacing.sm },
-  sectionLabel: {
-    fontSize: FontSize.sm,
-    fontFamily: FontFamily.semiBold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
   goalRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -340,7 +388,7 @@ const styles = StyleSheet.create({
   goalInfo: { flex: 1 },
   goalName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   goalMeta: { fontSize: FontSize.xs },
-  goalStreakWrap: { alignItems: 'center', gap: 2 },
+  goalStreakWrap: { alignItems: 'center', gap: Spacing.xs },
   goalStreak: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
 
   insightGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
@@ -353,6 +401,6 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     borderWidth: 1,
   },
-  insightValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
+  insightValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
   insightLabel: { fontSize: FontSize.xs, textAlign: 'center' },
 });

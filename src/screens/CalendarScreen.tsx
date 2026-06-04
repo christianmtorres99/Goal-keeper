@@ -258,20 +258,22 @@ export default function CalendarScreen() {
                 key={dateStr}
                 style={[
                   styles.cell,
-                  isToday && [styles.cellToday, { backgroundColor: hexAlpha(Colors.accentDim, 0.33) }],
-                  isPerfect && [styles.cellPerfect, { backgroundColor: hexAlpha(Colors.success, 0.09) }],
+                  isPerfect && { backgroundColor: hexAlpha(Colors.success, 0.09) },
                 ]}
                 onPress={() => isInteractive ? setSelectedDay(dateStr) : null}
                 disabled={!isInteractive}
               >
-                <Text style={[
-                  styles.dayNum,
-                  { color: Colors.textPrimary },
-                  isToday && [styles.dayNumToday, { color: Colors.accentBright }],
-                  isFuture && isCurrentMonth && [styles.dayNumFuture, { color: Colors.textDisabled }],
-                ]}>
-                  {parseInt(dateStr.split('-')[2])}
-                </Text>
+                <View style={styles.dayNumWrap}>
+                  {isToday && <View style={[styles.todayRing, { backgroundColor: Colors.accentBright }]} />}
+                  <Text style={[
+                    styles.dayNum,
+                    { color: Colors.textPrimary },
+                    isToday && [styles.dayNumToday, { color: Colors.bg0 }],
+                    isFuture && isCurrentMonth && { color: Colors.textDisabled },
+                  ]}>
+                    {parseInt(dateStr.split('-')[2])}
+                  </Text>
+                </View>
                 <View style={styles.dots}>
                   {goalIds.slice(0, 3).map(gid => (
                     <View key={gid} style={[styles.dot, { backgroundColor: goalMap[gid]?.color ?? Colors.accent }]} />
@@ -290,7 +292,10 @@ export default function CalendarScreen() {
 
         {/* ── Stats section ── */}
         <View style={styles.statsSection}>
-          <Text style={[styles.statsTitle, { color: Colors.textSecondary }]}>Month Stats</Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
+            <Text style={[styles.statsTitle, { color: Colors.textSecondary }]}>Month Stats</Text>
+          </View>
 
           {/* Progress bar */}
           <View style={[styles.progressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
@@ -527,17 +532,18 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: Spacing.xxl },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: CELL_W, height: CELL_H, alignItems: 'center', paddingTop: Spacing.sm },
-  cellToday: { borderRadius: Radius.sm },
-  cellPerfect: {},
-  dayNum: { fontSize: FontSize.sm, fontFamily: FontFamily.medium, marginBottom: 4 },
+  cell: { width: CELL_W, height: CELL_H, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  dayNumWrap: { width: CELL_W - 10, height: CELL_W - 10, alignItems: 'center', justifyContent: 'center' },
+  todayRing: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: Radius.full },
+  dayNum: { fontSize: FontSize.sm, fontFamily: FontFamily.medium },
   dayNumToday: { fontFamily: FontFamily.extraBold },
-  dayNumFuture: {},
   dots: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, justifyContent: 'center', maxWidth: CELL_W - 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
 
   // Stats section
   statsSection: { padding: Spacing.md, gap: Spacing.md },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sectionAccentBar: { width: 3, height: 16, borderRadius: Radius.full },
   statsTitle: { ...TextStyle.label },
 
   progressCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
@@ -548,10 +554,10 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 8, borderRadius: 4 },
 
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1 },
-  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
-  statLabel: { ...TextStyle.label },
-  statSub: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular },
+  statCard: { flex: 1, minWidth: '44%', maxWidth: '49%', borderRadius: Radius.lg, padding: Spacing.sm, gap: 2, borderWidth: 1, alignItems: 'center' },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
+  statLabel: { ...TextStyle.label, textAlign: 'center' },
+  statSub: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular, textAlign: 'center' },
 
   legendCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   legendTitle: { ...TextStyle.label },

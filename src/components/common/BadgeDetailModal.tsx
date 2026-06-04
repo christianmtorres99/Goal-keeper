@@ -3,7 +3,6 @@ import {
   Modal,
   View,
   Text,
-  TouchableOpacity,
   Dimensions,
   StyleSheet,
 } from 'react-native';
@@ -19,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import AnimatedPressable from './AnimatedPressable';
 import { useColors } from '../../hooks/useColors';
 import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
 import { useBadgeStore } from '../../store/badgeStore';
@@ -295,6 +295,8 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               paddingVertical: Spacing.xs,
               borderWidth: 1,
               borderColor: hexAlpha(rarityColor, 0.40),
+              alignItems: 'center',
+              justifyContent: 'center',
             }}>
               <Text style={{ color: rarityColor, fontSize: FontSize.sm, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {RARITY_LABELS[rarity]}
@@ -331,7 +333,8 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
             )}
 
             {/* Dismiss button */}
-            <TouchableOpacity
+            <AnimatedPressable
+              scale={0.97}
               onPress={onClose}
               style={{
                 marginTop: Spacing.sm,
@@ -342,12 +345,11 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
                 alignItems: 'center',
                 width: '100%',
               }}
-              activeOpacity={0.8}
             >
               <Text style={{ color: Colors.textPrimary, fontSize: FontSize.md, fontFamily: FontFamily.bold }}>
                 Close
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </SafeAreaView>
       </View>
