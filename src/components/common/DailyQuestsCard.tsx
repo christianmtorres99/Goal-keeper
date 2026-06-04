@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { Quest } from '../../types';
 
@@ -136,13 +136,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   headerXP: {
     fontSize: FontSize.sm,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   allDoneBanner: {
     flexDirection: 'row',
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   allDoneText: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
   },
   questRow: {
     flexDirection: 'row',
@@ -183,12 +183,12 @@ const styles = StyleSheet.create({
   },
   questDesc: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     flex: 1,
   },
   questXP: {
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   progressTrack: {
     height: 4,
@@ -205,5 +205,6 @@ const styles = StyleSheet.create({
     right: 0,
     top: -12,
     fontSize: 9,
+    fontFamily: FontFamily.regular,
   },
 });

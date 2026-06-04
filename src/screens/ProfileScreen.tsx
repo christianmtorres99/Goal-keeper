@@ -10,7 +10,7 @@ import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
@@ -510,18 +510,18 @@ const styles = StyleSheet.create({
   heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1 },
   heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   heroIconWrap: { width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  heroLevel: { fontSize: FontSize.xxl + 4, fontWeight: '800' },
-  heroTierTitle: { fontSize: FontSize.md, fontWeight: '700' },
-  heroXP: { fontSize: FontSize.sm, fontWeight: '600' },
-  heroNext: { fontSize: FontSize.xs },
+  heroLevel: { fontSize: FontSize.xxl + 4, fontFamily: FontFamily.extraBold },
+  heroTierTitle: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
+  heroXP: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+  heroNext: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   shareBtn: { padding: Spacing.xs },
 
-  pickerSublabel: { fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  pickerSublabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
   featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
   featureSlotFilled: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
-  featureSlotLabel: { fontSize: FontSize.xs, textAlign: 'center', fontWeight: '600' },
-  featureSlotEmpty: { fontSize: FontSize.xs },
+  featureSlotLabel: { fontSize: FontSize.xs, textAlign: 'center', fontFamily: FontFamily.semiBold },
+  featureSlotEmpty: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
   swatchContainer: {
     borderRadius: Radius.md,
@@ -535,11 +535,11 @@ const styles = StyleSheet.create({
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
-  statValue: { fontSize: FontSize.lg, fontWeight: '700' },
-  statLabel: { fontSize: FontSize.xs - 1 },
+  statValue: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  statLabel: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular },
 
   section: { gap: Spacing.sm },
-  sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   badgeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: BADGE_GAP },
 
   skillGrid: { gap: Spacing.sm },
@@ -547,20 +547,20 @@ const styles = StyleSheet.create({
   skillHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   skillIconWrap: { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   skillInfo: { flex: 1 },
-  skillName: { fontSize: FontSize.md, fontWeight: '600' },
-  skillGoalCount: { fontSize: FontSize.xs },
+  skillName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  skillGoalCount: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   skillLevelBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
-  skillLevel: { fontSize: FontSize.sm, fontWeight: '700' },
+  skillLevel: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
   // Picker modal
   pickerScreen: { flex: 1 },
   pickerTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md },
-  pickerTitle: { fontSize: FontSize.lg, fontWeight: '700' },
-  pickerSubtitle: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
-  pickerHeader: { fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, paddingVertical: Spacing.sm, marginTop: Spacing.sm },
+  pickerTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  pickerSubtitle: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm, fontFamily: FontFamily.regular },
+  pickerHeader: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 1, paddingVertical: Spacing.sm, marginTop: Spacing.sm },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.xs, borderWidth: 1 },
   pickerRowDisabled: { opacity: 0.4 },
-  pickerLabel: { flex: 1, fontSize: FontSize.md },
+  pickerLabel: { flex: 1, fontSize: FontSize.md, fontFamily: FontFamily.regular },
   pickerDone: { margin: Spacing.md, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
-  pickerDoneText: { fontSize: FontSize.lg, fontWeight: '700' },
+  pickerDoneText: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
 });

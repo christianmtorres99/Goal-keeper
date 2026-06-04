@@ -17,7 +17,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
 import { useBadgeStore } from '../../store/badgeStore';
@@ -276,7 +276,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
             </View>
 
             {/* Badge name */}
-            <Text style={{ color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center' }}>
+            <Text style={{ color: Colors.textPrimary, fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' }}>
               {def.label}
             </Text>
 
@@ -289,35 +289,35 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               borderWidth: 1,
               borderColor: rarityColor + '66',
             }}>
-              <Text style={{ color: rarityColor, fontSize: FontSize.sm, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <Text style={{ color: rarityColor, fontSize: FontSize.sm, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {RARITY_LABELS[rarity]}
               </Text>
             </View>
 
             {/* Description */}
-            <Text style={{ color: Colors.textSecondary, fontSize: FontSize.md, textAlign: 'center', lineHeight: 22 }}>
+            <Text style={{ color: Colors.textSecondary, fontSize: FontSize.md, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: 22 }}>
               {def.description}
             </Text>
 
             {/* Earned date or not earned */}
             {isEarned && earnedBadge ? (
-              <Text style={{ color: Colors.textSecondary, fontSize: FontSize.sm }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: FontSize.sm, fontFamily: FontFamily.regular }}>
                 Earned on{' '}
-                <Text style={{ color: Colors.accentBright, fontWeight: '600' }}>
+                <Text style={{ color: Colors.accentBright, fontFamily: FontFamily.semiBold }}>
                   {formatDisplayDate(earnedBadge.earnedAt.slice(0, 10))}
                 </Text>
               </Text>
             ) : (
-              <Text style={{ color: Colors.textDisabled, fontSize: FontSize.sm }}>
+              <Text style={{ color: Colors.textDisabled, fontSize: FontSize.sm, fontFamily: FontFamily.regular }}>
                 Not yet earned
               </Text>
             )}
 
             {/* Goal name (only if earnedBadge.goalId is not null and goal found) */}
             {isEarned && goalName && (
-              <Text style={{ color: Colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center' }}>
+              <Text style={{ color: Colors.textSecondary, fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center' }}>
                 Earned with:{' '}
-                <Text style={{ color: Colors.textPrimary, fontWeight: '600' }}>
+                <Text style={{ color: Colors.textPrimary, fontFamily: FontFamily.semiBold }}>
                   {goalName}
                 </Text>
               </Text>
@@ -337,7 +337,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               }}
               activeOpacity={0.8}
             >
-              <Text style={{ color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' }}>
+              <Text style={{ color: Colors.textPrimary, fontSize: FontSize.md, fontFamily: FontFamily.bold }}>
                 Close
               </Text>
             </TouchableOpacity>

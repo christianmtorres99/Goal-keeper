@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FontFamily } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -52,7 +53,7 @@ function TabNavigator() {
         },
         tabBarActiveTintColor: Colors.accentBright,
         tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarLabelStyle: { fontSize: 11 },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: FontFamily.regular },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, string> = {
             Home: focused ? 'home' : 'home-outline',
@@ -89,7 +90,7 @@ export default function AppNavigator() {
       screenOptions={{
         headerStyle: { backgroundColor: Colors.bg1 },
         headerTintColor: Colors.textPrimary,
-        headerTitleStyle: { fontWeight: '700' },
+        headerTitleStyle: { fontFamily: FontFamily.bold },
         contentStyle: { backgroundColor: Colors.bg0 },
         animation: 'fade',
       }}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 
 interface Props {
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
-  message: { fontSize: FontSize.sm, flex: 1 },
+  message: { fontSize: FontSize.sm, flex: 1, fontFamily: FontFamily.regular },
   undoBtn: { borderRadius: Radius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, marginLeft: Spacing.md },
-  undoText: { color: '#fff', fontSize: FontSize.sm, fontWeight: '700' },
+  undoText: { color: '#fff', fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 });

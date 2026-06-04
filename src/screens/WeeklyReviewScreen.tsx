@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -159,29 +159,29 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.md, paddingTop: Spacing.xl },
-  title: { fontSize: FontSize.xxl, fontWeight: '700' },
+  title: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold },
   closeBtn: { padding: Spacing.sm },
-  dateRange: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
+  dateRange: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm, fontFamily: FontFamily.regular },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
   card: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
-  cardLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   xpRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  xpBig: { fontSize: FontSize.xxxl, fontWeight: '800' },
+  xpBig: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold },
   diffBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
-  diffText: { fontSize: FontSize.sm, fontWeight: '600' },
+  diffText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   dowRow: { flexDirection: 'row', paddingLeft: 118 },
-  dowLabel: { flex: 1, textAlign: 'center', fontSize: FontSize.xs },
+  dowLabel: { flex: 1, textAlign: 'center', fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   goalDayRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  goalDayName: { width: 110, fontSize: FontSize.xs },
+  goalDayName: { width: 110, fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   dayDots: { flex: 1, flexDirection: 'row', gap: Spacing.xs },
   dayDot: { flex: 1, height: 14, borderRadius: 3 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  streakName: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
-  streakDays: { fontSize: FontSize.xl, fontWeight: '800' },
+  streakName: { flex: 1, fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  streakDays: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  badgeName: { fontSize: FontSize.md },
+  badgeName: { fontSize: FontSize.md, fontFamily: FontFamily.regular },
   motivationCard: { borderWidth: 1 },
-  motivation: { fontSize: FontSize.md, textAlign: 'center', lineHeight: 22 },
+  motivation: { fontSize: FontSize.md, textAlign: 'center', lineHeight: 22, fontFamily: FontFamily.regular },
   closeFullBtn: { borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
-  closeFullText: { fontSize: FontSize.md, fontWeight: '600' },
+  closeFullText: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
 });

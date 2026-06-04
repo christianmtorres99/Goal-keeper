@@ -16,7 +16,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import ReanimatedAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { useScheduledTaskStore } from '../../store/scheduledTaskStore';
 
@@ -177,20 +177,20 @@ const styles = StyleSheet.create({
   kavWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   sheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, maxHeight: '85%', gap: Spacing.md, borderTopWidth: 1 },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
-  title: { fontSize: FontSize.lg, fontWeight: '700' },
+  title: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   list: { maxHeight: 280 },
-  empty: { fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.md },
+  empty: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center', paddingVertical: Spacing.md },
   taskRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm, gap: Spacing.sm },
   taskInfo: { flex: 1 },
-  taskTitle: { fontSize: FontSize.md, fontWeight: '600' },
-  taskDays: { fontSize: FontSize.xs, marginTop: 2 },
-  scrollHint: { textAlign: 'center', fontSize: 11, marginTop: 2 },
+  taskTitle: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  taskDays: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
+  scrollHint: { textAlign: 'center', fontSize: 11, fontFamily: FontFamily.regular, marginTop: 2 },
   divider: { height: 1 },
-  newLabel: { fontSize: FontSize.sm, fontWeight: '600' },
-  input: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, padding: Spacing.md },
+  newLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+  input: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, fontFamily: FontFamily.regular, padding: Spacing.md },
   dowRow: { flexDirection: 'row', gap: Spacing.xs },
   dowPill: { flex: 1, alignItems: 'center', paddingVertical: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
-  dowText: { fontSize: FontSize.xs, fontWeight: '700' },
+  dowText: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
   addBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center' },
-  addBtnText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
+  addBtnText: { color: '#fff', fontSize: FontSize.md, fontFamily: FontFamily.bold },
 });

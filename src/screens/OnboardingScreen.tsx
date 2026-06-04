@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 
 export const ONBOARDING_KEY = 'onboardingComplete_v1';
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
   },
   slideScroll: {
     flex: 1,
@@ -278,12 +278,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.xxl,
-    fontWeight: '800',
+    fontFamily: FontFamily.extraBold,
     textAlign: 'center',
     lineHeight: 34,
   },
   subtitle: {
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -307,6 +308,7 @@ const styles = StyleSheet.create({
   },
   bulletText: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
     flex: 1,
     lineHeight: 19,
   },
@@ -344,6 +346,6 @@ const styles = StyleSheet.create({
   nextBtnText: {
     color: '#fff',
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 });

@@ -242,7 +242,7 @@ export default function JournalScreen() {
       <View style={[styles.tabRow, { backgroundColor: Colors.bg1, borderBottomColor: Colors.border }]}>
         {(['write', 'draw', 'stats'] as Tab[]).map(t => (
           <TouchableOpacity key={t} style={[styles.tab, tab === t && { borderBottomWidth: 2, borderBottomColor: Colors.accent }]} onPress={() => switchTab(t)}>
-            <Text style={[styles.tabText, { color: Colors.textSecondary }, tab === t && { color: Colors.accentBright, fontWeight: '700' }]}>
+            <Text style={[styles.tabText, { color: Colors.textSecondary }, tab === t && { color: Colors.accentBright, fontFamily: FontFamily.bold }]}>
               {t === 'write' ? 'Write' : t === 'draw' ? 'Draw' : 'Stats'}
             </Text>
           </TouchableOpacity>
@@ -424,14 +424,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
   },
-  headerTitle: { fontSize: FontSize.lg, fontWeight: '700' },
+  headerTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   saveBtn: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
   saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { fontSize: FontSize.sm, fontWeight: '700' },
+  saveBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
   tabRow: { flexDirection: 'row', borderBottomWidth: 1 },
   tab: { flex: 1, paddingVertical: Spacing.sm, alignItems: 'center' },
-  tabText: { fontSize: FontSize.md, fontWeight: '500' },
+  tabText: { fontSize: FontSize.md, fontFamily: FontFamily.medium },
 
   // Journal header (mood/energy/date)
   journalHeader: {
@@ -443,9 +443,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   moodToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4, width: '100%' },
-  dateLabel: { fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
+  dateLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textAlign: 'center' },
   ratingSection: { gap: Spacing.xs, width: '100%' },
-  ratingLabel: { fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  ratingLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   // Chip row (mood + energy)
   chipRow: { flexDirection: 'row', gap: Spacing.xs },
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   },
   moodDot: { width: 10, height: 10, borderRadius: 5 },
   chipLabelSelected: { fontFamily: FontFamily.bold },
-  chipLabel: { fontSize: 10, fontWeight: '600', textAlign: 'center' },
+  chipLabel: { fontSize: 10, fontFamily: FontFamily.semiBold, textAlign: 'center' },
 
   // Paper text area — fills remaining space
   paperWrapper: {
@@ -472,6 +472,7 @@ const styles = StyleSheet.create({
   paperInput: {
     flex: 1,
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     // lineHeight is set inline as LINE_H so it matches the paper line spacing
     padding: Spacing.md,
     textAlignVertical: 'top',
@@ -495,23 +496,23 @@ const styles = StyleSheet.create({
 
   // Stats tab
   statsContent: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  statsTitle: { fontSize: FontSize.xl, fontWeight: '700' },
+  statsTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
   statsRow: { flexDirection: 'row', gap: Spacing.sm },
   statCard: { flex: 1, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', gap: 4, borderWidth: 1 },
-  statCardValue: { fontSize: FontSize.xxxl, fontWeight: '800' },
-  statCardLabel: { fontSize: FontSize.xs },
+  statCardValue: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold },
+  statCardLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   compareCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
-  compareTitle: { fontSize: FontSize.sm, fontWeight: '600', marginBottom: Spacing.xs },
+  compareTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, marginBottom: Spacing.xs },
   compareRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  compareLabel: { fontSize: FontSize.sm, flex: 1 },
-  compareValue: { fontSize: FontSize.lg, fontWeight: '700' },
-  compareArrow: { fontSize: FontSize.sm },
-  sectionLabel: { fontSize: FontSize.xs, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  compareLabel: { fontSize: FontSize.sm, flex: 1, fontFamily: FontFamily.regular },
+  compareValue: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  compareArrow: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
+  sectionLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
   moodGridDay: { alignItems: 'center', gap: 2, width: 48 },
-  moodGridDate: { fontSize: 9 },
+  moodGridDate: { fontSize: 9, fontFamily: FontFamily.regular },
   moodGridDot: { width: 10, height: 10, borderRadius: 5 },
   moodEnergyBar: { width: 8, height: 24, borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
   moodEnergyFill: { width: '100%', borderRadius: 4 },
-  noData: { fontSize: FontSize.sm, textAlign: 'center', width: '100%', padding: Spacing.xl },
+  noData: { fontSize: FontSize.sm, textAlign: 'center', width: '100%', padding: Spacing.xl, fontFamily: FontFamily.regular },
 });

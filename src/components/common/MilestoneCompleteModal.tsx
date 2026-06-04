@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 
 interface Props {
@@ -76,20 +76,20 @@ export default function MilestoneCompleteModal({
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
   card: { borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', alignItems: 'center', gap: Spacing.md, borderWidth: 1 },
-  title: { fontSize: FontSize.xxl, fontWeight: '800' },
-  subtitle: { fontSize: FontSize.md },
+  title: { fontSize: FontSize.xxl, fontFamily: FontFamily.extraBold },
+  subtitle: { fontSize: FontSize.md, fontFamily: FontFamily.regular },
   statRow: { flexDirection: 'row', gap: Spacing.xxl },
   stat: { alignItems: 'center' },
-  statValue: { fontSize: FontSize.xxxl, fontWeight: '800' },
-  statLabel: { fontSize: FontSize.sm },
+  statValue: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold },
+  statLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   divider: { width: '100%', height: 1 },
-  sectionTitle: { fontSize: FontSize.lg, fontWeight: '700' },
-  hint: { fontSize: FontSize.sm },
+  sectionTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  hint: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   targetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
-  targetLabel: { fontSize: FontSize.md },
-  targetInput: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.lg, fontWeight: '700', padding: Spacing.sm, width: 80, textAlign: 'center' },
+  targetLabel: { fontSize: FontSize.md, fontFamily: FontFamily.regular },
+  targetInput: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.lg, fontFamily: FontFamily.bold, padding: Spacing.sm, width: 80, textAlign: 'center' },
   restartBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, borderRadius: Radius.md, padding: Spacing.md, paddingHorizontal: Spacing.xl, width: '100%', justifyContent: 'center' },
-  restartText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
+  restartText: { color: '#fff', fontSize: FontSize.md, fontFamily: FontFamily.bold },
   archiveBtn: { padding: Spacing.sm },
-  archiveText: { fontSize: FontSize.sm, textDecorationLine: 'underline' },
+  archiveText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textDecorationLine: 'underline' },
 });

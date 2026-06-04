@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { useTodoStore } from '../../store/todoStore';
 import type { Todo, SubItem } from '../../types';
@@ -137,14 +137,14 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
                 style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, dueDate === opt.value && { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}
                 onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
               >
-                <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && { color: Colors.accentBright, fontWeight: '600' }]}>
+                <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && { color: Colors.accentBright, fontFamily: FontFamily.semiBold }]}>
                   {opt.label}
                 </Text>
               </TouchableOpacity>
             ))}
             {dueDate && dueDate !== today && dueDate !== tomorrow && (
               <View style={[styles.dateBtn, { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}>
-                <Text style={{ color: Colors.accentBright, fontWeight: '600' }}>{dueDate}</Text>
+                <Text style={{ color: Colors.accentBright, fontFamily: FontFamily.semiBold }}>{dueDate}</Text>
               </View>
             )}
             {dueDate && (
@@ -479,10 +479,10 @@ export default function TodoSection({ onComplete }: TodoSectionProps) {
             />
             <View style={styles.editActions}>
               <TouchableOpacity style={[styles.editCancel, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setEditingTodo(null)}>
-                <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+                <Text style={{ color: Colors.textSecondary, fontFamily: FontFamily.semiBold }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.editSave, { backgroundColor: Colors.accent }]} onPress={async () => { if (editingTodo && editText.trim()) { await updateTodo(editingTodo.id, editText.trim()); } setEditingTodo(null); }}>
-                <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
+                <Text style={{ color: '#fff', fontFamily: FontFamily.bold }}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
   },
   countBadge: {
     borderRadius: Radius.full,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   },
   countBadgeText: {
     fontSize: FontSize.xs,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   addTaskBtn: {
     padding: Spacing.xs,
@@ -544,10 +544,11 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
   },
   emptyStateLink: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
   },
 
   // TodoCard
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
   },
   todoTitle: {
     fontSize: FontSize.md,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
   strikethrough: {
     textDecorationLine: 'line-through',
@@ -582,9 +583,11 @@ const styles = StyleSheet.create({
   },
   todoTime: {
     fontSize: FontSize.xs,
+    fontFamily: FontFamily.regular,
   },
   subCount: {
     fontSize: FontSize.xs,
+    fontFamily: FontFamily.regular,
   },
   todoActions: {
     flexDirection: 'row',
@@ -608,6 +611,7 @@ const styles = StyleSheet.create({
   },
   subItemCheckText: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
     flex: 1,
   },
 
@@ -630,17 +634,18 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   titleInput: {
     borderRadius: Radius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     borderWidth: 1,
   },
   fieldLabel: {
     fontSize: FontSize.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: -Spacing.sm,
@@ -662,12 +667,14 @@ const styles = StyleSheet.create({
   dateBtnActive: {},
   dateBtnText: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
   },
   dateBtnTextActive: {},
   timeInput: {
     borderRadius: Radius.md,
     padding: Spacing.sm,
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     borderWidth: 1,
   },
   subItemScroll: {
@@ -685,6 +692,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     borderWidth: 1,
   },
   addSubItemBtn: {
@@ -696,6 +704,7 @@ const styles = StyleSheet.create({
   },
   addSubItemText: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
   },
   saveBtn: {
     borderRadius: Radius.lg,
@@ -707,7 +716,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
 
   // Action sheet
@@ -735,7 +744,7 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     marginBottom: Spacing.sm,
     paddingHorizontal: Spacing.xs,
   },
@@ -748,7 +757,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: FontSize.md,
-    fontWeight: '500',
+    fontFamily: FontFamily.medium,
   },
 
   // Edit modal
@@ -767,12 +776,13 @@ const styles = StyleSheet.create({
   },
   editTitle: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   editInput: {
     borderRadius: Radius.md,
     padding: Spacing.md,
     fontSize: FontSize.md,
+    fontFamily: FontFamily.regular,
     borderWidth: 1,
   },
   editActions: {
