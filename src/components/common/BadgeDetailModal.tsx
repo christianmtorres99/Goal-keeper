@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
-  Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -14,9 +13,6 @@ import Animated, {
   withSpring,
   withDelay,
   withSequence,
-  withRepeat,
-  Easing,
-  runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -179,101 +175,29 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
     ? goals.find(g => g.id === earnedBadge.goalId)?.name ?? null
     : null;
 
-  // Animation shared values
-  const particleTrigger = useSharedValue(0);
-  const glowOpacity = useSharedValue(0);
   const iconScale = useSharedValue(1);
-  const legendaryShimmer = useSharedValue(0.3);
-  const legendaryRingScale = useSharedValue(0);
-  const legendaryRingOpacity = useSharedValue(0);
-
-  // We need a JS-side trigger state to pass to Particle components
   const [jsTrigger, setJsTrigger] = React.useState(0);
 
   const triggerAnimations = useCallback(() => {
     'worklet';
-    // Particles trigger
-    particleTrigger.value += 1;
-
-    if (rarity === 'uncommon' || rarity === 'rare' || rarity === 'legendary') {
-      // Pulsing glow ring
-      glowOpacity.value = withSequence(
-        withTiming(0.8, { duration: 300 }),
-        withRepeat(
-          withSequence(
-            withTiming(0.3, { duration: 600 }),
-            withTiming(0.8, { duration: 600 }),
-          ),
-          3,
-          true,
-        ),
-        withTiming(0, { duration: 400 }),
-      );
-    }
-
     if (rarity === 'rare' || rarity === 'legendary') {
-      // Icon scales up gently
       iconScale.value = withSequence(
-        withTiming(1.15, { duration: 300 }),
+        withTiming(1.12, { duration: 280 }),
         withSpring(1, { damping: 8, stiffness: 100 }),
       );
     }
+  }, [rarity, iconScale]);
 
-    if (rarity === 'legendary') {
-      // Continuous shimmer on border
-      legendaryShimmer.value = withRepeat(
-        withSequence(
-          withTiming(1, { duration: 800 }),
-          withTiming(0.3, { duration: 800 }),
-        ),
-        -1,
-        true,
-      );
-      // Gold expanding ring
-      legendaryRingScale.value = 0;
-      legendaryRingOpacity.value = 1;
-      legendaryRingScale.value = withTiming(2.2, { duration: 900, easing: Easing.out(Easing.quad) });
-      legendaryRingOpacity.value = withTiming(0, { duration: 900 });
-    }
-  }, [rarity, particleTrigger, glowOpacity, iconScale, legendaryShimmer, legendaryRingScale, legendaryRingOpacity]);
-
-  // Fire animations when modal opens
   useEffect(() => {
     if (badgeId) {
-      // Reset
-      glowOpacity.value = 0;
       iconScale.value = 1;
-      legendaryShimmer.value = 0.3;
-      legendaryRingScale.value = 0;
-      legendaryRingOpacity.value = 0;
-
-      // Increment JS trigger for Particle components
       setJsTrigger(t => t + 1);
-
-      // Fire worklet animations
       triggerAnimations();
     }
   }, [badgeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Animated styles
-  const glowRingStyle = useAnimatedStyle(() => ({
-    opacity: glowOpacity.value,
-    borderColor: rarityColor,
-  }));
-
   const iconContainerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],
-  }));
-
-  const legendaryBorderStyle = useAnimatedStyle(() => ({
-    opacity: legendaryShimmer.value,
-    borderColor: rarityColor,
-  }));
-
-  const legendaryRingStyle = useAnimatedStyle(() => ({
-    opacity: legendaryRingOpacity.value,
-    transform: [{ scale: legendaryRingScale.value }],
-    borderColor: rarityColor,
   }));
 
   if (!def) return null;
@@ -301,58 +225,8 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               overflow: 'hidden',
             }}
           >
-            {/* Legendary shimmer border overlay */}
-            {rarity === 'legendary' && (
-              <Animated.View
-                style={[
-                  {
-                    position: 'absolute',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    borderRadius: Radius.xl,
-                    borderWidth: 2,
-                  },
-                  legendaryBorderStyle,
-                ]}
-                pointerEvents="none"
-              />
-            )}
-
             {/* Icon area with particles */}
             <View style={{ width: ICON_CONTAINER_SIZE, height: ICON_CONTAINER_SIZE, alignItems: 'center', justifyContent: 'center' }}>
-              {/* Legendary expanding ring */}
-              {rarity === 'legendary' && (
-                <Animated.View
-                  style={[
-                    {
-                      position: 'absolute',
-                      width: ICON_CONTAINER_SIZE,
-                      height: ICON_CONTAINER_SIZE,
-                      borderRadius: ICON_CONTAINER_SIZE / 2,
-                      borderWidth: 3,
-                    },
-                    legendaryRingStyle,
-                  ]}
-                  pointerEvents="none"
-                />
-              )}
-
-              {/* Glow ring */}
-              {(rarity === 'uncommon' || rarity === 'rare' || rarity === 'legendary') && (
-                <Animated.View
-                  style={[
-                    {
-                      position: 'absolute',
-                      width: ICON_CONTAINER_SIZE,
-                      height: ICON_CONTAINER_SIZE,
-                      borderRadius: ICON_CONTAINER_SIZE / 2,
-                      borderWidth: 2,
-                    },
-                    glowRingStyle,
-                  ]}
-                  pointerEvents="none"
-                />
-              )}
-
               {/* Particles */}
               {Array.from({ length: numParticles }).map((_, i) => (
                 <Particle

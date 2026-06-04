@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, forwardRef, useImperativeHandle, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -10,7 +10,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, FontFamily, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { Goal, Log, StreakInfo } from '../../types';
 import { getPlayerStats, getStreakMultiplier } from '../../logic/xpEngine';
@@ -24,63 +24,6 @@ import { todayString } from '../../utils/dateUtils';
 import { getNextStreakBadge, getNextLogBadge } from '../../utils/motivationUtils';
 
 const BASE_LOG_XP = 50;
-const PARTICLE_COUNT = 18;
-const PARTICLE_ANGLES = Array.from({ length: PARTICLE_COUNT }, (_, i) =>
-  (i / PARTICLE_COUNT) * Math.PI * 2
-);
-
-interface ParticleRef {
-  trigger: () => void;
-}
-
-interface ParticleProps {
-  angle: number;
-  color: string;
-  index: number;
-}
-
-const Particle = forwardRef<ParticleRef, ParticleProps>(({ angle, color, index }, ref) => {
-  const scale = useSharedValue(0);
-  const opacity = useSharedValue(0);
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
-
-  useImperativeHandle(ref, () => ({
-    trigger() {
-      const dx = Math.cos(angle) * 100;
-      const dy = Math.sin(angle) * 100;
-      const delay = index * 20;
-      tx.value = 0;
-      ty.value = 0;
-      scale.value = withDelay(delay, withSequence(
-        withTiming(1, { duration: 200 }),
-        withTiming(0, { duration: 250 })
-      ));
-      opacity.value = withDelay(delay, withSequence(
-        withTiming(1, { duration: 100 }),
-        withTiming(0, { duration: 350 })
-      ));
-      tx.value = withDelay(delay, withTiming(dx, { duration: 450 }));
-      ty.value = withDelay(delay, withTiming(dy, { duration: 450 }));
-    },
-  }));
-
-  const style = useAnimatedStyle(() => ({
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: color,
-    opacity: opacity.value,
-    transform: [
-      { translateX: tx.value },
-      { translateY: ty.value },
-      { scale: scale.value },
-    ],
-  }));
-
-  return <Animated.View style={style} pointerEvents="none" />;
-});
 
 interface Props {
   goal: Goal;
@@ -106,7 +49,6 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   const activeRestDate = useRestDayStore(s => s.activeRestDate);
   const isRestDay = activeRestDate === todayString();
 
-  // Count goal: compute today's total and completion
   const todayStr = todayString();
   const todayLogs = logs.filter(l => l.goalId === goal.id && l.logDate === todayStr);
   const todayCountTotal = goal.type === 'count'
@@ -131,7 +73,6 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     ? 'Start!'
     : `${streakInfo.currentStreak}d`;
 
-  // Progress bar animation (Task A3)
   const fillPct = goal.type === 'count' && goal.targetCount
     ? Math.min(100, (todayCountTotal / goal.targetCount) * 100)
     : 0;
@@ -149,19 +90,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     width: `${progressAnim.value * 100}%` as any,
   }));
 
-  // Animation shared values
   const buttonScale = useSharedValue(1);
   const xpOpacity = useSharedValue(0);
   const xpTranslateY = useSharedValue(0);
-  const ringScale = useSharedValue(0);
-  const ringOpacity = useSharedValue(0);
-  const burstRingScale = useSharedValue(0.5);
-  const burstRingOpacity = useSharedValue(0);
-
-  // Particle refs
-  const particleRefs = useRef<Array<ParticleRef | null>>(
-    Array.from({ length: PARTICLE_COUNT }, () => null)
-  );
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
@@ -175,46 +106,21 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     transform: [{ translateY: xpTranslateY.value }],
   }));
 
-  const animatedRingStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: ringScale.value }],
-    opacity: ringOpacity.value,
-  }));
-
-  const animatedBurstRingStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: burstRingScale.value }],
-    opacity: burstRingOpacity.value,
-  }));
-
-  const triggerBurstAnimation = useCallback(() => {
-    // Button spring
+  const triggerLogAnimation = useCallback(() => {
     buttonScale.value = withSequence(
-      withTiming(0.82, { duration: 80 }),
-      withSpring(1.18, { damping: 4, stiffness: 320 }),
+      withTiming(0.9, { duration: 80 }),
+      withSpring(1.05, { damping: 6, stiffness: 300 }),
       withSpring(1.0, { damping: 12, stiffness: 200 })
     );
-    // XP float upward
     xpTranslateY.value = 0;
     xpOpacity.value = 1;
-    xpTranslateY.value = withTiming(-90, { duration: 650 });
-    xpOpacity.value = withDelay(280, withTiming(0, { duration: 380 }));
-    // Expanding ring
-    ringScale.value = 0;
-    ringOpacity.value = 0.7;
-    ringScale.value = withTiming(3.5, { duration: 550 });
-    ringOpacity.value = withTiming(0, { duration: 550 });
-    // Burst ring
-    burstRingScale.value = 0.5;
-    burstRingOpacity.value = 0.7;
-    burstRingScale.value = withTiming(3.0, { duration: 500 });
-    burstRingOpacity.value = withTiming(0, { duration: 500 });
-    // Particles
-    particleRefs.current.forEach(p => p?.trigger());
+    xpTranslateY.value = withTiming(-60, { duration: 600 });
+    xpOpacity.value = withDelay(250, withTiming(0, { duration: 350 }));
   }, []);
 
-  // Fire animation when animateSignal increments (after modals close)
   useEffect(() => {
     if (animateSignal && animateSignal > 0) {
-      triggerBurstAnimation();
+      triggerLogAnimation();
     }
   }, [animateSignal]);
 
@@ -223,7 +129,6 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
   }, [onLog]);
 
   const xpLabel = `+${Math.round(BASE_LOG_XP * multiplier)} XP`;
-
   const doneBtnStyle = loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count';
 
   return (
@@ -253,7 +158,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           <View style={styles.topRight}>
             {isDailyDouble && (
               <View style={[styles.doubleBadge, { backgroundColor: Colors.warning + '22', borderColor: Colors.warning + '44' }]}>
-                <Text style={[styles.doubleText, { color: Colors.warning }]}>2× ⭐</Text>
+                <Text style={[styles.doubleText, { color: Colors.warning }]}>2×</Text>
               </View>
             )}
             {graceUsed && !isAtRisk && (
@@ -277,7 +182,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
               <Text style={[
                 styles.streakText,
                 { color: Colors.warning },
-                streakInfo.currentStreak === 0 && { color: Colors.textDisabled, fontWeight: '600' },
+                streakInfo.currentStreak === 0 && { color: Colors.textDisabled },
               ]}>
                 {streakDisplay}
               </Text>
@@ -318,38 +223,15 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           )}
           <View style={{ flex: 1 }} />
 
-          {/* Log button with burst animation — or rest day badge */}
           {isRestDay ? (
             <View style={[styles.restDayBadge, { backgroundColor: Colors.accentDim }]}>
-              <Text style={[styles.restDayText, { color: Colors.textSecondary }]}>Rest Day 😌</Text>
+              <Text style={[styles.restDayText, { color: Colors.textSecondary }]}>Rest Day</Text>
             </View>
           ) : (
             <View style={styles.logBtnWrapper}>
-              {/* Expanding ring */}
-              <Animated.View
-                style={[styles.ring, { borderColor: goal.color }, animatedRingStyle]}
-                pointerEvents="none"
-              />
-              {/* Burst ring */}
-              <Animated.View
-                style={[styles.burstRing, { borderColor: goal.color }, animatedBurstRingStyle]}
-                pointerEvents="none"
-              />
-              {/* Burst particles */}
-              {PARTICLE_ANGLES.map((angle, i) => (
-                <Particle
-                  key={i}
-                  ref={el => { particleRefs.current[i] = el; }}
-                  angle={angle}
-                  color={goal.color}
-                  index={i}
-                />
-              ))}
-              {/* XP float label */}
               <Animated.Text style={[styles.xpFloat, { color: Colors.accentBright }, animatedXPStyle]} pointerEvents="none">
                 {xpLabel}
               </Animated.Text>
-              {/* Animated button wrapper */}
               <Animated.View style={animatedButtonStyle}>
                 <TouchableOpacity
                   style={[
@@ -394,53 +276,37 @@ const styles = StyleSheet.create({
   body: { flex: 1, padding: 12, gap: 6 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
-  name: { fontSize: FontSize.md, fontWeight: '600', flex: 1, lineHeight: FontSize.md * 1.4 },
+  name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
-  atRiskText: { fontSize: 10, fontWeight: '700' },
+  atRiskText: { fontSize: 10, fontFamily: FontFamily.bold },
   graceBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },
-  graceBadgeText: { fontSize: 10, fontWeight: '600' },
+  graceBadgeText: { fontSize: 10, fontFamily: FontFamily.semiBold },
   streakBadge: { flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
-  streakText: { fontSize: FontSize.sm, fontWeight: '700' },
+  streakText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   nextBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  nextBadgeText: { fontSize: 11, fontWeight: '600' },
+  nextBadgeText: { fontSize: 11, fontFamily: FontFamily.semiBold },
   bottomRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  multiplier: { fontSize: FontSize.xs, fontWeight: '700', borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
-  milestoneText: { fontSize: FontSize.sm },
-
-  // Log button animation wrapper
+  multiplier: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
+  milestoneText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   logBtnWrapper: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ring: {
-    position: 'absolute',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-  },
-  burstRing: {
-    position: 'absolute',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 2,
-  },
   xpFloat: {
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 18,
+    fontFamily: FontFamily.semiBold,
   },
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  logBtnText: { fontSize: FontSize.sm, fontWeight: '700' },
+  logBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   dragHandle: { marginLeft: Spacing.xs },
   restDayBadge: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  restDayText: { fontSize: FontSize.sm },
+  restDayText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   doubleBadge: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1 },
-  doubleText: { fontSize: 10, fontWeight: '800' },
+  doubleText: { fontSize: 10, fontFamily: FontFamily.extraBold },
   countProgressWrapper: { gap: 4, marginTop: 4 },
-  countProgressText: { fontSize: FontSize.xs },
+  countProgressText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   countProgressBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
   countProgressFill: { height: '100%', borderRadius: 2 },
 });

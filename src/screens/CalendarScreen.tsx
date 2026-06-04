@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path as SvgPath } from 'react-native-svg';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -28,7 +28,7 @@ const SCREEN_W = Dimensions.get('window').width;
 const CELL_W = Math.floor(SCREEN_W / 7);
 const CELL_H = Math.floor(CELL_W * 1.25);
 
-const MOOD_EMOJIS = ['😔', '😕', '😐', '🙂', '😄'];
+const MOOD_DOT_COLORS = ['#DC4545', '#D98A1A', '#888898', '#22A37A', '#22C98A'];
 const THUMB_SIZE = 80;
 
 export default function CalendarScreen() {
@@ -148,7 +148,7 @@ export default function CalendarScreen() {
     if (perfectDayCount > 0) msgs.push(`${perfectDayCount} perfect day${perfectDayCount > 1 ? 's' : ''} — every goal logged`);
     if (bestWeek && bestWeek.count >= 5) msgs.push(`Best week started ${bestWeek.label} with ${bestWeek.count} logs`);
     if (longestGap && longestGap >= 3) msgs.push(`Longest gap between logs: ${longestGap} days`);
-    if (completionPct === 100 && elapsedDays > 5) msgs.push('Perfect month so far — every day logged! 🔥');
+    if (completionPct === 100 && elapsedDays > 5) msgs.push('Perfect month so far — every day logged.');
     else if (completionPct >= 80) msgs.push('Excellent consistency this month!');
     else if (completionPct >= 50) msgs.push('Good momentum — keep pushing!');
     else if (loggedDayCount === 0) msgs.push('No logs yet this month — start today!');
@@ -447,9 +447,7 @@ export default function CalendarScreen() {
                   <View style={styles.journalSectionBody}>
                     {/* Mood + energy */}
                     <View style={styles.journalMoodRow}>
-                      <Text style={styles.journalMoodEmoji}>
-                        {MOOD_EMOJIS[selectedDayJournal.mood - 1]}
-                      </Text>
+                      <View style={[styles.journalMoodDot, { backgroundColor: MOOD_DOT_COLORS[selectedDayJournal.mood - 1] }]} />
                       <View style={styles.journalEnergyBars}>
                         {[1, 2, 3, 4, 5].map(v => (
                           <View
@@ -523,10 +521,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   arrow: { padding: Spacing.sm },
-  monthTitle: { fontSize: FontSize.xl, fontWeight: '700' },
+  monthTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
 
   dowRow: { flexDirection: 'row', paddingHorizontal: 0 },
-  dowLabel: { width: CELL_W, textAlign: 'center', fontSize: FontSize.xs, fontWeight: '600', paddingBottom: Spacing.xs },
+  dowLabel: { width: CELL_W, textAlign: 'center', fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, paddingBottom: Spacing.xs },
 
   scroll: { paddingBottom: Spacing.xxl },
 
@@ -587,7 +585,7 @@ const styles = StyleSheet.create({
   journalSectionTitle: { flex: 1, fontSize: FontSize.sm, fontWeight: '700' },
   journalSectionBody: { gap: Spacing.sm },
   journalMoodRow: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.sm },
-  journalMoodEmoji: { fontSize: 22 },
+  journalMoodDot: { width: 14, height: 14, borderRadius: 7 },
   journalEnergyBars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3 },
   journalEnergyBar: { width: 6, borderRadius: 2 },
   journalEnergyBarActive: {},

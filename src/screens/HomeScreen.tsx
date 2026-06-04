@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -207,7 +207,7 @@ export default function HomeScreen() {
     setRestDayModalVisible(false);
     await activateRestDay();
     const xp = Math.floor(Math.random() * 51) + 100;
-    setUndoEntry({ type: 'goal', logId: '', message: `Rest Day activated! +${xp} XP — your streak is safe 😌` });
+    setUndoEntry({ type: 'goal', logId: '', message: `Rest Day activated — +${xp} XP, streak is safe` });
   }, [activateRestDay]);
 
   const handleRestDayDismiss = useCallback(async () => {
@@ -363,7 +363,7 @@ export default function HomeScreen() {
 
   const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
-  const greeting = allDone ? 'All done today! 🔥' : getTimeGreeting();
+  const greeting = allDone ? 'All done today' : getTimeGreeting();
 
   const todayStr = todayString();
   const countModalGoal = countModalGoalId ? goals.find(g => g.id === countModalGoalId) : null;
@@ -620,14 +620,14 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
   headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  greeting: { fontSize: FontSize.xxl, fontWeight: '700' },
-  date: { fontSize: FontSize.sm },
+  greeting: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold },
+  date: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   iconBtn: { padding: Spacing.sm },
   addBtn: { borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
-  xpCaption: { fontSize: FontSize.xs },
-  sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  xpCaption: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   // Logged goals section
   loggedSection: { marginTop: Spacing.md },
   loggedHeader: {
@@ -637,5 +637,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.xs,
   },
-  loggedHeaderText: { fontSize: FontSize.sm, fontWeight: '700' },
+  loggedHeaderText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 });

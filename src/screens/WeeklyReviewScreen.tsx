@@ -66,7 +66,7 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
   const totalDaysLogged = new Set(weekLogs.map(l => l.logDate)).size;
 
   const getMotivation = () => {
-    if (totalDaysLogged === 7) return "Perfect week! You showed up every single day. 🔥";
+    if (totalDaysLogged === 7) return "Perfect week. You showed up every single day.";
     if (totalDaysLogged >= 5) return "Strong week. Keep that momentum going!";
     if (totalDaysLogged >= 3) return "Good start — aim for one more day next week.";
     return "Every streak starts with a single day. You got this.";

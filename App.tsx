@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, useColorScheme, AppState, AppStateStatus } from 'react-native';
+import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold }
+  from '@expo-google-fonts/plus-jakarta-sans';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,6 +31,14 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
 
   const systemScheme = useColorScheme(); // 'dark' | 'light' | null
   const { colors: appColors, isLight } = useColors();
@@ -114,6 +125,8 @@ export default function App() {
       appStateSub.remove();
     };
   }, [systemScheme]);
+
+  if (!fontsLoaded) return null;
 
   if (error) {
     return (

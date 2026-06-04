@@ -25,7 +25,7 @@ export default function MilestoneCompleteModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={[styles.overlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
         <View style={[styles.card, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
-          <Text style={styles.emoji}>🏆</Text>
+          <Ionicons name="trophy" size={56} color={goalColor} />
           <Text style={[styles.title, { color: Colors.textPrimary }]}>Milestone Complete!</Text>
           <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>{goalName}</Text>
 
@@ -76,7 +76,6 @@ export default function MilestoneCompleteModal({
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl },
   card: { borderRadius: Radius.xl, padding: Spacing.xl, width: '100%', alignItems: 'center', gap: Spacing.md, borderWidth: 1 },
-  emoji: { fontSize: 56 },
   title: { fontSize: FontSize.xxl, fontWeight: '800' },
   subtitle: { fontSize: FontSize.md },
   statRow: { flexDirection: 'row', gap: Spacing.xxl },

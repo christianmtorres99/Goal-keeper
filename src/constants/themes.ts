@@ -23,27 +23,27 @@ export interface ColorPalette {
 
 export const THEMES: Record<ThemeName, ColorPalette> = {
   violet: {
-    bg0: '#080B12',
-    bg1: '#0F1320',
-    bg2: '#161B2E',
-    bg3: '#1F2540',
-    border: '#2D3555',
-    accent: '#7C3AED',
-    accentBright: '#A855F7',
-    accentDim: '#3B0764',
-    accentGlow: 'rgba(124, 58, 237, 0.25)',
-    success: '#10B981',
-    warning: '#F59E0B',
-    danger: '#EF4444',
-    info: '#38BDF8',
+    bg0: '#08080C',
+    bg1: '#101018',
+    bg2: '#16161F',
+    bg3: '#222230',
+    border: '#2E2E3E',
+    accent: '#5551E8',
+    accentBright: '#7B78F2',
+    accentDim: '#1A193A',
+    accentGlow: 'rgba(85, 81, 232, 0.22)',
+    success: '#22A37A',
+    warning: '#D98A1A',
+    danger: '#DC4545',
+    info: '#3A9FD8',
     goalColors: [
-      '#7C3AED', '#3B82F6', '#10B981', '#F59E0B',
-      '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899',
+      '#5551E8', '#3A7DD8', '#22A37A', '#D98A1A',
+      '#DC4545', '#8B68DA', '#1AAFC0', '#C94A8E',
     ],
-    textPrimary: '#F1F5F9',
-    textSecondary: '#94A3B8',
-    textDisabled: '#475569',
-    xpGradient: ['#7C3AED', '#A855F7'],
+    textPrimary: '#ECEEF5',
+    textSecondary: '#8A94A8',
+    textDisabled: '#444C60',
+    xpGradient: ['#5551E8', '#7B78F2'],
   },
   ocean: {
     bg0: '#060D1A',
@@ -167,13 +167,13 @@ export type ThemePalette = ColorPalette;
 
 export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
   violet: {
-    bg0: '#FFFFFF', bg1: '#F5F3FF', bg2: '#EDE9FE', bg3: '#DDD6FE', border: '#C4B5FD',
-    accent: '#7C3AED', accentBright: '#8B5CF6', accentDim: '#6D28D9',
-    accentGlow: 'rgba(124, 58, 237, 0.15)',
-    textPrimary: '#1A1A2E', textSecondary: '#4C4B6A', textDisabled: '#9E9DBF',
-    success: '#059669', warning: '#D97706', danger: '#DC2626', info: '#0284C7',
-    goalColors: ['#7C3AED', '#3B82F6', '#059669', '#D97706', '#DC2626', '#8B5CF6', '#0891B2', '#DB2777'],
-    xpGradient: ['#7C3AED', '#8B5CF6'],
+    bg0: '#FFFFFF', bg1: '#F4F3FF', bg2: '#ECEAFD', bg3: '#DCDAFB', border: '#C0BEFA',
+    accent: '#5551E8', accentBright: '#7B78F2', accentDim: '#3E3CB8',
+    accentGlow: 'rgba(85, 81, 232, 0.15)',
+    textPrimary: '#18182A', textSecondary: '#48476A', textDisabled: '#9898BE',
+    success: '#1A8F6A', warning: '#B8750F', danger: '#C23838', info: '#2880B8',
+    goalColors: ['#5551E8', '#3A7DD8', '#1A8F6A', '#B8750F', '#C23838', '#8B68DA', '#1AAFC0', '#C94A8E'],
+    xpGradient: ['#5551E8', '#7B78F2'],
   },
   ocean: {
     bg0: '#FFFFFF', bg1: '#EFF6FF', bg2: '#DBEAFE', bg3: '#BFDBFE', border: '#93C5FD',
@@ -223,7 +223,7 @@ export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
 };
 
 export const THEME_META: Record<ThemeName, { label: string; preview: string }> = {
-  violet:  { label: 'Violet Night', preview: '#9B7FD4' },
+  violet:  { label: 'Midnight Indigo', preview: '#7B78F2' },
   ocean:   { label: 'Ocean Blue',   preview: '#3B82F6' },
   forest:  { label: 'Forest',       preview: '#22C55E' },
   crimson: { label: 'Crimson',      preview: '#EF4444' },

@@ -5,7 +5,7 @@ import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -417,13 +417,13 @@ export default function StatsScreen() {
             {/* Mood distribution */}
             <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
               <Text style={[styles.moodLegendText, { color: Colors.textSecondary, marginBottom: Spacing.sm }]}>Mood Distribution</Text>
-              {(['😞', '😕', '😐', '🙂', '😄'] as const).map((emoji, idx) => {
+              {(['Low', 'Meh', 'Okay', 'Good', 'Great'] as const).map((label, idx) => {
                 const count = moodStats.moodDist[idx];
                 const total = moodStats.moodDist.reduce((a, b) => a + b, 0);
                 const pct = total > 0 ? count / total : 0;
                 return (
                   <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs }}>
-                    <Text style={{ width: 24, textAlign: 'center' }}>{emoji}</Text>
+                    <Text style={{ width: 32, fontSize: 11, color: Colors.textSecondary }}>{label}</Text>
                     <View style={{ flex: 1, height: 10, backgroundColor: Colors.bg3, borderRadius: 5, overflow: 'hidden' }}>
                       <View style={{ width: `${Math.round(pct * 100)}%`, height: '100%', backgroundColor: Colors.accent, borderRadius: 5 }} />
                     </View>
@@ -473,31 +473,31 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  title: { fontSize: FontSize.xxl, fontWeight: '700' },
+  title: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold },
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
-  statValue: { fontSize: FontSize.xl, fontWeight: '700' },
-  statLabel: { fontSize: FontSize.xs },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
+  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   filterSection: { gap: Spacing.xs },
   filterRow: { flexGrow: 0 },
   filterBtn: { borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.xs },
   filterBtnActive: {},
   categoryFilterBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   categoryFilterBtnActive: {},
-  filterText: { fontSize: FontSize.sm },
+  filterText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   filterTextActive: {},
-  sectionLabel: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   chartCard: { borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, overflow: 'hidden' },
   chart: { borderRadius: Radius.md, marginLeft: -Spacing.md },
-  noData: { textAlign: 'center', padding: Spacing.xl },
+  noData: { textAlign: 'center', padding: Spacing.xl, fontFamily: FontFamily.regular },
   streakCard: { borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderLeftWidth: 3, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  streakGoalName: { fontSize: FontSize.md, fontWeight: '600', flex: 1 },
+  streakGoalName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flex: 1 },
   streakNums: { flexDirection: 'row', gap: Spacing.lg },
   streakNum: { alignItems: 'center' },
-  streakValue: { fontSize: FontSize.xl, fontWeight: '700' },
-  streakLabel: { fontSize: FontSize.xs },
+  streakValue: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
+  streakLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   moodLegend: { flexDirection: 'row', gap: Spacing.md, marginBottom: Spacing.sm },
   moodLegendItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   moodLegendDot: { width: 10, height: 10, borderRadius: 5 },
-  moodLegendText: { fontSize: FontSize.xs },
+  moodLegendText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
 });

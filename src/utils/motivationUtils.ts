@@ -67,14 +67,14 @@ export function getMotivationalQuote(streak: number): string {
 }
 
 export function getEventTitle(events: LogEvent[], badgeCount: number): string {
-  if (events.includes('perfectMonth')) return '🏆 Perfect Month!';
-  if (events.includes('perfectWeek')) return '🔥 Perfect Week!';
-  if (events.includes('newBest')) return '🎯 New Personal Best!';
-  if (events.includes('comeback')) return '💪 Welcome Back!';
-  if (events.includes('firstLog')) return '🌱 First Step!';
-  if (badgeCount > 1) return `🎉 ${badgeCount} Badges Unlocked!`;
-  if (badgeCount === 1) return '🎉 Badge Unlocked!';
-  return '⚡ Bonus XP!';
+  if (events.includes('perfectMonth')) return 'Perfect Month';
+  if (events.includes('perfectWeek')) return 'Perfect Week';
+  if (events.includes('newBest')) return 'New Personal Best';
+  if (events.includes('comeback')) return 'Welcome Back';
+  if (events.includes('firstLog')) return 'First Step';
+  if (badgeCount > 1) return `${badgeCount} Badges Unlocked`;
+  if (badgeCount === 1) return 'Badge Unlocked';
+  return 'Bonus XP';
 }
 
 export function getEventSubtitle(events: LogEvent[]): string | null {
@@ -88,11 +88,11 @@ export function getEventSubtitle(events: LogEvent[]): string | null {
 
 export function getUndoToastMessage(goalName: string, totalXP: number, events: LogEvent[]): string {
   const xpStr = `+${totalXP} XP`;
-  if (events.includes('perfectWeek')) return `🔥 Perfect Week! ${xpStr}`;
-  if (events.includes('perfectMonth')) return `🏆 Perfect Month! ${xpStr}`;
-  if (events.includes('newBest')) return `🎯 New record! ${xpStr}`;
-  if (events.includes('comeback')) return `💪 Welcome back! ${xpStr}`;
-  if (events.includes('firstLog')) return `🌱 First log! ${xpStr}`;
+  if (events.includes('perfectWeek')) return `Perfect Week — ${xpStr}`;
+  if (events.includes('perfectMonth')) return `Perfect Month — ${xpStr}`;
+  if (events.includes('newBest')) return `New record — ${xpStr}`;
+  if (events.includes('comeback')) return `Welcome back — ${xpStr}`;
+  if (events.includes('firstLog')) return `First log — ${xpStr}`;
   return `Logged "${goalName}" ${xpStr}`;
 }
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontSize, FontFamily, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { getLevelTier } from './ProfileShareCard';
 
@@ -13,44 +13,26 @@ interface Props {
   onClose: () => void;
 }
 
-const { width: W } = Dimensions.get('window');
-
 export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: Props) {
   const { colors: Colors, isLight } = useColors();
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
-  const flashAnim = useRef(new Animated.Value(0)).current;
 
   const tier = getLevelTier(newLevel);
 
   useEffect(() => {
     if (visible) {
-      flashAnim.setValue(0.6);
-      Animated.timing(flashAnim, { toValue: 0, duration: 400, useNativeDriver: true }).start();
-      Animated.sequence([
-        Animated.parallel([
-          Animated.spring(scaleAnim, { toValue: 1, tension: 20, friction: 3, useNativeDriver: true }),
-          Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        ]),
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(glowAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-            Animated.timing(glowAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
-          ])
-        ),
+      Animated.parallel([
+        Animated.spring(scaleAnim, { toValue: 1, tension: 20, friction: 3, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
       ]).start();
     } else {
       scaleAnim.setValue(0.5);
       opacityAnim.setValue(0);
-      glowAnim.setValue(0);
-      flashAnim.setValue(0);
     }
   }, [visible]);
 
-  const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] });
   const overlayBg = isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE;
-  const flashColor = isLight ? Colors.bg2 : '#FFFFFF';
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
@@ -60,9 +42,6 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
             colors={[tier.color + '33', Colors.bg2, Colors.bg2]}
             style={styles.gradient}
           />
-
-          {/* Glow ring */}
-          <Animated.View style={[styles.glowRing, { borderColor: tier.color, opacity: glowOpacity }]} />
 
           <Text style={[styles.label, { color: Colors.textDisabled }]}>LEVEL UP</Text>
 
@@ -84,15 +63,10 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
             onPress={onClose}
             activeOpacity={0.8}
           >
-            <Text style={styles.buttonText}>Keep going! ⚡</Text>
+            <Text style={styles.buttonText}>Keep going</Text>
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Flash overlay */}
-        <Animated.View
-          style={[styles.flashOverlay, { opacity: flashAnim, backgroundColor: flashColor }]}
-          pointerEvents="none"
-        />
       </Animated.View>
     </Modal>
   );
@@ -117,24 +91,9 @@ const styles = StyleSheet.create({
   gradient: {
     ...StyleSheet.absoluteFill,
   },
-  glowRing: {
-    position: 'absolute',
-    width: W * 0.8,
-    height: W * 0.8,
-    borderRadius: W * 0.4,
-    borderWidth: 2,
-    top: -W * 0.25,
-  },
-  flashOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
   label: {
     fontSize: FontSize.xs,
-    fontWeight: '800',
+    fontFamily: FontFamily.extraBold,
     letterSpacing: 3,
     textTransform: 'uppercase',
   },
@@ -153,19 +112,20 @@ const styles = StyleSheet.create({
   },
   oldLevel: {
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   newLevel: {
     fontSize: 52,
-    fontWeight: '900',
+    fontFamily: FontFamily.extraBold,
   },
   tierName: {
     fontSize: FontSize.xl,
-    fontWeight: '800',
+    fontFamily: FontFamily.extraBold,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
     textAlign: 'center',
   },
   button: {
@@ -179,7 +139,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: FontSize.md,
-    fontWeight: '800',
+    fontFamily: FontFamily.extraBold,
     letterSpacing: 0.3,
   },
 });

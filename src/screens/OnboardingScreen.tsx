@@ -89,7 +89,7 @@ export default function OnboardingScreen({ onDone }: Props) {
       title: 'Daily Double & Hot Streak',
       subtitle: 'Every day one goal is randomly selected as the Daily Double — log it for 2× XP.',
       bullets: [
-        { icon: 'sparkles', text: 'Daily Double goal marked with a ⭐ badge on its card' },
+        { icon: 'sparkles', text: 'Daily Double goal marked with a 2× badge on its card' },
         { icon: 'bonfire', text: 'Log ALL goals 3 days in a row to activate Hot Streak (1.5× global multiplier)' },
         { icon: 'stats-chart', text: 'Monthly challenge: hit your XP target for a bonus reward' },
       ],

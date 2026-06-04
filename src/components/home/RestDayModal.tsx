@@ -20,7 +20,7 @@ export default function RestDayModal({ visible, onClose, onActivate, streak, ban
 
   const bodyText = isVeteran
     ? "Still going strong! Just checking — your body okay? Rest day's here if you need it."
-    : `Hey! You've been doing great! You have a ${streak} day streak! However, rest is important. Take today off! You should rest as hard as you work! (Don't worry, your streak is safe 😌)`;
+    : `Hey! You've been doing great! You have a ${streak} day streak! However, rest is important. Take today off. You should rest as hard as you work. (Your streak is safe.)`;
 
   const translateY = useSharedValue(0);
 

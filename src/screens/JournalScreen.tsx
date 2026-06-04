@@ -16,7 +16,7 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontSize, FontFamily, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useJournalStore } from '../store/journalStore';
 import { useBadgeStore } from '../store/badgeStore';
@@ -27,8 +27,8 @@ import type { DrawingPath, JournalEntry } from '../types';
 
 type Tab = 'write' | 'draw' | 'stats';
 
-const MOOD_EMOJIS  = ['😔', '😕', '😐', '🙂', '😄'];
-const MOOD_LABELS  = ['Low', 'Meh', 'Okay', 'Good', 'Great'];
+const MOOD_DOT_COLORS = ['#DC4545', '#D98A1A', '#888898', '#22A37A', '#22C98A'];
+const MOOD_LABELS     = ['Low', 'Meh', 'Okay', 'Good', 'Great'];
 const ENERGY_ICONS: Array<'battery-dead-outline' | 'battery-half-outline' | 'battery-full-outline' | 'flash-outline' | 'flash'> =
   ['battery-dead-outline', 'battery-half-outline', 'battery-full-outline', 'flash-outline', 'flash'];
 const ENERGY_LABELS = ['Low', 'Fair', 'Good', 'High', 'Max'];
@@ -57,12 +57,11 @@ interface ChipProps {
   selected: boolean;
   onPress: () => void;
   label: string;
-  /** Either an emoji string or an Ionicons name */
-  icon: string;
-  iconIsEmoji?: boolean;
+  icon?: string;
+  dotColor?: string;
 }
 
-function RatingChip({ selected, onPress, label, icon, iconIsEmoji }: ChipProps) {
+function RatingChip({ selected, onPress, label, icon, dotColor }: ChipProps) {
   const { colors: Colors } = useColors();
   return (
     <TouchableOpacity
@@ -74,12 +73,12 @@ function RatingChip({ selected, onPress, label, icon, iconIsEmoji }: ChipProps) 
       onPress={onPress}
       activeOpacity={0.75}
     >
-      {iconIsEmoji ? (
-        <Text style={[styles.chipEmoji, selected && styles.chipEmojiSelected]}>{icon}</Text>
-      ) : (
+      {dotColor ? (
+        <View style={[styles.moodDot, { backgroundColor: dotColor }]} />
+      ) : icon ? (
         <Ionicons name={icon as any} size={selected ? 22 : 20} color={selected ? Colors.accentBright : Colors.textSecondary} />
-      )}
-      <Text style={[styles.chipLabel, { color: selected ? Colors.accentBright : Colors.textSecondary }, selected && { fontWeight: '700' }]}>
+      ) : null}
+      <Text style={[styles.chipLabel, { color: selected ? Colors.accentBright : Colors.textSecondary }, selected && styles.chipLabelSelected]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -275,14 +274,13 @@ export default function JournalScreen() {
                   <View style={styles.ratingSection}>
                     <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Mood</Text>
                     <View style={styles.chipRow}>
-                      {MOOD_EMOJIS.map((emoji, idx) => (
+                      {MOOD_DOT_COLORS.map((color, idx) => (
                         <RatingChip
                           key={idx}
                           selected={mood === idx + 1}
                           onPress={() => setMood(idx + 1)}
-                          icon={emoji}
+                          dotColor={color}
                           label={MOOD_LABELS[idx]}
-                          iconIsEmoji
                         />
                       ))}
                     </View>
@@ -383,13 +381,13 @@ export default function JournalScreen() {
           <View style={[styles.compareCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <Text style={[styles.compareTitle, { color: Colors.textPrimary }]}>This Week vs Last Week</Text>
             <View style={styles.compareRow}>
-              <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>😊 Mood</Text>
+              <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>Mood</Text>
               <Text style={[styles.compareValue, { color: Colors.textPrimary }]}>{statsData.thisWeekMood}</Text>
               <Text style={[styles.compareArrow, { color: Colors.textDisabled }]}>→</Text>
               <Text style={[styles.compareValue, { color: Colors.textSecondary }]}>{statsData.lastWeekMood}</Text>
             </View>
             <View style={styles.compareRow}>
-              <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>⚡ Energy</Text>
+              <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>Energy</Text>
               <Text style={[styles.compareValue, { color: Colors.textPrimary }]}>{statsData.thisWeekEnergy}</Text>
               <Text style={[styles.compareArrow, { color: Colors.textDisabled }]}>→</Text>
               <Text style={[styles.compareValue, { color: Colors.textSecondary }]}>{statsData.lastWeekEnergy}</Text>
@@ -401,7 +399,7 @@ export default function JournalScreen() {
             {statsData.recent.map(e => (
               <View key={e.id} style={styles.moodGridDay}>
                 <Text style={[styles.moodGridDate, { color: Colors.textDisabled }]}>{e.entryDate.slice(5)}</Text>
-                <Text style={styles.moodGridEmoji}>{MOOD_EMOJIS[e.mood - 1]}</Text>
+                <View style={[styles.moodGridDot, { backgroundColor: MOOD_DOT_COLORS[e.mood - 1] }]} />
                 <View style={[styles.moodEnergyBar, { backgroundColor: Colors.bg3 }]}>
                   <View style={[styles.moodEnergyFill, { height: (e.energy / 5) * 24, backgroundColor: Colors.accent }]} />
                 </View>
@@ -461,8 +459,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     minHeight: 64,
   },
-  chipEmoji: { fontSize: 24 },
-  chipEmojiSelected: { fontSize: 26 },
+  moodDot: { width: 10, height: 10, borderRadius: 5 },
+  chipLabelSelected: { fontFamily: FontFamily.bold },
   chipLabel: { fontSize: 10, fontWeight: '600', textAlign: 'center' },
 
   // Paper text area — fills remaining space
@@ -512,7 +510,7 @@ const styles = StyleSheet.create({
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
   moodGridDay: { alignItems: 'center', gap: 2, width: 48 },
   moodGridDate: { fontSize: 9 },
-  moodGridEmoji: { fontSize: 18 },
+  moodGridDot: { width: 10, height: 10, borderRadius: 5 },
   moodEnergyBar: { width: 8, height: 24, borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
   moodEnergyFill: { width: '100%', borderRadius: 4 },
   noData: { fontSize: FontSize.sm, textAlign: 'center', width: '100%', padding: Spacing.xl },

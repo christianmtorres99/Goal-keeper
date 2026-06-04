@@ -15,7 +15,7 @@ export async function scheduleGoalReminder(
   const [hour, minute] = time.split(':').map(Number);
   return Notifications.scheduleNotificationAsync({
     content: {
-      title: `Time to log ${goalName}! 🔥`,
+      title: `Time to log ${goalName}`,
       body: 'Keep your streak alive — tap to open Goal Keeper.',
       data: { goalId },
       ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),

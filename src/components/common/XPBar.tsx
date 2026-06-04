@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, FontFamily, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { PlayerStats } from '../../types';
 
@@ -27,12 +26,7 @@ export default function XPBar({ stats, compact }: Props) {
         )}
       </View>
       <View style={[styles.track, { backgroundColor: Colors.bg3 }]}>
-        <LinearGradient
-          colors={Colors.xpGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.fill, { width: `${Math.min(progressPercent * 100, 100)}%` }]}
-        />
+        <View style={[styles.fill, { width: `${Math.min(progressPercent * 100, 100)}%`, backgroundColor: Colors.accent }]} />
       </View>
     </View>
   );
@@ -46,8 +40,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
   },
-  levelText: { fontSize: FontSize.sm, fontWeight: '700' },
-  xpText: { fontSize: FontSize.sm },
+  levelText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
+  xpText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   track: {
     height: 8,
     borderRadius: Radius.full,
