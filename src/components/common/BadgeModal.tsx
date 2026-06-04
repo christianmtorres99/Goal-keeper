@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { BadgeDefinition } from '../../types';
 import type { LogEvent } from '../../store/logStore';
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.xl,
-    fontWeight: '800',
+    fontFamily: FontFamily.extraBold,
     textAlign: 'center',
   },
   subtitle: {
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: { flex: 1 },
-  badgeName: { fontSize: FontSize.md, fontWeight: '700' },
+  badgeName: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
   badgeDesc: { fontSize: FontSize.sm, marginTop: 2 },
   bonusRow: {
     flexDirection: 'row',
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
-  bonusXP: { fontSize: FontSize.lg, fontWeight: '800' },
+  bonusXP: { fontSize: FontSize.lg, fontFamily: FontFamily.extraBold },
   button: {
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.xl,
@@ -134,5 +134,5 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontSize: FontSize.md, fontWeight: '800', letterSpacing: 0.3 },
+  buttonText: { color: '#fff', fontSize: FontSize.md, fontFamily: FontFamily.extraBold, letterSpacing: 0.3 },
 });

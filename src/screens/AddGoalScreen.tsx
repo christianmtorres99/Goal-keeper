@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { CATEGORY_ICONS, CATEGORY_LABELS } from '../utils/categoryXP';
@@ -193,7 +193,7 @@ export default function AddGoalScreen() {
         <Text style={[styles.label, { color: Colors.textSecondary }]}>Type</Text>
         <View style={styles.typeRow}>
           <TouchableOpacity
-            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
             onPress={() => setGoalType('habit')}
             activeOpacity={0.7}
           >
@@ -202,7 +202,7 @@ export default function AddGoalScreen() {
             <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Daily check-in</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'count' && { borderColor: selectedColor, backgroundColor: selectedColor + '22' }]}
+            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'count' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
             onPress={() => setGoalType('count')}
             activeOpacity={0.7}
           >
@@ -240,7 +240,7 @@ export default function AddGoalScreen() {
           {CATEGORIES.map(cat => (
             <TouchableOpacity
               key={cat}
-              style={[styles.categoryBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, category === cat && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+              style={[styles.categoryBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, category === cat && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
               onPress={() => setCategory(cat)}
             >
               <Ionicons name={CATEGORY_ICONS[cat] as any} size={16} color={category === cat ? selectedColor : Colors.textSecondary} />
@@ -270,7 +270,7 @@ export default function AddGoalScreen() {
             return (
               <TouchableOpacity
                 key={d}
-                style={[styles.diffBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, sel && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+                style={[styles.diffBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, sel && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
                 onPress={() => setDifficulty(d)}
               >
                 <Ionicons name={icons[d] as any} size={16} color={sel ? selectedColor : Colors.textSecondary} />
@@ -293,7 +293,7 @@ export default function AddGoalScreen() {
           {ICONS.map(icon => (
             <TouchableOpacity
               key={icon}
-              style={[styles.iconBtn, { width: iconBtnSize, height: iconBtnSize, backgroundColor: Colors.bg2, borderColor: Colors.border }, selectedIcon === icon && { backgroundColor: selectedColor + '33', borderColor: selectedColor }]}
+              style={[styles.iconBtn, { width: iconBtnSize, height: iconBtnSize, backgroundColor: Colors.bg2, borderColor: Colors.border }, selectedIcon === icon && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
               onPress={() => setSelectedIcon(icon)}
             >
               <Ionicons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : Colors.textSecondary} />
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
-  label: { fontSize: FontSize.sm, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   sublabel: { fontSize: FontSize.sm, marginTop: 2 },
   input: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, padding: Spacing.md },
   multiline: { height: 80, textAlignVertical: 'top' },
@@ -361,28 +361,28 @@ const styles = StyleSheet.create({
   flex1: { flex: 1 },
   typeRow: { flexDirection: 'row', gap: Spacing.sm },
   typeCard: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.lg, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm, borderWidth: 2, minHeight: 44 },
-  typeCardTitle: { fontSize: FontSize.md, fontWeight: '700' },
+  typeCardTitle: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
   typeCardSub: { fontSize: FontSize.xs, textAlign: 'center' },
   categoryRow: { flexGrow: 0 },
   categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.sm },
-  categoryText: { fontSize: FontSize.sm, fontWeight: '600' },
+  categoryText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   colorSwatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { transform: [{ scale: 1.15 }] },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   iconBtn: { borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   saveBtn: { borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.md },
-  saveBtnText: { fontSize: FontSize.lg, fontWeight: '700' },
+  saveBtnText: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   // 12hr time picker
   timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1 },
   timeUnit: { alignItems: 'center', gap: Spacing.xs },
   timeArrow: { padding: Spacing.sm },
-  timeDigit: { fontSize: FontSize.xxl, fontWeight: '700', minWidth: 42, textAlign: 'center' },
-  timeColon: { fontSize: FontSize.xxl, fontWeight: '700', marginBottom: 8 },
+  timeDigit: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold, minWidth: 42, textAlign: 'center' },
+  timeColon: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold, marginBottom: 8 },
   ampmBtn: { borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-  ampmText: { fontSize: FontSize.md, fontWeight: '700' },
+  ampmText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
   difficultyRow: { flexDirection: 'row', gap: Spacing.sm },
   diffBtn: { flex: 1, alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1 },
-  diffLabel: { fontSize: FontSize.xs, fontWeight: '700' },
-  diffMult: { fontSize: FontSize.xs, fontWeight: '600' },
+  diffLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
+  diffMult: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
 });

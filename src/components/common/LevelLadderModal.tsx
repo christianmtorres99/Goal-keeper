@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, ScrollView, TouchableOpacity, Dimensions
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { xpThresholdForLevel } from '../../logic/xpEngine';
 import { getLevelTier } from './ProfileShareCard';
@@ -71,11 +71,11 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
                       style={[
                         styles.levelRow,
                         { backgroundColor: Colors.bg2, borderColor: Colors.border },
-                        isCurrentLevel && { borderColor: Colors.accentBright, backgroundColor: Colors.accentDim + '55' },
+                        isCurrentLevel && { borderColor: Colors.accentBright, backgroundColor: hexAlpha(Colors.accentDim, 0.33) },
                         !isUnlocked && styles.levelRowLocked,
                       ]}
                     >
-                      <View style={[styles.levelIconWrap, { borderColor: isUnlocked ? tier.color + '66' : Colors.border, backgroundColor: isUnlocked ? tier.color + '22' : Colors.bg3 }]}>
+                      <View style={[styles.levelIconWrap, { borderColor: isUnlocked ? hexAlpha(tier.color, 0.40) : Colors.border, backgroundColor: isUnlocked ? hexAlpha(tier.color, 0.13) : Colors.bg3 }]}>
                         <Ionicons name={tier.icon as any} size={20} color={isUnlocked ? tier.color : Colors.textDisabled} />
                       </View>
                       <View style={styles.levelInfo}>
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFill },
   sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: Spacing.lg, maxHeight: '80%', borderTopWidth: 1 },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.md },
-  title: { fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center' },
+  title: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
   subtitle: { fontSize: FontSize.sm, textAlign: 'center', marginBottom: Spacing.md },
   listWrap: { height: Math.floor(Dimensions.get('window').height * 0.45), position: 'relative' },
   scroll: { flex: 1 },
@@ -123,11 +123,11 @@ const styles = StyleSheet.create({
   levelRowLocked: { opacity: 0.45 },
   levelIconWrap: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   levelInfo: { flex: 1 },
-  levelNum: { fontSize: FontSize.sm, fontWeight: '700' },
+  levelNum: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   tierName: { fontSize: FontSize.xs },
-  xpReq: { fontSize: FontSize.xs, fontWeight: '600' },
+  xpReq: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
   moreLevels: { alignItems: 'center', paddingVertical: Spacing.sm },
-  moreLevelsText: { fontSize: FontSize.sm, fontWeight: '600' },
+  moreLevelsText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   closeBtn: { borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', marginTop: Spacing.sm, borderWidth: 1 },
-  closeBtnText: { fontSize: FontSize.md, fontWeight: '600' },
+  closeBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
 });

@@ -17,7 +17,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
 import { useBadgeStore } from '../../store/badgeStore';
@@ -282,12 +282,12 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
 
             {/* Rarity tier label */}
             <View style={{
-              backgroundColor: rarityColor + '22',
+              backgroundColor: hexAlpha(rarityColor, 0.13),
               borderRadius: Radius.full,
               paddingHorizontal: Spacing.md,
               paddingVertical: Spacing.xs,
               borderWidth: 1,
-              borderColor: rarityColor + '66',
+              borderColor: hexAlpha(rarityColor, 0.40),
             }}>
               <Text style={{ color: rarityColor, fontSize: FontSize.sm, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {RARITY_LABELS[rarity]}

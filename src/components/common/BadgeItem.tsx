@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Radius, Spacing } from '../../constants/theme';
+import { FontFamily, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { formatCompactDate } from '../../utils/dateUtils';
 import { RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
@@ -24,7 +24,7 @@ export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props)
   return (
     <View style={[s.container, { width: size }, !earned && s.locked]}>
       {/* Rarity pip */}
-      <View style={[s.rarityPip, { backgroundColor: rarityColor + (earned ? 'FF' : '66') }]} />
+      <View style={[s.rarityPip, { backgroundColor: earned ? rarityColor : hexAlpha(rarityColor, 0.40) }]} />
 
       <View style={[
         s.iconWrap,
@@ -87,7 +87,7 @@ const s = StyleSheet.create({
   iconWrap:     { alignItems: 'center', justifyContent: 'center' },
   lockOverlay:  { position: 'absolute', bottom: 4, right: 4 },
   crownWrap:    { position: 'absolute', top: -4, right: -4, borderRadius: 8, padding: 1 },
-  label:        { fontWeight: '600', textAlign: 'center' },
+  label:        { fontFamily: FontFamily.semiBold, textAlign: 'center' },
   sub:          { textAlign: 'center', lineHeight: 13 },
-  rarityTag:    { fontWeight: '700', textAlign: 'center' },
+  rarityTag:    { fontFamily: FontFamily.bold, textAlign: 'center' },
 });

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
-import { FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 
 interface Props {
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.xl,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     textAlign: 'center',
   },
   body: {
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   },
   bankedLabel: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     textAlign: 'center',
   },
   primaryBtn: {
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
   },
   secondaryBtn: {
     alignItems: 'center',

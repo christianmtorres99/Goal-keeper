@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -89,7 +89,7 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
           <View style={styles.xpRow}>
             <Text style={[styles.xpBig, { color: Colors.accentBright }]}>{thisWeekXP}</Text>
             {xpDiff !== 0 && (
-              <View style={[styles.diffBadge, { backgroundColor: xpDiff > 0 ? Colors.success + '22' : Colors.danger + '22' }]}>
+              <View style={[styles.diffBadge, { backgroundColor: xpDiff > 0 ? hexAlpha(Colors.success, 0.13) : hexAlpha(Colors.danger, 0.13) }]}>
                 <Ionicons name={xpDiff > 0 ? 'arrow-up' : 'arrow-down'} size={12} color={xpDiff > 0 ? Colors.success : Colors.danger} />
                 <Text style={[styles.diffText, { color: xpDiff > 0 ? Colors.success : Colors.danger }]}>{Math.abs(xpDiff)} vs last week</Text>
               </View>

@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { Colors, FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import type { Goal, StreakInfo, PlayerStats } from '../../types';
 import XPBar from './XPBar';
 
@@ -26,7 +26,7 @@ const ShareCard = forwardRef<View, Props>(({ goal, streakInfo, stats, earnedBadg
 
         {/* Goal */}
         <View style={styles.goalRow}>
-          <View style={[styles.iconWrap, { backgroundColor: goal.color + '33' }]}>
+          <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.20) }]}>
             <Ionicons name={goal.icon as any} size={32} color={goal.color} />
           </View>
           <View style={styles.goalInfo}>
@@ -74,18 +74,18 @@ const styles = StyleSheet.create({
   card: { width: 320, borderRadius: Radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: Colors.accentDim },
   gradient: { padding: Spacing.xl, gap: Spacing.lg },
   appHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  appName: { color: Colors.accentBright, fontSize: FontSize.sm, fontWeight: '700', letterSpacing: 1 },
+  appName: { color: Colors.accentBright, fontSize: FontSize.sm, fontFamily: FontFamily.bold, letterSpacing: 1 },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   iconWrap: { width: 52, height: 52, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   goalInfo: { flex: 1 },
-  goalName: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+  goalName: { color: Colors.textPrimary, fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   goalCategory: { color: Colors.textSecondary, fontSize: FontSize.sm, textTransform: 'capitalize' },
   streakSection: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  streakNumber: { color: Colors.textPrimary, fontSize: 56, fontWeight: '800', lineHeight: 64 },
+  streakNumber: { color: Colors.textPrimary, fontSize: 56, fontFamily: FontFamily.extraBold, lineHeight: 64 },
   streakLabel: { color: Colors.textSecondary, fontSize: FontSize.md, marginTop: 8 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { alignItems: 'center' },
-  statValue: { fontSize: FontSize.xl, fontWeight: '700' },
+  statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
   statLabel: { color: Colors.textSecondary, fontSize: FontSize.xs },
   xpBarWrap: { width: '100%' },
   tagline: { color: Colors.textDisabled, fontSize: FontSize.xs, textAlign: 'center', fontStyle: 'italic' },

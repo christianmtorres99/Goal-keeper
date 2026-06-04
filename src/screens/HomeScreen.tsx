@@ -519,7 +519,7 @@ export default function HomeScreen() {
         }
         ListEmptyComponent={
           loggedGoals.length === 0 ? (
-            <EmptyState icon="flag-outline" title="No goals yet" subtitle="Tap + to add your first goal" />
+            <EmptyState icon="flag-outline" title="No goals yet" subtitle="Create your first goal to start tracking." />
           ) : null
         }
         ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}

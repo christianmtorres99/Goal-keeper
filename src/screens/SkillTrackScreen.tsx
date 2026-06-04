@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -144,9 +144,9 @@ export default function SkillTrackScreen({ route }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Hero header */}
-        <View style={[styles.heroCard, { borderColor: catColor + '44', backgroundColor: Colors.bg1 }]}>
+        <View style={[styles.heroCard, { borderColor: hexAlpha(catColor, 0.27), backgroundColor: Colors.bg1 }]}>
           <View style={styles.heroTop}>
-            <View style={[styles.heroIcon, { backgroundColor: catColor + '22', borderColor: catColor + '55' }]}>
+            <View style={[styles.heroIcon, { backgroundColor: hexAlpha(catColor, 0.13), borderColor: hexAlpha(catColor, 0.33) }]}>
               <Ionicons name={catIcon as any} size={32} color={catColor} />
             </View>
             <View style={{ flex: 1 }}>
@@ -154,7 +154,7 @@ export default function SkillTrackScreen({ route }: Props) {
               <Text style={[styles.heroLevel, { color: catColor }]}>Level {playerStats.level}</Text>
               <Text style={[styles.heroXP, { color: Colors.textSecondary }]}>{totalXP.toLocaleString()} XP total</Text>
             </View>
-            <View style={[styles.levelBadge, { backgroundColor: catColor + '22', borderColor: catColor + '55' }]}>
+            <View style={[styles.levelBadge, { backgroundColor: hexAlpha(catColor, 0.13), borderColor: hexAlpha(catColor, 0.33) }]}>
               <Text style={[styles.levelBadgeText, { color: catColor }]}>Lv {playerStats.level}</Text>
             </View>
           </View>
@@ -186,7 +186,7 @@ export default function SkillTrackScreen({ route }: Props) {
           <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Goals</Text>
           {goalStats.map(({ goal, logCount, streak }) => (
             <View key={goal.id} style={[styles.goalRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <View style={[styles.goalIcon, { backgroundColor: goal.color + '22' }]}>
+              <View style={[styles.goalIcon, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
                 <Ionicons name={goal.icon as any} size={20} color={goal.color} />
               </View>
               <View style={styles.goalInfo}>
@@ -253,7 +253,7 @@ export default function SkillTrackScreen({ route }: Props) {
 
 function InsightTile({ icon, label, value, color, bg2, textSecondary }: { icon: string; label: string; value: string; color: string; bg2: string; textSecondary: string }) {
   return (
-    <View style={[styles.insightTile, { borderColor: color + '33', backgroundColor: bg2 }]}>
+    <View style={[styles.insightTile, { borderColor: hexAlpha(color, 0.20), backgroundColor: bg2 }]}>
       <Ionicons name={icon as any} size={20} color={color} />
       <Text style={[styles.insightValue, { color }]}>{value}</Text>
       <Text style={[styles.insightLabel, { color: textSecondary }]}>{label}</Text>
@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
   },
-  heroCategory: { fontSize: FontSize.xl, fontWeight: '800' },
-  heroLevel: { fontSize: FontSize.sm, fontWeight: '700' },
+  heroCategory: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
+  heroLevel: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   heroXP: { fontSize: FontSize.xs },
   levelBadge: {
     borderRadius: Radius.md,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
-  levelBadgeText: { fontSize: FontSize.md, fontWeight: '800' },
+  levelBadgeText: { fontSize: FontSize.md, fontFamily: FontFamily.extraBold },
 
   statsRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  statValue: { fontSize: FontSize.lg, fontWeight: '700' },
+  statValue: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   statLabel: { fontSize: 10, textAlign: 'center' },
 
   card: {
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   section: { gap: Spacing.sm },
   sectionLabel: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -340,10 +340,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   goalInfo: { flex: 1 },
-  goalName: { fontSize: FontSize.md, fontWeight: '600' },
+  goalName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   goalMeta: { fontSize: FontSize.xs },
   goalStreakWrap: { alignItems: 'center', gap: 2 },
-  goalStreak: { fontSize: FontSize.xs, fontWeight: '700' },
+  goalStreak: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
 
   insightGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   insightTile: {
@@ -355,6 +355,6 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     borderWidth: 1,
   },
-  insightValue: { fontSize: FontSize.lg, fontWeight: '800' },
+  insightValue: { fontSize: FontSize.lg, fontFamily: FontFamily.extraBold },
   insightLabel: { fontSize: FontSize.xs, textAlign: 'center' },
 });

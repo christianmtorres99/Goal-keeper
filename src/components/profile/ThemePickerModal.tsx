@@ -5,7 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../store/themeStore';
 import { THEMES, LIGHT_THEMES, THEME_META, type ThemeName } from '../../constants/themes';
-import { Radius, Spacing, FontSize, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { FontFamily, Radius, Spacing, FontSize, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 
 type ColorMode = 'dark' | 'light' | 'system';
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontFamily: FontFamily.bold,
     textAlign: 'center',
   },
   grid: {
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FontSize.xs - 1,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
     textAlign: 'center',
   },
   check: {
@@ -196,6 +196,6 @@ const styles = StyleSheet.create({
   },
   modeBtnText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
+    fontFamily: FontFamily.semiBold,
   },
 });

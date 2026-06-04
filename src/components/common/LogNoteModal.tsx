@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvo
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { FontFamily, FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import { getStreakMultiplier, calculateXPForLog } from '../../logic/xpEngine';
 import { getMotivationalQuote } from '../../utils/motivationUtils';
@@ -148,16 +148,16 @@ const styles = StyleSheet.create({
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   colorDot: { width: 12, height: 12, borderRadius: 6 },
-  goalName: { fontSize: FontSize.lg, fontWeight: '700' },
+  goalName: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   preview: { flexDirection: 'row', gap: Spacing.lg, borderRadius: Radius.md, padding: Spacing.md },
   previewItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  previewValue: { fontSize: FontSize.sm, fontWeight: '600' },
-  label: { fontSize: FontSize.sm, fontWeight: '600' },
+  previewValue: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+  label: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   input: { borderRadius: Radius.md, borderWidth: 1, fontSize: FontSize.md, padding: Spacing.md, minHeight: 80, textAlignVertical: 'top' },
   quote: { fontSize: FontSize.xs, fontStyle: 'italic', textAlign: 'center', paddingHorizontal: Spacing.md },
   actions: { flexDirection: 'row', gap: Spacing.md },
   cancelBtn: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
-  cancelText: { fontSize: FontSize.md, fontWeight: '600' },
+  cancelText: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   confirmBtn: { flex: 2, borderRadius: Radius.md, padding: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-  confirmText: { color: '#fff', fontSize: FontSize.md, fontWeight: '700' },
+  confirmText: { color: '#fff', fontSize: FontSize.md, fontFamily: FontFamily.bold },
 });

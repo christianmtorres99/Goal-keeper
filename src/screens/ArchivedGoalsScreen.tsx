@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 
@@ -39,7 +39,7 @@ export default function ArchivedGoalsScreen() {
               <Text style={[styles.name, { color: Colors.textPrimary }]}>{goal.name}</Text>
               <Text style={[styles.meta, { color: Colors.textSecondary }]}>{goal.type} · archived {goal.createdAt}</Text>
             </View>
-            <TouchableOpacity style={[styles.restoreBtn, { backgroundColor: Colors.success + '22' }]} onPress={() => restoreGoal(goal.id)}>
+            <TouchableOpacity style={[styles.restoreBtn, { backgroundColor: hexAlpha(Colors.success, 0.13) }]} onPress={() => restoreGoal(goal.id)}>
               <Ionicons name="refresh" size={16} color={Colors.success} />
               <Text style={[styles.restoreText, { color: Colors.success }]}>Restore</Text>
             </TouchableOpacity>
@@ -56,14 +56,14 @@ export default function ArchivedGoalsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: Spacing.xxl },
-  title: { fontSize: FontSize.xxl, fontWeight: '700', marginBottom: Spacing.md },
+  title: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold, marginBottom: Spacing.md },
   row: { borderRadius: Radius.md, flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.sm, borderWidth: 1, borderLeftWidth: 3 },
   icon: { width: 28 },
   info: { flex: 1 },
-  name: { fontSize: FontSize.md, fontWeight: '600' },
+  name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   meta: { fontSize: FontSize.xs },
   restoreBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 4 },
-  restoreText: { fontSize: FontSize.sm, fontWeight: '600' },
+  restoreText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   deleteBtn: { padding: Spacing.xs },
   empty: { paddingTop: Spacing.xxl, alignItems: 'center', gap: Spacing.sm },
   emptyText: { fontSize: FontSize.md },

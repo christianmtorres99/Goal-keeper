@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 
 export const ONBOARDING_KEY = 'onboardingComplete_v1';
@@ -175,7 +175,7 @@ export default function OnboardingScreen({ onDone }: Props) {
             style={[styles.content, { opacity: slideIdx === current ? fadeAnim : 1, width: W }]}
           >
             {/* Icon */}
-            <View style={[styles.iconWrap, { borderColor: s.iconColor + '44', backgroundColor: s.iconColor + '18' }]}>
+            <View style={[styles.iconWrap, { borderColor: hexAlpha(s.iconColor, 0.27), backgroundColor: hexAlpha(s.iconColor, 0.09) }]}>
               <Ionicons name={s.icon as any} size={56} color={s.iconColor} />
             </View>
 
@@ -189,7 +189,7 @@ export default function OnboardingScreen({ onDone }: Props) {
             <View style={styles.bullets}>
               {s.bullets.map((b, i) => (
                 <View key={i} style={[styles.bullet, { backgroundColor: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)' }]}>
-                  <View style={[styles.bulletIcon, { backgroundColor: s.iconColor + '22' }]}>
+                  <View style={[styles.bulletIcon, { backgroundColor: hexAlpha(s.iconColor, 0.13) }]}>
                     <Ionicons name={b.icon as any} size={16} color={s.iconColor} />
                   </View>
                   <Text style={[styles.bulletText, { color: Colors.textPrimary }]}>{b.text}</Text>

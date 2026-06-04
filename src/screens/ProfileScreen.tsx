@@ -10,7 +10,7 @@ import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
@@ -297,7 +297,7 @@ export default function ProfileScreen() {
         >
           <View style={styles.heroHeader}>
             <TouchableOpacity
-              style={[styles.heroIconWrap, { borderColor: tier.color + '66', backgroundColor: tier.color + '22' }]}
+              style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
               onPress={() => setLevelLadderVisible(true)}
               activeOpacity={0.8}
             >
@@ -437,7 +437,7 @@ export default function ProfileScreen() {
                     activeOpacity={0.75}
                   >
                     <View style={styles.skillHeader}>
-                      <View style={[styles.skillIconWrap, { backgroundColor: goal.color + '22' }]}>
+                      <View style={[styles.skillIconWrap, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
                         <StreakFlame streak={goalStreak.currentStreak} size={36}>
                           <Ionicons name={goal.icon as any} size={18} color={goal.color} />
                         </StreakFlame>

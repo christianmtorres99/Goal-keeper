@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { MoodSuggestion } from '../../utils/moodSuggestions';
 
@@ -19,7 +19,7 @@ export default function MoodSuggestionCard({ suggestion, onDismiss, onOpenJourna
     <TouchableOpacity
       style={[
         styles.card,
-        { backgroundColor: Colors.bg2, borderColor: isHigh ? Colors.danger + '55' : Colors.warning + '55' },
+        { backgroundColor: Colors.bg2, borderColor: isHigh ? hexAlpha(Colors.danger, 0.33) : hexAlpha(Colors.warning, 0.33) },
       ]}
       onPress={onOpenJournal}
       activeOpacity={0.85}

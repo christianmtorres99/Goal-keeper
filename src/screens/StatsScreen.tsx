@@ -5,7 +5,7 @@ import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -205,7 +205,7 @@ export default function StatsScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
         <Text style={[styles.title, { color: Colors.textPrimary, padding: Spacing.md }]}>Stats</Text>
-        <EmptyState icon="bar-chart-outline" title="No stats yet" subtitle="Add a goal and start logging to see your stats" />
+        <EmptyState icon="bar-chart-outline" title="No stats yet" subtitle="Log your first goal to see stats here." />
       </SafeAreaView>
     );
   }
@@ -247,7 +247,7 @@ export default function StatsScreen() {
                 style={[
                   styles.filterBtn,
                   { backgroundColor: Colors.bg2, borderColor: Colors.border },
-                  filterMode === 'goal' && selectedGoalId === g.id && { backgroundColor: g.color + '33', borderColor: g.color },
+                  filterMode === 'goal' && selectedGoalId === g.id && { backgroundColor: hexAlpha(g.color, 0.20), borderColor: g.color },
                 ]}
                 onPress={() => selectGoal(g.id)}
                 hitSlop={{ top: 4, bottom: 4 }}

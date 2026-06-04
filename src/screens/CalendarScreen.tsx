@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path as SvgPath } from 'react-native-svg';
 
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -215,7 +215,7 @@ export default function CalendarScreen() {
             <Ionicons name="chevron-forward" size={22} color={Colors.textPrimary} />
           </TouchableOpacity>
         </View>
-        <EmptyState icon="calendar-outline" title="Nothing logged yet" subtitle="Start logging your goals to see them here" />
+        <EmptyState icon="calendar-outline" title="Nothing logged yet" subtitle="Log your first goal to begin." />
       </SafeAreaView>
     );
   }
@@ -257,8 +257,8 @@ export default function CalendarScreen() {
                 key={dateStr}
                 style={[
                   styles.cell,
-                  isToday && [styles.cellToday, { backgroundColor: Colors.accentDim + '55' }],
-                  isPerfect && [styles.cellPerfect, { backgroundColor: Colors.success + '18' }],
+                  isToday && [styles.cellToday, { backgroundColor: hexAlpha(Colors.accentDim, 0.33) }],
+                  isPerfect && [styles.cellPerfect, { backgroundColor: hexAlpha(Colors.success, 0.09) }],
                 ]}
                 onPress={() => isInteractive ? setSelectedDay(dateStr) : null}
                 disabled={!isInteractive}
@@ -415,7 +415,7 @@ export default function CalendarScreen() {
                   : null;
                 return (
                   <View key={group.goalId} style={[styles.logRow, { backgroundColor: Colors.bg2 }]}>
-                    <View style={[styles.logIconWrap, { backgroundColor: (g?.color ?? Colors.accent) + '22' }]}>
+                    <View style={[styles.logIconWrap, { backgroundColor: hexAlpha(g?.color ?? Colors.accent, 0.13) }]}>
                       <Ionicons name={(g?.icon ?? 'flag') as any} size={18} color={g?.color ?? Colors.accent} />
                     </View>
                     <View style={styles.logInfo}>

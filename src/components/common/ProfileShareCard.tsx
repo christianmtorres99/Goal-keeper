@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, Radius, Spacing } from '../../constants/theme';
+import { Colors, FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import type { Goal, PlayerStats, BadgeDefinition } from '../../types';
 import XPBar from './XPBar';
 
@@ -70,7 +70,7 @@ const ProfileShareCard = forwardRef<View, Props>(
       const goal = goals.find(g => g.id === f.id);
       if (!goal) return null;
       return (
-        <View key={i} style={[styles.featureSlot, { borderColor: goal.color + '44' }]}>
+        <View key={i} style={[styles.featureSlot, { borderColor: hexAlpha(goal.color, 0.27) }]}>
           <Ionicons name={goal.icon as any} size={24} color={goal.color} />
           <Text style={styles.featureLabel} numberOfLines={2}>{goal.name}</Text>
         </View>
@@ -86,7 +86,7 @@ const ProfileShareCard = forwardRef<View, Props>(
         </View>
 
         {/* Level icon */}
-        <View style={[styles.iconCircle, { borderColor: tier.color + '55', backgroundColor: tier.color + '22' }]}>
+        <View style={[styles.iconCircle, { borderColor: hexAlpha(tier.color, 0.33), backgroundColor: hexAlpha(tier.color, 0.13) }]}>
           <Ionicons name={tier.icon as any} size={52} color={tier.color} />
         </View>
         <Text style={[styles.tierTitle, { color: tier.color }]}>{tier.title}</Text>
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     left: 0,
   },
   appRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  appName: { color: Colors.accentBright, fontSize: 11, fontWeight: '700', letterSpacing: 2 },
+  appName: { color: Colors.accentBright, fontSize: 11, fontFamily: FontFamily.bold, letterSpacing: 2 },
   iconCircle: {
     width: 96, height: 96,
     borderRadius: 48,
@@ -135,12 +135,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: Spacing.sm,
   },
-  tierTitle: { fontSize: FontSize.md, fontWeight: '700', letterSpacing: 1 },
-  levelNum: { color: '#FFFFFF', fontSize: 40, fontWeight: '800', lineHeight: 44 },
+  tierTitle: { fontSize: FontSize.md, fontFamily: FontFamily.bold, letterSpacing: 1 },
+  levelNum: { color: '#FFFFFF', fontSize: 40, fontFamily: FontFamily.extraBold, lineHeight: 44 },
   xpNum: { color: 'rgba(255,255,255,0.6)', fontSize: FontSize.sm },
   barWrap: { width: '100%' },
   divider: { width: '80%', height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: Spacing.xs },
-  featuredLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '700', letterSpacing: 2 },
+  featuredLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontFamily: FontFamily.bold, letterSpacing: 2 },
   featuresRow: { flexDirection: 'row', gap: Spacing.sm, width: '100%' },
   featureSlot: {
     flex: 1,

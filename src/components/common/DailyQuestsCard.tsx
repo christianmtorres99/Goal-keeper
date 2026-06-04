@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FontFamily, FontSize, Radius, Spacing } from '../../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { Quest } from '../../types';
 
@@ -44,9 +44,9 @@ export default function DailyQuestsCard({ quests, totalEarned, totalAvailable }:
       </TouchableOpacity>
 
       {expanded && allDone && (
-        <View style={[styles.allDoneBanner, { backgroundColor: Colors.success + '18' }]}>
+        <View style={[styles.allDoneBanner, { backgroundColor: hexAlpha(Colors.success, 0.09) }]}>
           <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
-          <Text style={[styles.allDoneText, { color: Colors.success }]}>All quests complete! Come back tomorrow.</Text>
+          <Text style={[styles.allDoneText, { color: Colors.success }]}>All done for today.</Text>
         </View>
       )}
 
@@ -66,12 +66,12 @@ const QuestRow = React.memo(function QuestRow({ quest }: { quest: Quest }) {
     <View style={[
       styles.questRow,
       { backgroundColor: Colors.bg2, borderColor: Colors.border },
-      quest.completed && { borderColor: Colors.success + '44', backgroundColor: Colors.success + '0A' },
+      quest.completed && { borderColor: hexAlpha(Colors.success, 0.27), backgroundColor: hexAlpha(Colors.success, 0.04) },
     ]}>
       <View style={[
         styles.questIcon,
         { backgroundColor: Colors.accentDim },
-        quest.completed && { backgroundColor: Colors.success + '22' },
+        quest.completed && { backgroundColor: hexAlpha(Colors.success, 0.13) },
       ]}>
         <Ionicons
           name={quest.completed ? 'checkmark' : (icon as any)}

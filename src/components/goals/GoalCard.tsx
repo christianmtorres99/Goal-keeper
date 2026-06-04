@@ -10,7 +10,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, FontFamily, Radius, Spacing } from '../../constants/theme';
+import { FontSize, FontFamily, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 import type { Goal, Log, StreakInfo } from '../../types';
 import { getPlayerStats, getStreakMultiplier } from '../../logic/xpEngine';
@@ -157,18 +157,18 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           </View>
           <View style={styles.topRight}>
             {isDailyDouble && (
-              <View style={[styles.doubleBadge, { backgroundColor: Colors.warning + '22', borderColor: Colors.warning + '44' }]}>
+              <View style={[styles.doubleBadge, { backgroundColor: hexAlpha(Colors.warning, 0.13), borderColor: hexAlpha(Colors.warning, 0.27) }]}>
                 <Text style={[styles.doubleText, { color: Colors.warning }]}>2×</Text>
               </View>
             )}
             {graceUsed && !isAtRisk && (
-              <View style={[styles.graceBadge, { backgroundColor: Colors.warning + '18' }]}>
+              <View style={[styles.graceBadge, { backgroundColor: hexAlpha(Colors.warning, 0.09) }]}>
                 <Ionicons name="shield-checkmark" size={11} color={Colors.warning} />
                 <Text style={[styles.graceBadgeText, { color: Colors.warning }]}>Grace</Text>
               </View>
             )}
             {isAtRisk && (
-              <View style={[styles.atRiskBadge, { backgroundColor: Colors.warning + '22' }]}>
+              <View style={[styles.atRiskBadge, { backgroundColor: hexAlpha(Colors.warning, 0.13) }]}>
                 <Ionicons name="warning" size={11} color={Colors.warning} />
                 <Text style={[styles.atRiskText, { color: Colors.warning }]}>Log today!</Text>
               </View>
@@ -237,7 +237,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
                   style={[
                     styles.logBtn,
                     { backgroundColor: Colors.accent },
-                    doneBtnStyle && { backgroundColor: Colors.success + '22', borderWidth: 1, borderColor: Colors.success + '55' },
+                    doneBtnStyle && { backgroundColor: hexAlpha(Colors.success, 0.13), borderWidth: 1, borderColor: hexAlpha(Colors.success, 0.33) },
                   ]}
                   onPress={handleLog}
                   disabled={doneBtnStyle}

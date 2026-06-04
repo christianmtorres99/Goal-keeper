@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
-import { FontFamily, FontSize, Radius, Spacing } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -230,16 +230,16 @@ export default function GoalDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* Goal header */}
-        <View style={[styles.heroCard, { backgroundColor: Colors.bg1, borderColor: goal.color + '55' }]}>
+        <View style={[styles.heroCard, { backgroundColor: Colors.bg1, borderColor: hexAlpha(goal.color, 0.33) }]}>
           <View style={styles.heroTop}>
-            <View style={[styles.iconWrap, { backgroundColor: goal.color + '22' }]}>
+            <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
               <Ionicons name={goal.icon as any} size={36} color={goal.color} />
             </View>
             <View style={styles.heroText}>
               <Text style={[styles.goalName, { color: Colors.textPrimary }]}>{goal.name}</Text>
               {goal.description ? <Text style={[styles.goalDesc, { color: Colors.textSecondary }]}>{goal.description}</Text> : null}
               <View style={styles.tagRow}>
-                <View style={[styles.typeBadge, { backgroundColor: goal.color + '22' }]}>
+                <View style={[styles.typeBadge, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
                   <Text style={[styles.typeText, { color: goal.color }]}>
                     {goal.type === 'habit' ? 'Daily Habit' : 'Milestone'}
                   </Text>
@@ -291,7 +291,7 @@ export default function GoalDetailScreen() {
         </View>
 
         {grace.graceDayUsed && (
-          <View style={[styles.graceCard, { backgroundColor: Colors.warning + '22', borderColor: Colors.warning + '55' }]}>
+          <View style={[styles.graceCard, { backgroundColor: hexAlpha(Colors.warning, 0.13), borderColor: hexAlpha(Colors.warning, 0.33) }]}>
             <Ionicons name="shield-checkmark" size={16} color={Colors.warning} />
             <Text style={[styles.graceText, { color: Colors.warning }]}>Grace day used — log today to maintain your streak!</Text>
           </View>
@@ -385,7 +385,7 @@ export default function GoalDetailScreen() {
         {/* Log history */}
         <View style={styles.sectionRow}>
           <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Recent Logs</Text>
-          <TouchableOpacity style={[styles.pastDayBtn, { backgroundColor: Colors.accentDim + '55', borderColor: Colors.accentBright + '44' }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity style={[styles.pastDayBtn, { backgroundColor: hexAlpha(Colors.accentDim, 0.33), borderColor: hexAlpha(Colors.accentBright, 0.27) }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
             <Text style={[styles.pastDayBtnText, { color: Colors.accentBright }]}>Log past day</Text>
           </TouchableOpacity>
@@ -407,11 +407,11 @@ export default function GoalDetailScreen() {
 
         {/* Danger zone */}
         <View style={[styles.dangerZone, { borderTopColor: Colors.bg3 }]}>
-          <TouchableOpacity style={[styles.archiveBtn, { borderColor: Colors.warning + '55' }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
+          <TouchableOpacity style={[styles.archiveBtn, { borderColor: hexAlpha(Colors.warning, 0.33) }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
             <Ionicons name="archive-outline" size={16} color={Colors.warning} />
             <Text style={[styles.archiveBtnText, { color: Colors.warning }]}>Archive Goal</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.deleteBtn, { borderColor: Colors.danger + '55' }]} onPress={handleDelete}>
+          <TouchableOpacity style={[styles.deleteBtn, { borderColor: hexAlpha(Colors.danger, 0.33) }]} onPress={handleDelete}>
             <Ionicons name="trash-outline" size={16} color={Colors.danger} />
             <Text style={[styles.deleteBtnText, { color: Colors.danger }]}>Delete Goal</Text>
           </TouchableOpacity>
@@ -448,7 +448,7 @@ export default function GoalDetailScreen() {
                 const [, , dd] = dateStr.split('-');
                 return (
                   <TouchableOpacity
-                    style={[styles.dayCell, { backgroundColor: Colors.bg2, borderColor: Colors.border }, logged && { backgroundColor: goal.color + '33', borderColor: goal.color }]}
+                    style={[styles.dayCell, { backgroundColor: Colors.bg2, borderColor: Colors.border }, logged && { backgroundColor: hexAlpha(goal.color, 0.20), borderColor: goal.color }]}
                     onPress={() => {
                       if (!logged) {
                         setPastPickerVisible(false);
