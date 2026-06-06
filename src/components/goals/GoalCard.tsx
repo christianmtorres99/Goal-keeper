@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 56,
+    height: 66,
   },
   body: { flex: 1, padding: Spacing.md, gap: Spacing.xs },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

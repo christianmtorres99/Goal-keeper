@@ -269,7 +269,7 @@ export default function CalendarScreen() {
                     styles.dayNum,
                     { color: Colors.textPrimary },
                     isToday && [styles.dayNumToday, { color: Colors.bg0 }],
-                    isFuture && isCurrentMonth && { color: Colors.textDisabled },
+                    isFuture && { color: Colors.textDisabled },
                   ]}>
                     {parseInt(dateStr.split('-')[2])}
                   </Text>
