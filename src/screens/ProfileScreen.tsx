@@ -334,7 +334,7 @@ export default function ProfileScreen() {
             >
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </AnimatedPressable>
-            <AnimatedPressable style={{ flex: 1, gap: 4, alignItems: 'center' }} onPress={() => setLevelLadderVisible(true)}>
+            <AnimatedPressable style={{ flex: 1, gap: 4 }} onPress={() => setLevelLadderVisible(true)}>
               <Text style={[styles.heroLevel, { color: tier.color }]}>{playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
               <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP total</Text>
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
   statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center', alignSelf: 'stretch' },
-  statLabel: { fontSize: FontSize.xs - 1, fontFamily: FontFamily.regular, textAlign: 'center', alignSelf: 'stretch' },
+  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, textAlign: 'center', alignSelf: 'stretch' },
 
   section: { gap: Spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

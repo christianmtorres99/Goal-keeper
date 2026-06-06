@@ -190,9 +190,6 @@ export default function SkillTrackScreen({ route }: Props) {
               <Text style={[styles.heroLevel, { color: catColor }]}>{playerStats.level}</Text>
               <Text style={[styles.heroXP, { color: Colors.textSecondary }]}>{totalXP.toLocaleString()} XP total</Text>
             </View>
-            <View style={[styles.levelBadge, { backgroundColor: hexAlpha(catColor, 0.13), borderColor: hexAlpha(catColor, 0.33) }]}>
-              <Text style={[styles.levelBadgeText, { color: catColor }]}>Lv {playerStats.level}</Text>
-            </View>
           </View>
           <XPBar stats={playerStats} hideLevel />
         </LinearGradient>
@@ -252,7 +249,10 @@ export default function SkillTrackScreen({ route }: Props) {
 
         {/* Insights */}
         <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Insights</Text>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: catColor }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Insights</Text>
+          </View>
           <View style={styles.insightGrid}>
             <InsightTile
               icon="calendar-outline"
@@ -328,18 +328,7 @@ const styles = StyleSheet.create({
   },
   heroCategory: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
   heroLevel: { fontSize: FontSize.xxl, fontFamily: FontFamily.extraBold },
-  heroXP: { fontSize: FontSize.xs },
-  levelBadge: {
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  levelBadgeText: { fontSize: FontSize.md, fontFamily: FontFamily.extraBold },
-
+  heroXP: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   sectionBlock: { gap: Spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   sectionAccentBar: { width: 3, height: 16, borderRadius: Radius.full },
@@ -353,7 +342,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
-  statLabel: { fontSize: 10, textAlign: 'center' },
+  statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, textAlign: 'center' },
 
   card: {
     borderRadius: Radius.lg,
@@ -389,7 +378,7 @@ const styles = StyleSheet.create({
   goalName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   goalMeta: { fontSize: FontSize.xs },
   goalStreakWrap: { alignItems: 'center', gap: Spacing.xs },
-  goalStreak: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
+  goalStreak: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
   insightGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   insightTile: {
