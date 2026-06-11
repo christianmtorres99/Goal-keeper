@@ -24,7 +24,7 @@ import { useJournalStore } from '../store/journalStore';
 import { computeStreakWithGrace, isAlreadyLoggedToday } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
-import { todayString, getWeekStart } from '../utils/dateUtils';
+import { todayString, getWeekStart, formatDisplayDate } from '../utils/dateUtils';
 import { getTimeGreeting, getUndoToastMessage } from '../utils/motivationUtils';
 import { shouldShowRestDayPrompt } from '../utils/restDayEngine';
 import { detectMoodSuggestion } from '../utils/moodSuggestions';
@@ -84,6 +84,8 @@ export default function HomeScreen() {
 
   // Logged goals collapsible
   const [loggedCollapsed, setLoggedCollapsed] = useState(false);
+  const listRef = useRef<any>(null);
+  const justExpandedRef = useRef(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
 
@@ -362,7 +364,7 @@ export default function HomeScreen() {
     await AsyncStorage.setItem('moodSuggestionDismissed', moodSuggestion.id);
   }, [moodSuggestion]);
 
-  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const todayLabel = `${new Date().toLocaleDateString('en-US', { weekday: 'long' })}, ${formatDisplayDate(todayString())}`;
   const allDone = activeGoals.length > 0 && todayLogged.size >= activeGoals.length;
   const greeting = allDone ? 'All done today' : getTimeGreeting();
 
@@ -447,17 +449,31 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       <DraggableFlatList
+        ref={listRef}
         data={pendingGoals}
         keyExtractor={g => g.id}
         onDragEnd={handleDragEnd}
         renderItem={renderItem}
         contentContainerStyle={styles.content}
+        onContentSizeChange={() => {
+          if (justExpandedRef.current) {
+            justExpandedRef.current = false;
+            listRef.current?.scrollToEnd({ animated: true });
+          }
+        }}
         ListHeaderComponent={
           <View style={styles.headerSection}>
             <View style={styles.header}>
-              <View>
-                <Text style={[styles.greeting, { color: Colors.textPrimary }]}>{greeting}</Text>
-                <Text style={[styles.date, { color: Colors.textSecondary }]}>{todayLabel}</Text>
+              <View style={styles.headerLeft}>
+                <Text
+                  style={[styles.greeting, { color: Colors.textPrimary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {greeting}
+                </Text>
+                <Text style={[styles.date, { color: Colors.textSecondary }]} numberOfLines={1}>{todayLabel}</Text>
               </View>
               <View style={styles.headerActions}>
                 <View style={[styles.progressChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.13) }]}>
@@ -515,7 +531,10 @@ export default function HomeScreen() {
             <View style={[styles.loggedSection, { gap: Spacing.sm }]}>
               <TouchableOpacity
                 style={styles.loggedHeader}
-                onPress={() => setLoggedCollapsed(v => !v)}
+                onPress={() => {
+                  if (loggedCollapsed) justExpandedRef.current = true;
+                  setLoggedCollapsed(v => !v);
+                }}
                 activeOpacity={0.7}
               >
                 <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
@@ -640,9 +659,10 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
   headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerLeft: { flex: 1, marginRight: Spacing.sm },
   greeting: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold },
   date: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexShrink: 0 },
   iconBtn: { padding: Spacing.sm },
   addBtn: { borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   progressChip: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 3 },

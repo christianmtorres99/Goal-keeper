@@ -14,8 +14,8 @@ import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
 import { useJournalStore } from '../store/journalStore';
-import { sumXP } from '../utils/xpUtils';
-import { getMonthDays, getMonthName, todayString, dateFromString, formatDisplayDate, daysBetween } from '../utils/dateUtils';
+import { sumXP, formatStatValue } from '../utils/xpUtils';
+import { getMonthDays, getMonthName, todayString, dateFromString, formatDisplayDate, formatShortDate, daysBetween } from '../utils/dateUtils';
 import EmptyState from '../components/common/EmptyState';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { DrawingPath } from '../types';
@@ -125,8 +125,7 @@ export default function CalendarScreen() {
     const top = Object.entries(weekCounts).sort(([, a], [, b]) => b - a)[0];
     if (!top) return null;
     const [dateStr, count] = top;
-    const d = dateFromString(dateStr);
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const label = formatShortDate(dateStr);
     return { label, count };
   }, [monthLogs]);
 
@@ -340,7 +339,7 @@ export default function CalendarScreen() {
               icon="flash"
               iconColor={Colors.accentBright}
               label="Month XP"
-              value={monthXP.toLocaleString()}
+              value={formatStatValue(monthXP)}
               sub="XP earned"
             />
             {bestWeek && (
@@ -513,8 +512,8 @@ function StatCard({ icon, iconColor, label, value, sub }: {
   return (
     <View style={[styles.statCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
       <Ionicons name={icon as any} size={16} color={iconColor} />
-      <Text style={[styles.statValue, { color: Colors.textPrimary }]} numberOfLines={1}>{value}</Text>
-      <Text style={[styles.statLabel, { color: Colors.textPrimary }]}>{label}</Text>
+      <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.statValue, { color: Colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{value}</Text>
       <Text style={[styles.statSub, { color: Colors.textSecondary }]} numberOfLines={1}>{sub}</Text>
     </View>
   );

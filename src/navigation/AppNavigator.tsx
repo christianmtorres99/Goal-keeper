@@ -24,7 +24,7 @@ export type RootStackParamList = {
   GoalDetail: { goalId: string };
   AddGoal: { goalId?: string };
   ArchivedGoals: undefined;
-  SkillTrack: { category: GoalCategory; goalId?: string };
+  SkillTrack: { category: GoalCategory; customLabel?: string };
   Journal: { date?: string } | undefined;
 };
 
@@ -126,7 +126,7 @@ export default function AppNavigator() {
       <Stack.Screen
         name="SkillTrack"
         component={SkillTrackScreen}
-        options={({ route }) => ({ title: route.params.category.charAt(0).toUpperCase() + route.params.category.slice(1) })}
+        options={({ route }) => ({ title: route.params.customLabel ?? route.params.category.charAt(0).toUpperCase() + route.params.category.slice(1) })}
       />
       <Stack.Screen
         name="Journal"

@@ -22,7 +22,7 @@ import { useJournalStore } from '../store/journalStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeJournalStreak } from '../utils/journalUtils';
 import DrawingCanvas from '../components/journal/DrawingCanvas';
-import { todayString, formatDisplayDate, addDays } from '../utils/dateUtils';
+import { todayString, formatDisplayDate, formatShortDate, addDays } from '../utils/dateUtils';
 import type { DrawingPath, JournalEntry } from '../types';
 
 type Tab = 'write' | 'draw' | 'stats';
@@ -398,7 +398,7 @@ export default function JournalScreen() {
           <View style={styles.moodGrid}>
             {statsData.recent.map(e => (
               <View key={e.id} style={styles.moodGridDay}>
-                <Text style={[styles.moodGridDate, { color: Colors.textDisabled }]}>{e.entryDate.slice(5)}</Text>
+                <Text style={[styles.moodGridDate, { color: Colors.textDisabled }]}>{formatShortDate(e.entryDate)}</Text>
                 <View style={[styles.moodGridDot, { backgroundColor: MOOD_DOT_COLORS[e.mood - 1] }]} />
                 <View style={[styles.moodEnergyBar, { backgroundColor: Colors.bg3 }]}>
                   <View style={[styles.moodEnergyFill, { height: (e.energy / 5) * 24, backgroundColor: Colors.accent }]} />

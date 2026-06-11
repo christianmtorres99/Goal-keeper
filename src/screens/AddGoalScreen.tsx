@@ -69,8 +69,21 @@ export default function AddGoalScreen() {
   const navigation = useNavigation();
   const route = useRoute<Route>();
   const { addGoal, updateGoal, getGoal } = useGoalStore();
+  const allGoals = useGoalStore(s => s.goals);
   const editingId = route.params?.goalId;
   const existing = editingId ? getGoal(editingId) : undefined;
+
+  // Distinct custom skill-track names already in use (for the 'Other' category picker)
+  const existingTrackLabels = useMemo(() => {
+    const seen = new Map<string, string>();
+    allGoals
+      .filter(g => !g.isArchived && g.category === 'other' && g.customCategoryLabel?.trim())
+      .forEach(g => {
+        const label = g.customCategoryLabel!.trim();
+        if (!seen.has(label.toLowerCase())) seen.set(label.toLowerCase(), label);
+      });
+    return [...seen.values()];
+  }, [allGoals]);
 
   const [name, setName] = useState(existing?.name ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
@@ -250,14 +263,33 @@ export default function AddGoalScreen() {
           ))}
         </ScrollView>
         {category === 'other' && (
-          <TextInput
-            style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
-            placeholder='Give it a name (e.g. "Finance", "Cooking")'
-            placeholderTextColor={Colors.textDisabled}
-            value={customCategoryLabel}
-            onChangeText={setCustomCategoryLabel}
-            maxLength={24}
-          />
+          <>
+            <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>Pick an existing skill track or create a new one</Text>
+            {existingTrackLabels.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
+                {existingTrackLabels.map(label => {
+                  const sel = customCategoryLabel.trim().toLowerCase() === label.toLowerCase();
+                  return (
+                    <AnimatedPressable
+                      key={label}
+                      style={[styles.categoryBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, sel && { backgroundColor: hexAlpha(selectedColor, 0.20), borderColor: selectedColor }]}
+                      onPress={() => setCustomCategoryLabel(sel ? '' : label)}
+                    >
+                      <Text style={[styles.categoryText, { color: Colors.textSecondary }, sel && { color: selectedColor }]}>{label}</Text>
+                    </AnimatedPressable>
+                  );
+                })}
+              </ScrollView>
+            )}
+            <TextInput
+              style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
+              placeholder='New skill track name (e.g. "Finance", "Cooking")'
+              placeholderTextColor={Colors.textDisabled}
+              value={customCategoryLabel}
+              onChangeText={setCustomCategoryLabel}
+              maxLength={24}
+            />
+          </>
         )}
 
         <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Difficulty</Text>

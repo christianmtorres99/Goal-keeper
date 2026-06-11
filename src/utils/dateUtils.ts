@@ -41,14 +41,16 @@ export function getMonthDays(year: number, month: number): string[] {
   return days;
 }
 
+// "2026-06-11" → "6/11/26"
 export function formatDisplayDate(dateStr: string): string {
-  const d = dateFromString(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+  return `${m}/${d}/${String(y).slice(-2)}`;
 }
 
+// "2026-06-11" → "6/11"
 export function formatShortDate(dateStr: string): string {
-  const d = dateFromString(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const [, m, d] = dateStr.slice(0, 10).split('-').map(Number);
+  return `${m}/${d}`;
 }
 
 export function getMonthName(month: number): string {
@@ -59,10 +61,9 @@ export function isToday(dateStr: string): boolean {
   return dateStr === todayString();
 }
 
-// "2026-05-22" → "5-22-26"
+// "2026-05-22" → "5/22/26"
 export function formatCompactDate(dateStr: string): string {
-  const [y, m, d] = dateStr.slice(0, 10).split('-').map(Number);
-  return `${m}-${d}-${String(y).slice(-2)}`;
+  return formatDisplayDate(dateStr);
 }
 
 // "09:00" → "9:00 AM",  "13:30" → "1:30 PM"

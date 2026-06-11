@@ -28,8 +28,8 @@ import { useGoalStore } from '../store/goalStore';
 import { useTodoXPStore } from '../store/todoXPStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
-import { sumXP } from '../utils/xpUtils';
-import { getCategoryStats, getCategoryDisplayLabel, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
+import { sumXP, formatStatValue } from '../utils/xpUtils';
+import { getCategoryStats, getCategoryDisplayLabel, getCustomTracks, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
 import BadgeItem from '../components/common/BadgeItem';
@@ -132,6 +132,7 @@ export default function ProfileScreen() {
 
   const categoryStats = useMemo(() => getCategoryStats(goals, logs), [goals, logs]);
   const activeCategories = useMemo(() => Object.keys(categoryStats) as GoalCategory[], [categoryStats]);
+  const customTracks = useMemo(() => getCustomTracks(goals), [goals]);
 
   const categoryMaxStreak = useMemo(() => {
     const result: Record<string, number> = {};
@@ -327,6 +328,9 @@ export default function ProfileScreen() {
           end={{ x: 0, y: 1 }}
           style={[styles.heroCard, { borderColor: Colors.accentDim }]}
         >
+          <AnimatedPressable style={styles.shareBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+          </AnimatedPressable>
           <View style={styles.heroHeader}>
             <AnimatedPressable
               style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
@@ -334,14 +338,11 @@ export default function ProfileScreen() {
             >
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </AnimatedPressable>
-            <AnimatedPressable style={{ flex: 1, gap: 4 }} onPress={() => setLevelLadderVisible(true)}>
+            <AnimatedPressable style={styles.heroInfo} onPress={() => setLevelLadderVisible(true)}>
               <Text style={[styles.heroLevel, { color: tier.color }]}>{playerStats.level}</Text>
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
               <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP total</Text>
               <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
-            </AnimatedPressable>
-            <AnimatedPressable style={[styles.shareBtn, { alignSelf: 'flex-start' }]} onPress={handleShare}>
-              <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
             </AnimatedPressable>
           </View>
           <View style={{ width: '100%' }}>
@@ -356,7 +357,7 @@ export default function ProfileScreen() {
               if (!f) {
                 return (
                   <AnimatedPressable key={idx} style={[styles.featureSlot, { borderColor: Colors.accentDim, backgroundColor: Colors.accentDim + (isLight ? '18' : '40') }]} onPress={() => setPickerVisible(true)}>
-                    <Ionicons name="add-circle-outline" size={24} color={Colors.textDisabled} />
+                    <Ionicons name="add-circle-outline" size={28} color={Colors.textDisabled} />
                     <Text style={[styles.featureSlotEmpty, { color: Colors.textDisabled }]}>Add</Text>
                   </AnimatedPressable>
                 );
@@ -379,7 +380,7 @@ export default function ProfileScreen() {
                   <View style={[styles.featureSlotRemoveBadge, { backgroundColor: Colors.bg3 }]}>
                     <Ionicons name="close" size={9} color={Colors.textDisabled} />
                   </View>
-                  <Ionicons name={icon as any} size={26} color={iconColor} />
+                  <Ionicons name={icon as any} size={30} color={iconColor} />
                   <Text style={[styles.featureSlotLabel, { color: Colors.textPrimary }]} numberOfLines={2}>{label}</Text>
                 </AnimatedPressable>
               );
@@ -406,13 +407,13 @@ export default function ProfileScreen() {
         <Animated.View style={reveal1}>
           <View style={styles.statRow}>
             {[
-              { label: 'Total Logs', value: logs.length },
+              { label: 'Total Logs', value: formatStatValue(logs.length) },
               { label: 'Best Streak', value: longestStreak + 'd' },
               { label: 'Badges', value: `${totalEarned}/${totalBadges}` },
-              { label: 'Goals', value: goals.filter(g => !g.isArchived).length },
+              { label: 'Goals', value: formatStatValue(goals.filter(g => !g.isArchived).length) },
             ].map(s => (
               <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border, borderTopWidth: 2, borderTopColor: hexAlpha(Colors.accentBright, 0.50) }]}>
-                <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
+                <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{s.value}</Text>
                 <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
               </View>
             ))}
@@ -421,7 +422,7 @@ export default function ProfileScreen() {
 
         {/* Skill Tracks */}
         <Animated.View style={reveal2}>
-        {activeCategories.length > 0 && (
+        {(activeCategories.length > 0 || customTracks.length > 0) && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
@@ -455,37 +456,41 @@ export default function ProfileScreen() {
                   </AnimatedPressable>
                 );
               })}
-              {/* Individual skill tracks for 'Other' category goals */}
-              {activeGoals.filter(g => g.category === 'other').map(goal => {
-                const goalLogs = logs.filter(l => l.goalId === goal.id);
-                const goalXP = goalLogs.reduce((sum, l) => sum + l.xpAwarded + (l.bonusXp ?? 0), 0);
-                const goalStats = getPlayerStats(goalXP);
-                const goalStreak = (() => {
-                  const grace = graceStates[goal.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
-                  return computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
-                })();
+              {/* Custom skill tracks — 'other' goals grouped by track name */}
+              {customTracks.map(track => {
+                const trackGoalIds = new Set(track.goals.map(g => g.id));
+                const trackLogs = logs.filter(l => trackGoalIds.has(l.goalId));
+                const trackStats = getPlayerStats(sumXP(trackLogs));
+                const trackMaxStreak = track.goals.reduce((max, g) => {
+                  const gl = logs.filter(l => l.goalId === g.id);
+                  const grace = graceStates[g.id] ?? { graceDayUsed: false, graceDayRefillDate: null };
+                  const { currentStreak } = computeStreakWithGrace(gl, grace.graceDayUsed, grace.graceDayRefillDate);
+                  return Math.max(max, currentStreak);
+                }, 0);
+                const trackColor = track.goals[0]?.color ?? Colors.accentBright;
+                const trackIcon = track.goals.length === 1 ? track.goals[0].icon : CATEGORY_ICONS.other;
                 return (
                   <AnimatedPressable
-                    key={goal.id}
+                    key={track.label}
                     style={[styles.skillCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
-                    onPress={() => navigation.navigate('SkillTrack', { category: 'other', goalId: goal.id })}
+                    onPress={() => navigation.navigate('SkillTrack', { category: 'other', customLabel: track.label })}
                   >
                     <View style={styles.skillHeader}>
-                      <View style={[styles.skillIconWrap, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
-                        <StreakFlame streak={goalStreak.currentStreak} size={36}>
-                          <Ionicons name={goal.icon as any} size={18} color={goal.color} />
+                      <View style={[styles.skillIconWrap, { backgroundColor: hexAlpha(trackColor, 0.13) }]}>
+                        <StreakFlame streak={trackMaxStreak} size={36}>
+                          <Ionicons name={trackIcon as any} size={18} color={trackColor} />
                         </StreakFlame>
                       </View>
                       <View style={styles.skillInfo}>
-                        <Text style={[styles.skillName, { color: Colors.textPrimary }]}>{goal.customCategoryLabel ?? goal.name}</Text>
-                        <Text style={[styles.skillGoalCount, { color: Colors.textSecondary }]}>1 goal</Text>
+                        <Text style={[styles.skillName, { color: Colors.textPrimary }]}>{track.label}</Text>
+                        <Text style={[styles.skillGoalCount, { color: Colors.textSecondary }]}>{track.goals.length} goal{track.goals.length !== 1 ? 's' : ''}</Text>
                       </View>
                       <View style={[styles.skillLevelBadge, { backgroundColor: isLight ? Colors.bg3 : Colors.accentDim }]}>
-                        <Text style={[styles.skillLevel, { color: Colors.accentBright }]}>Lv {goalStats.level}</Text>
+                        <Text style={[styles.skillLevel, { color: Colors.accentBright }]}>Lv {trackStats.level}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
                     </View>
-                    <XPBar stats={goalStats} compact />
+                    <XPBar stats={trackStats} compact />
                   </AnimatedPressable>
                 );
               })}
@@ -542,20 +547,21 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xxl },
 
-  heroCard: { borderRadius: Radius.xl, padding: Spacing.xl, gap: Spacing.md, borderWidth: 1 },
+  heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   heroIconWrap: { width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  heroInfo: { flex: 1, gap: 4, justifyContent: 'center', paddingRight: Spacing.lg },
   heroLevel: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold },
   heroTierTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   heroXP: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   heroNext: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
-  shareBtn: { padding: Spacing.xs },
+  shareBtn: { position: 'absolute', top: Spacing.md, right: Spacing.md, padding: Spacing.xs, zIndex: 1 },
 
   pickerSublabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
-  featureSlot: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
-  featureSlotFilled: { flex: 1, minHeight: 84, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
-  featureSlotLabel: { fontSize: FontSize.xs, textAlign: 'center', fontFamily: FontFamily.semiBold },
+  featureSlot: { flex: 1, minHeight: 104, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
+  featureSlotFilled: { flex: 1, minHeight: 104, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
+  featureSlotLabel: { fontSize: FontSize.sm, textAlign: 'center', fontFamily: FontFamily.semiBold },
   featureSlotEmpty: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
   swatchContainer: {

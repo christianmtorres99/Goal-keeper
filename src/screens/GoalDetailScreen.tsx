@@ -14,7 +14,7 @@ import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { getPlayerStats } from '../logic/xpEngine';
-import { sumXP } from '../utils/xpUtils';
+import { sumXP, formatStatValue } from '../utils/xpUtils';
 import { makeChartConfig, hexToRgba } from '../utils/colorUtils';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
@@ -113,7 +113,7 @@ export default function GoalDetailScreen() {
       const date = addDays(today, -i);
       const dayXP = sortedLogs.filter(l => l.logDate === date).reduce((s, l) => s + l.xpAwarded + l.bonusXp, 0);
       cumXP += dayXP;
-      labels.push(i % 10 === 0 ? formatShortDate(date).split(' ')[1] : '');
+      labels.push(i % 10 === 0 ? formatShortDate(date) : '');
       data.push(cumXP);
     }
     return { labels, datasets: [{ data, color: (opacity = 1) => hexToRgba(goal?.color ?? '#7B5EA7', opacity), strokeWidth: 2 }] };
@@ -281,11 +281,11 @@ export default function GoalDetailScreen() {
           {[
             { label: 'Streak', value: `${streakInfo.currentStreak}d` },
             { label: 'Best', value: `${streakInfo.longestStreak}d` },
-            { label: 'Total Logs', value: goalLogs.length },
-            { label: 'Total XP', value: totalXP },
+            { label: 'Total Logs', value: formatStatValue(goalLogs.length) },
+            { label: 'Total XP', value: formatStatValue(totalXP) },
           ].map(s => (
             <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
+              <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{s.value}</Text>
               <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
             </View>
           ))}

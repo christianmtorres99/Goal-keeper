@@ -23,12 +23,12 @@ import { useTodoXPStore } from '../store/todoXPStore';
 import { useJournalStore } from '../store/journalStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
-import { sumXP } from '../utils/xpUtils';
+import { sumXP, formatStatValue } from '../utils/xpUtils';
 import { getCategoryStats, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
 import EmptyState from '../components/common/EmptyState';
 import StreakFlame from '../components/common/StreakFlame';
-import { todayString, addDays } from '../utils/dateUtils';
+import { todayString, addDays, formatShortDate } from '../utils/dateUtils';
 import type { GoalCategory } from '../types';
 
 const W = Dimensions.get('window').width - Spacing.md * 2;
@@ -115,7 +115,7 @@ export default function StatsScreen() {
     for (let i = 29; i >= 0; i--) {
       const d = addDays(today, -i);
       const entry = journalEntries.find(e => e.entryDate === d);
-      labels.push(i % 7 === 0 ? d.slice(5) : '');
+      labels.push(i % 7 === 0 ? formatShortDate(d) : '');
       moodData.push(entry?.mood ?? 0);
       energyData.push(entry?.energy ?? 0);
     }
@@ -137,7 +137,7 @@ export default function StatsScreen() {
       const entry = journalEntries.find(e => e.entryDate === d);
       last30.push({ date: d, mood: entry?.mood ?? 0, energy: entry?.energy ?? 0 });
     }
-    const last30Labels = last30.map((item, i) => (i % 5 === 0 ? item.date.slice(5) : ''));
+    const last30Labels = last30.map((item, i) => (i % 5 === 0 ? formatShortDate(item.date) : ''));
     const last30Mood = last30.map(item => item.mood);
     const last30Energy = last30.map(item => item.energy);
 
@@ -200,7 +200,7 @@ export default function StatsScreen() {
       const d = addDays(today, -i);
       const dayXP = filteredLogs.filter(l => l.logDate === d).reduce((s, l) => s + l.xpAwarded + l.bonusXp, 0);
       cumXP += dayXP;
-      if (i % 6 === 0) labels.push(d.slice(5));
+      if (i % 6 === 0) labels.push(formatShortDate(d));
       else labels.push('');
       data.push(cumXP);
     }
@@ -263,13 +263,13 @@ export default function StatsScreen() {
         <Animated.View style={[styles.sectionBlock, reveal0]}>
           <View style={styles.statRow}>
             {[
-              { label: 'Level', value: playerStats.level },
-              { label: 'Total XP', value: totalXP },
-              { label: 'Total Logs', value: totalLogs },
-              { label: 'Goals', value: activeGoals.length },
+              { label: 'Level', value: formatStatValue(playerStats.level) },
+              { label: 'Total XP', value: formatStatValue(totalXP) },
+              { label: 'Total Logs', value: formatStatValue(totalLogs) },
+              { label: 'Goals', value: formatStatValue(activeGoals.length) },
             ].map(s => (
               <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-                <Text style={[styles.statValue, { color: Colors.accentBright }]}>{s.value}</Text>
+                <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{s.value}</Text>
                 <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
               </View>
             ))}
@@ -406,15 +406,15 @@ export default function StatsScreen() {
             <>
               <View style={styles.statRow}>
                 <View style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-                  <Text style={[styles.statValue, { color: Colors.accentBright }]}>{moodStats.avgMood ?? '—'}</Text>
+                  <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{moodStats.avgMood ?? '—'}</Text>
                   <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>Avg Mood</Text>
                 </View>
                 <View style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-                  <Text style={[styles.statValue, { color: Colors.accentBright }]}>{moodStats.avgEnergy ?? '—'}</Text>
+                  <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{moodStats.avgEnergy ?? '—'}</Text>
                   <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>Avg Energy</Text>
                 </View>
                 <View style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-                  <Text style={[styles.statValue, { color: Colors.accentBright }]}>{moodStats.journalStreak}</Text>
+                  <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{moodStats.journalStreak}</Text>
                   <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>Journal Streak</Text>
                 </View>
               </View>
@@ -444,7 +444,7 @@ export default function StatsScreen() {
                     chartConfig={chartConfig}
                     bezier
                     withDots={false}
-                    style={styles.chart}
+                    style={{ borderRadius: Radius.md, marginLeft: -Spacing.lg }}
                     fromZero
                     yAxisSuffix=""
                     yAxisLabel=""
@@ -459,14 +459,14 @@ export default function StatsScreen() {
                   {moodStats.bestDay && (
                     <View style={{ flex: 1, alignItems: 'center' }}>
                       <Text style={[styles.moodLegendText, { color: Colors.textSecondary }]}>Best Day</Text>
-                      <Text style={[styles.statValue, { color: Colors.success, fontSize: FontSize.md, textAlign: 'center' }]}>{(moodStats.bestDay as any).date}</Text>
+                      <Text style={[styles.statValue, { color: Colors.success, fontSize: FontSize.md, textAlign: 'center' }]}>{formatShortDate((moodStats.bestDay as any).date)}</Text>
                       <Text style={[styles.statLabel, { color: Colors.textSecondary, textAlign: 'center' }]}>score {(moodStats.bestDay as any).score}</Text>
                     </View>
                   )}
                   {moodStats.worstDay && (
                     <View style={{ flex: 1, alignItems: 'center' }}>
                       <Text style={[styles.moodLegendText, { color: Colors.textSecondary }]}>Worst Day</Text>
-                      <Text style={[styles.statValue, { color: Colors.danger, fontSize: FontSize.md, textAlign: 'center' }]}>{(moodStats.worstDay as any).date}</Text>
+                      <Text style={[styles.statValue, { color: Colors.danger, fontSize: FontSize.md, textAlign: 'center' }]}>{formatShortDate((moodStats.worstDay as any).date)}</Text>
                       <Text style={[styles.statLabel, { color: Colors.textSecondary, textAlign: 'center' }]}>score {(moodStats.worstDay as any).score}</Text>
                     </View>
                   )}
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   sectionLabel: { ...TextStyle.label },
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
-  statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.md, alignItems: 'center', borderWidth: 1 },
+  statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
   statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' },
   statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: 'center' },
 

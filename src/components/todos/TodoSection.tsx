@@ -10,7 +10,6 @@ import {
   Animated,
   Easing,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -102,73 +101,70 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
   const bottomPad = Math.max(insets.bottom, Spacing.md);
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={onClose}>
       <Animated.View
         style={[StyleSheet.absoluteFill, { backgroundColor: isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK, opacity: backdropOpacity }]}
         pointerEvents="none"
       />
-      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.modalKAV}
-      >
+      <KeyboardAvoidingView behavior="padding" style={styles.modalKAV}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border, paddingBottom: bottomPad, transform: [{ translateY: sheetTranslateY }] }]}>
           <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
           <Text style={[styles.modalTitle, { color: Colors.textPrimary }]}>New Task</Text>
 
-          <TextInput
-            style={[styles.titleInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
-            placeholder="Task title"
-            placeholderTextColor={Colors.textDisabled}
-            value={title}
-            onChangeText={setTitle}
-            returnKeyType="done"
-          />
+          <ScrollView contentContainerStyle={styles.modalFormContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <TextInput
+              style={[styles.titleInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
+              placeholder="Task title"
+              placeholderTextColor={Colors.textDisabled}
+              value={title}
+              onChangeText={setTitle}
+              returnKeyType="done"
+            />
 
-          {/* Due date quick buttons */}
-          <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Due Date</Text>
-          <View style={styles.dateBtnRow}>
-            {[
-              { label: 'Today', value: today },
-              { label: 'Tomorrow', value: tomorrow },
-            ].map(opt => (
-              <TouchableOpacity
-                key={opt.label}
-                style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, dueDate === opt.value && { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}
-                onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
-              >
-                <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && { color: Colors.accentBright, fontFamily: FontFamily.semiBold }]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            {dueDate && dueDate !== today && dueDate !== tomorrow && (
-              <View style={[styles.dateBtn, { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}>
-                <Text style={{ color: Colors.accentBright, fontFamily: FontFamily.semiBold }}>{dueDate}</Text>
-              </View>
-            )}
-            {dueDate && (
-              <TouchableOpacity style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setDueDate(undefined)}>
-                <Ionicons name="close-circle-outline" size={16} color={Colors.textSecondary} />
-              </TouchableOpacity>
-            )}
-          </View>
+            {/* Due date quick buttons */}
+            <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Due Date</Text>
+            <View style={styles.dateBtnRow}>
+              {[
+                { label: 'Today', value: today },
+                { label: 'Tomorrow', value: tomorrow },
+              ].map(opt => (
+                <TouchableOpacity
+                  key={opt.label}
+                  style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }, dueDate === opt.value && { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}
+                  onPress={() => setDueDate(prev => prev === opt.value ? undefined : opt.value)}
+                >
+                  <Text style={[styles.dateBtnText, { color: Colors.textSecondary }, dueDate === opt.value && { color: Colors.accentBright, fontFamily: FontFamily.semiBold }]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {dueDate && dueDate !== today && dueDate !== tomorrow && (
+                <View style={[styles.dateBtn, { backgroundColor: Colors.accentDim, borderColor: Colors.accent }]}>
+                  <Text style={{ color: Colors.accentBright, fontFamily: FontFamily.semiBold }}>{dueDate}</Text>
+                </View>
+              )}
+              {dueDate && (
+                <TouchableOpacity style={[styles.dateBtn, { backgroundColor: Colors.bg2, borderColor: Colors.border }]} onPress={() => setDueDate(undefined)}>
+                  <Ionicons name="close-circle-outline" size={16} color={Colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
 
-          {/* Due time */}
-          <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Time (optional, HH:MM)</Text>
-          <TextInput
-            style={[styles.timeInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
-            placeholder="e.g. 09:30"
-            placeholderTextColor={Colors.textDisabled}
-            value={dueTime}
-            onChangeText={setDueTime}
-            keyboardType="numbers-and-punctuation"
-            maxLength={5}
-          />
+            {/* Due time */}
+            <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Time (optional, HH:MM)</Text>
+            <TextInput
+              style={[styles.timeInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}
+              placeholder="e.g. 09:30"
+              placeholderTextColor={Colors.textDisabled}
+              value={dueTime}
+              onChangeText={setDueTime}
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+            />
 
-          {/* Sub-items */}
-          <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Sub-tasks</Text>
-          <ScrollView style={styles.subItemScroll} keyboardShouldPersistTaps="handled">
+            {/* Sub-items */}
+            <Text style={[styles.fieldLabel, { color: Colors.textSecondary }]}>Sub-tasks</Text>
             {subItemInputs.map((val, idx) => (
               <View key={idx} style={styles.subItemRow}>
                 <Ionicons name="remove-circle-outline" size={18} color={Colors.danger} style={{ marginRight: 4 }} />
@@ -464,8 +460,8 @@ export default function TodoSection({ onComplete }: TodoSectionProps) {
       </Modal>
 
       {/* Edit modal */}
-      <Modal visible={!!editingTodo} transparent animationType="fade" onRequestClose={() => setEditingTodo(null)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.editOverlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
+      <Modal visible={!!editingTodo} transparent statusBarTranslucent animationType="fade" onRequestClose={() => setEditingTodo(null)}>
+        <KeyboardAvoidingView behavior="padding" style={[styles.editOverlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
           <View style={[styles.editCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <Text style={[styles.editTitle, { color: Colors.textPrimary }]}>Edit Task</Text>
             <TextInput
@@ -616,7 +612,7 @@ const styles = StyleSheet.create({
   },
 
   // Add Todo Modal
-  modalKAV: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  modalKAV: { flex: 1, justifyContent: 'flex-end' },
   modalSheet: {
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
@@ -625,6 +621,7 @@ const styles = StyleSheet.create({
     maxHeight: '85%',
     borderWidth: 1,
   },
+  modalFormContent: { gap: Spacing.md },
   modalHandle: {
     width: 36,
     height: 4,
@@ -676,9 +673,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontFamily: FontFamily.regular,
     borderWidth: 1,
-  },
-  subItemScroll: {
-    maxHeight: 180,
   },
   subItemRow: {
     flexDirection: 'row',

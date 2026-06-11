@@ -16,7 +16,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
@@ -26,9 +25,9 @@ import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
-import { sumXP } from '../utils/xpUtils';
+import { sumXP, formatStatValue } from '../utils/xpUtils';
 import { todayString } from '../utils/dateUtils';
-import { getCategoryStats, getCategoryDisplayLabel, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
+import { getCategoryDisplayLabel, CATEGORY_ICONS } from '../utils/categoryXP';
 import XPBar from '../components/common/XPBar';
 import HeatmapGrid from '../components/charts/HeatmapGrid';
 import StreakFlame from '../components/common/StreakFlame';
@@ -49,8 +48,7 @@ const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function SkillTrackScreen({ route }: Props) {
   const { colors: Colors, isLight } = useColors();
-  const { category, goalId } = route.params;
-  const navigation = useNavigation();
+  const { category, customLabel } = route.params;
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
 
@@ -61,26 +59,17 @@ export default function SkillTrackScreen({ route }: Props) {
   };
 
   const catColor = CATEGORY_COLORS[category] ?? Colors.accentBright;
-  const catLabel = getCategoryDisplayLabel(goals, category);
+  const catLabel = category === 'other' ? (customLabel ?? 'Other') : getCategoryDisplayLabel(goals, category);
   const catIcon = CATEGORY_ICONS[category];
 
-  // If goalId is provided, filter to just that single goal
-  const screenGoals = goalId
-    ? goals.filter(g => g.id === goalId && !g.isArchived)
-    : goals.filter(g => g.category === category && !g.isArchived);
-
+  // For 'other', show the goals belonging to this custom-named track
+  const trackKey = (customLabel ?? 'Other').trim().toLowerCase();
   const catGoals = useMemo(
-    () => screenGoals,
-    [goals, category, goalId]
+    () => category === 'other'
+      ? goals.filter(g => g.category === 'other' && !g.isArchived && (g.customCategoryLabel?.trim() || 'Other').toLowerCase() === trackKey)
+      : goals.filter(g => g.category === category && !g.isArchived),
+    [goals, category, trackKey]
   );
-
-  // If goalId is provided, update the screen title to use the goal name
-  useEffect(() => {
-    if (goalId) {
-      const g = goals.find(g => g.id === goalId);
-      if (g) navigation.setOptions({ title: g.customCategoryLabel ?? g.name });
-    }
-  }, [goalId, goals]);
 
   const catGoalIds = useMemo(() => new Set(catGoals.map(g => g.id)), [catGoals]);
 
@@ -142,10 +131,10 @@ export default function SkillTrackScreen({ route }: Props) {
   }, [catLogs]);
 
   const statsRow = [
-    { label: 'Total Logs', value: catLogs.length },
+    { label: 'Total Logs', value: formatStatValue(catLogs.length) },
     { label: 'Best Streak', value: bestCurrentStreak > 0 ? `${bestCurrentStreak}d` : '-' },
     { label: 'Longest', value: bestLongestStreak > 0 ? `${bestLongestStreak}d` : '-' },
-    { label: 'Days Logged', value: uniqueDaysLogged },
+    { label: 'Days Logged', value: formatStatValue(uniqueDaysLogged) },
   ];
 
   // Section reveal animations
@@ -200,7 +189,7 @@ export default function SkillTrackScreen({ route }: Props) {
         <View style={styles.statsRow}>
           {statsRow.map(s => (
             <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.statValue, { color: catColor }]}>{s.value}</Text>
+              <Text style={[styles.statValue, { color: catColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{s.value}</Text>
               <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
             </View>
           ))}

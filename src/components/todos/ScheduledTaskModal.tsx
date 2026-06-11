@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
-  Platform,
   Animated,
   Easing,
 } from 'react-native';
@@ -96,15 +95,14 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
   const bottomPad = Math.max(insets.bottom, Spacing.md);
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible={visible} transparent statusBarTranslucent navigationBarTranslucent animationType="none" onRequestClose={onClose}>
       {/* Fade backdrop */}
       <Animated.View
         style={[StyleSheet.absoluteFill, { backgroundColor: isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK, opacity: backdropOpacity }]}
         pointerEvents="none"
       />
-      <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.kavWrapper}>
+      <KeyboardAvoidingView behavior="padding" style={styles.kavWrapper}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
         {/* Outer: RN Animated for entry slide */}
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
           {/* Inner: Reanimated for drag gesture */}
@@ -174,7 +172,7 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  kavWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  kavWrapper: { flex: 1, justifyContent: 'flex-end' },
   sheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.xl, maxHeight: '85%', gap: Spacing.md, borderTopWidth: 1 },
   handle: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
   title: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },

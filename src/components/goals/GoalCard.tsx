@@ -168,17 +168,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
           },
         ]}
       >
-        {/* Color wash */}
-        <View
-          pointerEvents="none"
-          style={[styles.colorWash, {
-            backgroundColor: hexAlpha(isAtRisk ? Colors.warning : goal.color, 0.10),
-            borderTopLeftRadius: Radius.lg,
-            borderTopRightRadius: Radius.lg,
-          }]}
-        />
-
-        <View style={styles.body}>
+        {/* Color band header — always the goal's own color */}
+        <View style={[styles.header, { backgroundColor: hexAlpha(goal.color, 0.14) }]}>
           <View style={styles.topRow}>
             <View style={styles.iconName}>
               <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.15) }]}>
@@ -219,7 +210,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
               </View>
             </View>
           </View>
+        </View>
 
+        <View style={styles.body}>
           <XPBar stats={stats} compact />
 
           {nextBadgeLabel && (
@@ -304,14 +297,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardDragging: { opacity: 0.9 },
-  colorWash: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 66,
-  },
-  body: { flex: 1, padding: Spacing.md, gap: Spacing.xs },
+  header: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+  body: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.md, gap: Spacing.xs },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
   iconWrap: { width: 42, height: 42, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },

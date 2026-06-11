@@ -26,6 +26,33 @@ export const CATEGORY_ICONS: Record<GoalCategory, string> = {
   other: 'grid',
 };
 
+export interface CustomTrack {
+  label: string;
+  goals: Goal[];
+}
+
+/**
+ * Groups active 'other'-category goals into named skill tracks by customCategoryLabel.
+ * Goals without a label fall into a generic 'Other' track. Label matching is
+ * case-insensitive; the first-seen casing is used for display.
+ */
+export function getCustomTracks(goals: Goal[]): CustomTrack[] {
+  const tracks: CustomTrack[] = [];
+  const byKey = new Map<string, CustomTrack>();
+  goals.filter(g => !g.isArchived && g.category === 'other').forEach(g => {
+    const label = g.customCategoryLabel?.trim() || 'Other';
+    const key = label.toLowerCase();
+    let track = byKey.get(key);
+    if (!track) {
+      track = { label, goals: [] };
+      byKey.set(key, track);
+      tracks.push(track);
+    }
+    track.goals.push(g);
+  });
+  return tracks;
+}
+
 export function getCategoryStats(
   goals: Goal[],
   logs: Log[]
