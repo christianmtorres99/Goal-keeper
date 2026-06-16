@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { todayString } from '../utils/dateUtils';
 import type { Quest } from '../types';
+import { COIN_QUEST_COMPLETE } from '../constants/xp';
+import { useCoinStore } from './coinStore';
+import { usePerkStore } from './perkStore';
+import { useCraftingStore } from './craftingStore';
+import { useGameStore } from './gameStore';
 
 const KEY = 'dailyQuests_v1';
 
@@ -17,7 +22,7 @@ interface QuestStore {
   getTotalEarnedXP: () => number;
 }
 
-function generateQuests(goalIds: string[], goalNames: string[]): Quest[] {
+function generateQuests(goalIds: string[], goalNames: string[], hasBonusQuestPerk: boolean): Quest[] {
   const today = todayString();
   const seed = parseInt(today.replace(/-/g, ''), 10);
   const quests: Quest[] = [];
@@ -63,6 +68,20 @@ function generateQuests(goalIds: string[], goalNames: string[]): Quest[] {
     }
   }
 
+  // Bonus Scroll perk: 4th quest slot
+  if (hasBonusQuestPerk && goalIds.length >= 1) {
+    const bonusVariant = (seed + 1) % 4;
+    if (bonusVariant === 0) {
+      quests.push({ id: 'q_bonus_use_note', type: 'use_note', description: 'Add a note to any log (bonus)', xpReward: 20, progress: 0, target: 1, completed: false });
+    } else if (bonusVariant === 1) {
+      quests.push({ id: 'q_bonus_early_log', type: 'early_log', description: 'Log any goal before 10am (bonus)', xpReward: 30, progress: 0, target: 1, completed: false });
+    } else if (bonusVariant === 2) {
+      quests.push({ id: 'q_bonus_log_count', type: 'log_count', description: 'Log any goal 3 times today (bonus)', xpReward: 35, progress: 0, target: 3, completed: false });
+    } else {
+      quests.push({ id: 'q_bonus_log_all', type: 'log_all', description: `Log all goals today (bonus)`, xpReward: 50, progress: 0, target: Math.max(goalIds.length, 2), completed: false });
+    }
+  }
+
   return quests;
 }
 
@@ -72,6 +91,7 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
 
   loadOrGenerate: async (goalIds, goalNames) => {
     const today = todayString();
+    const hasBonusQuestPerk = usePerkStore.getState().isEquipped('bonus_quest');
     try {
       const raw = await AsyncStorage.getItem(KEY);
       if (raw) {
@@ -82,7 +102,7 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
         }
       }
     } catch {}
-    const newQuests = generateQuests(goalIds, goalNames);
+    const newQuests = generateQuests(goalIds, goalNames, hasBonusQuestPerk);
     set({ quests: newQuests, questsDate: today });
     try { await AsyncStorage.setItem(KEY, JSON.stringify({ date: today, quests: newQuests })); } catch {}
   },
@@ -130,7 +150,23 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
       AsyncStorage.setItem(KEY, JSON.stringify({ date: today, quests: updated })).catch(() => {});
       return { quests: updated };
     });
-    return { xp: quest.xpReward };
+
+    // Apply quest_master perk (+25% XP)
+    let xp = quest.xpReward;
+    if (usePerkStore.getState().isEquipped('quest_master')) {
+      xp = Math.round(xp * 1.25);
+    }
+    // Apply quest_boost consumable (+50% quest XP)
+    if (useCraftingStore.getState().isQuestBoostActive()) {
+      xp = Math.round(xp * 1.5);
+    }
+
+    // Award coins (skip if time manipulated)
+    if (!useGameStore.getState().timeManipulated) {
+      useCoinStore.getState().addCoins(COIN_QUEST_COMPLETE, 'quest').catch(() => {});
+    }
+
+    return { xp };
   },
 
   getTotalAvailableXP: () => get().quests.reduce((s, q) => s + q.xpReward, 0),

@@ -36,23 +36,35 @@ interface GameStore {
   // Personal records
   personalRecords: PersonalRecords;
 
-  // Prestige
+  // Prestige — non-destructive XP offset approach
   prestigeLevel: number;
+  prestigeXPOffset: number;    // subtracted from raw totalXP to give reset-level XP
+  prestigeXPBonus: number;     // +0.05 per prestige (5% XP multiplier bonus)
+  prestigeHistory: string[];   // ISO dates of each prestige event
+
+  // Anti-cheat date integrity
+  lastKnownDate: string | null;
+  timeManipulated: boolean;
 
   // Actions
   load: () => Promise<void>;
-  checkAndClaimLoginBonus: () => number; // returns XP to award (0 if already claimed)
+  checkAndClaimLoginBonus: () => number;
   markLoginClaimed: () => Promise<void>;
   clearPendingLoginXP: () => Promise<void>;
-  onXpEarned: () => Promise<void>; // call after any log; updates xpStreak
-  checkHotStreak: (allGoalsLoggedToday: boolean) => Promise<boolean>; // returns true if hot streak active
+  onXpEarned: () => Promise<void>;
+  checkHotStreak: (allGoalsLoggedToday: boolean) => Promise<boolean>;
   refreshDailyDouble: (goalIds: string[]) => Promise<string | null>;
   startRebuild: (goalId: string) => Promise<void>;
   endRebuild: (goalId: string) => Promise<void>;
   isInRebuild: (goalId: string) => boolean;
-  getRebuildDay: (goalId: string) => number; // 1-7 if in rebuild, 0 otherwise
+  getRebuildDay: (goalId: string) => number;
   updatePersonalRecords: (weekXP: number, monthXP: number, streak: number, dayLogs: number) => Promise<void>;
-  prestige: () => Promise<void>;
+  // Prestige: pass current raw totalXP so we can store the offset non-destructively
+  prestige: (currentTotalXP: number) => Promise<void>;
+  canPrestige: (playerLevel: number) => boolean;
+  getAdjustedXP: (rawTotalXP: number) => number;
+  // Date integrity: call on every app open
+  checkDateIntegrity: () => Promise<boolean>;
 }
 
 const DEFAULT_STATE = {
@@ -68,6 +80,11 @@ const DEFAULT_STATE = {
   rebuildGoals: {} as Record<string, string>,
   personalRecords: { bestWeekXP: 0, bestMonthXP: 0, longestStreak: 0, mostLogsInDay: 0 } as PersonalRecords,
   prestigeLevel: 0 as number,
+  prestigeXPOffset: 0 as number,
+  prestigeXPBonus: 0 as number,
+  prestigeHistory: [] as string[],
+  lastKnownDate: null as string | null,
+  timeManipulated: false as boolean,
 };
 
 async function persist(partial: Record<string, unknown>) {
@@ -198,10 +215,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
     await persist({ personalRecords: updated });
   },
 
-  prestige: async () => {
-    const { prestigeLevel } = get();
+  prestige: async (currentTotalXP: number) => {
+    const { prestigeLevel, prestigeXPOffset, prestigeXPBonus, prestigeHistory } = get();
     const newLevel = prestigeLevel + 1;
-    set({ prestigeLevel: newLevel });
-    await persist({ prestigeLevel: newLevel });
+    const newOffset = prestigeXPOffset + currentTotalXP;
+    const newBonus = Math.round((prestigeXPBonus + 0.05) * 100) / 100;
+    const history = [...prestigeHistory, new Date().toISOString()];
+    set({
+      prestigeLevel: newLevel,
+      prestigeXPOffset: newOffset,
+      prestigeXPBonus: newBonus,
+      prestigeHistory: history,
+    });
+    await persist({ prestigeLevel: newLevel, prestigeXPOffset: newOffset, prestigeXPBonus: newBonus, prestigeHistory: history });
+  },
+
+  canPrestige: (playerLevel: number) => playerLevel >= 25,
+
+  getAdjustedXP: (rawTotalXP: number) => {
+    const { prestigeXPOffset } = get();
+    return Math.max(0, rawTotalXP - prestigeXPOffset);
+  },
+
+  checkDateIntegrity: async () => {
+    const { lastKnownDate } = get();
+    const today = todayString();
+    if (lastKnownDate && today < lastKnownDate) {
+      set({ timeManipulated: true });
+      return false;
+    }
+    set({ lastKnownDate: today, timeManipulated: false });
+    await persist({ lastKnownDate: today, timeManipulated: false });
+    return true;
   },
 }));

@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import BossRaidCard from '../components/home/BossRaidCard';
+import { useRaidStore } from '../store/raidStore';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
@@ -64,7 +66,13 @@ export default function HomeScreen() {
   const { logs, graceStates, addLog, removeLog, loadLogs, addBonusXP } = useLogStore();
   const { checkAndAward, loadBadges } = useBadgeStore();
   const dailyDoubleGoalId = useGameStore(s => s.dailyDoubleGoalId);
+  const timeManipulated = useGameStore(s => s.timeManipulated);
   const quests = useQuestStore(s => s.quests);
+
+  const isRaidActive = useRaidStore(s => s.isRaidActive());
+  const isBossDefeated = useRaidStore(s => s.isBossDefeated());
+
+  const [rankUpMessage, setRankUpMessage] = useState<string | null>(null);
 
   const [pendingBadges, setPendingBadges] = useState<BadgeDefinition[]>([]);
   const [pendingBonusXP, setPendingBonusXP] = useState(0);
@@ -323,8 +331,16 @@ export default function HomeScreen() {
       logHour: new Date().getHours(),
     });
 
+    if (result.rankUp) {
+      const goal = goals.find(g => g.id === goalId);
+      if (goal) setRankUpMessage(`⭐ ${goal.name} leveled up!`);
+    }
+
     const totalDisplayXP = result.log.xpAwarded + result.bonusXP + extraXP;
-    setUndoEntry({ type: 'goal', logId: result.log.id, message: getUndoToastMessage(goalName, totalDisplayXP, extraEvents) });
+    let toastMsg = getUndoToastMessage(goalName, totalDisplayXP, extraEvents);
+    if (result.coinsAwarded > 0) toastMsg += `  ·  +${result.coinsAwarded} 🪙`;
+    if (result.shardDropped) toastMsg += '  ·  💎 Shard!';
+    setUndoEntry({ type: 'goal', logId: result.log.id, message: toastMsg });
 
     if (newBadges.length > 0 || result.bonusXP > 0 || extraXP > 0) {
       setPendingBadges(newBadges);
@@ -463,6 +479,23 @@ export default function HomeScreen() {
         }}
         ListHeaderComponent={
           <View style={styles.headerSection}>
+            {timeManipulated && (
+              <View style={[styles.manipBanner, { backgroundColor: hexAlpha(Colors.warning, 0.15), borderColor: hexAlpha(Colors.warning, 0.35) }]}>
+                <Ionicons name="warning" size={14} color={Colors.warning} />
+                <Text style={[styles.manipBannerText, { color: Colors.warning }]}>Clock anomaly detected — XP paused</Text>
+              </View>
+            )}
+
+            {rankUpMessage && (
+              <TouchableOpacity
+                style={[styles.rankUpBanner, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.35) }]}
+                onPress={() => setRankUpMessage(null)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.rankUpText, { color: Colors.accentBright }]}>{rankUpMessage}</Text>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <Text
@@ -515,6 +548,10 @@ export default function HomeScreen() {
                 totalEarned={questsEarned}
                 totalAvailable={questsAvailable}
               />
+            )}
+
+            {isRaidActive && !isBossDefeated && (
+              <BossRaidCard onPress={() => navigation.navigate('BossRaid')} />
             )}
 
             <TodoSection onComplete={handleTodoComplete} />
@@ -670,6 +707,10 @@ const styles = StyleSheet.create({
   xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   xpCaption: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  manipBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },
+  manipBannerText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, flex: 1 },
+  rankUpBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },
+  rankUpText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   // Logged goals section
   loggedSection: { marginTop: Spacing.md },
   loggedHeader: {

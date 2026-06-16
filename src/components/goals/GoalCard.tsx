@@ -25,6 +25,7 @@ import { useLogStore } from '../../store/logStore';
 import { useRestDayStore } from '../../store/restDayStore';
 import { todayString } from '../../utils/dateUtils';
 import { getNextStreakBadge, getNextLogBadge } from '../../utils/motivationUtils';
+import { getGoalRank } from '../../utils/goalRank';
 
 const BASE_LOG_XP = 50;
 
@@ -72,6 +73,8 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     : nextLogBadge
     ? `${nextLogBadge.logsLeft} logs to ${nextLogBadge.name}`
     : null;
+
+  const rankInfo = getGoalRank(logs.length);
 
   const streakDisplay = streakInfo.currentStreak === 0 && goal.type === 'habit' && !loggedToday
     ? 'Start!'
@@ -174,6 +177,21 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
             <View style={styles.iconName}>
               <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.15) }]}>
                 <Ionicons name={goal.icon as any} size={20} color={goal.color} />
+                {rankInfo.rank !== 'novice' && (
+                  <View style={[styles.rankDot, {
+                    backgroundColor: rankInfo.rank === 'legend' ? '#F5C842' :
+                                     rankInfo.rank === 'master'  ? '#C0A060' :
+                                     rankInfo.rank === 'expert'  ? '#909090' :
+                                     goal.color,
+                  }]}>
+                    <Text style={styles.rankDotText}>
+                      {rankInfo.rank === 'legend' ? '★' :
+                       rankInfo.rank === 'master'  ? '★' :
+                       rankInfo.rank === 'expert'  ? '◆' :
+                       rankInfo.rank === 'journeyman' ? '▲' : '•'}
+                    </Text>
+                  </View>
+                )}
               </View>
               <Text style={[styles.name, { color: Colors.textPrimary }]} numberOfLines={2}>{goal.name}</Text>
             </View>
@@ -301,7 +319,9 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.md, gap: Spacing.xs },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
-  iconWrap: { width: 42, height: 42, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 42, height: 42, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  rankDot: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'transparent' },
+  rankDotText: { fontSize: 7, lineHeight: 9, fontFamily: FontFamily.bold, color: '#fff' },
   name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },

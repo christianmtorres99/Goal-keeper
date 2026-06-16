@@ -46,3 +46,22 @@ export const LEVEL_BASE = 80;
 export const LEVEL_EXPONENT = 1.65;
 export const GRACE_DAY_REFILL_DAYS = 14;
 export const GRACE_DAY_MIN_STREAK = 7;
+
+// ── Coins ─────────────────────────────────────────────────────────────────────
+export const COIN_PER_LOG = 5;
+export const COIN_STREAK_TIER_BONUS = 1; // extra per streak tier above base
+export const COIN_QUEST_COMPLETE = 15;
+export const COIN_BOSS_DEFEAT_NORMAL = 80;
+export const COIN_BOSS_DEFEAT_ELITE = 150;
+export const COIN_BOSS_DEFEAT_LEGENDARY = 250;
+export const COIN_SEASON_CHALLENGE = 30;
+export const COIN_SEASON_COMPLETE = 100;
+export const COIN_PRESTIGE = 500;
+
+// ── Loot Drops ────────────────────────────────────────────────────────────────
+export const SHARD_DROP_CHANCE = 0.04; // 4%
+export const SHARDS_PER_CRAFT = 3;
+
+// ── Anti-cheat ────────────────────────────────────────────────────────────────
+export const RAID_DAMAGE_DAILY_CAP = 120;
+export const PRESTIGE_LEVEL_THRESHOLD = 25;

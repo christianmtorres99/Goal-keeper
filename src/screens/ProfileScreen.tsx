@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
+import AboutCard from '../components/profile/AboutCard';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { Spring, Timing, Stagger } from '../constants/motion';
@@ -26,12 +27,20 @@ import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { useGoalStore } from '../store/goalStore';
 import { useTodoXPStore } from '../store/todoXPStore';
+import { useCoinStore } from '../store/coinStore';
+import { useTitleStore } from '../store/titleStore';
+import { useCraftingStore } from '../store/craftingStore';
+import { useSeasonStore } from '../store/seasonStore';
+import { useGameStore } from '../store/gameStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP, formatStatValue } from '../utils/xpUtils';
 import { getCategoryStats, getCategoryDisplayLabel, getCustomTracks, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS } from '../constants/badges';
+import { getCurrentSeason } from '../constants/seasons';
+import { getTitleDefinition } from '../constants/titles';
+import { todayString } from '../utils/dateUtils';
 import BadgeItem from '../components/common/BadgeItem';
 import XPBar from '../components/common/XPBar';
 import ProfileShareCard, { getLevelTier } from '../components/common/ProfileShareCard';
@@ -63,6 +72,14 @@ const SHARE_BG_COLORS_LIGHT = [
   '#FAFAFA', '#F5ECD7', '#F2D4CC', '#CCE5FF', '#D4F2E8', '#FFF0FB',
 ];
 
+const CONSUMABLE_LABELS: Record<string, { label: string; icon: string; desc: string }> = {
+  xp_surge:    { label: 'XP Surge',      icon: 'flash',          desc: '+50% XP next 5 logs' },
+  lucky_boost: { label: 'Lucky Boost',   icon: 'sparkles',       desc: '2x lucky drop for 24h' },
+  coin_cache:  { label: 'Coin Cache',    icon: 'cash',           desc: '+75 coins immediately' },
+  grace_refill:{ label: 'Grace Refill',  icon: 'shield',         desc: 'Refill grace day for a goal' },
+  quest_boost: { label: 'Quest Boost',   icon: 'list',           desc: '+50% quest XP today' },
+};
+
 export default function ProfileScreen() {
   const { colors: Colors, isLight } = useColors();
   const navigation = useNavigation<Nav>();
@@ -83,9 +100,17 @@ export default function ProfileScreen() {
   const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
+  const [titlePickerVisible, setTitlePickerVisible] = useState(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
+
+  // Game systems
+  const coinBalance = useCoinStore(s => s.balance);
+  const { earnedTitleIds, equippedTitleId } = useTitleStore();
+  const { shardCount, consumables, isSurgeActive, isLuckyBoostActive } = useCraftingStore();
+  const { completedChallengeIds, claimedSeasonIds } = useSeasonStore();
+  const { prestigeLevel, canPrestige, getAdjustedXP, prestigeXPBonus } = useGameStore();
 
   // Section reveal animations
   const revealY0 = useSharedValue(12);
@@ -111,6 +136,19 @@ export default function ProfileScreen() {
   const totalXP = useMemo(() => sumXP(logs) + todoXP, [logs, todoXP]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
   const tier = useMemo(() => getLevelTier(playerStats.level), [playerStats.level]);
+
+  const currentSeason = useMemo(() => getCurrentSeason(todayString()), []);
+  const seasonChallengesCompleted = useMemo(() => {
+    if (!currentSeason) return 0;
+    return currentSeason.challenges.filter(c => completedChallengeIds.includes(c.id)).length;
+  }, [currentSeason, completedChallengeIds]);
+  const seasonClaimed = currentSeason ? claimedSeasonIds.includes(currentSeason.id) : false;
+
+  const equippedTitle = equippedTitleId ? getTitleDefinition(equippedTitleId) : null;
+
+  // Prestige-adjusted stats
+  const adjustedXP = useMemo(() => getAdjustedXP(totalXP), [totalXP, getAdjustedXP]);
+  const adjustedStats = useMemo(() => getPlayerStats(adjustedXP), [adjustedXP]);
 
   const longestStreak = useMemo(() => {
     let max = 0;
@@ -167,12 +205,14 @@ export default function ProfileScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <AnimatedPressable
-          onPress={() => setThemePickerVisible(true)}
-          style={{ marginRight: Spacing.md }}
-        >
-          <Ionicons name="color-palette-outline" size={22} color={Colors.textPrimary} />
-        </AnimatedPressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginRight: Spacing.md }}>
+          <AnimatedPressable onPress={() => navigation.navigate('Shop')}>
+            <Ionicons name="storefront-outline" size={22} color={Colors.textPrimary} />
+          </AnimatedPressable>
+          <AnimatedPressable onPress={() => setThemePickerVisible(true)}>
+            <Ionicons name="color-palette-outline" size={22} color={Colors.textPrimary} />
+          </AnimatedPressable>
+        </View>
       ),
     });
   }, [navigation, Colors.textPrimary]);
@@ -202,6 +242,59 @@ export default function ProfileScreen() {
     } catch {
       Alert.alert('Share failed', 'Could not capture card. Try again.');
     }
+  };
+
+  const handlePrestige = () => {
+    Alert.alert(
+      '✨ Ascension',
+      `Reset your level to 0 for a permanent +5% XP bonus? You keep all badges, goals, coins, and perks. Prestige bonus becomes ${Math.round((prestigeXPBonus + 0.05) * 100)}%.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Ascend',
+          style: 'destructive',
+          onPress: async () => {
+            await useGameStore.getState().prestige(totalXP);
+            await useCoinStore.getState().addCoins(500, 'prestige');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUseConsumable = async (id: string) => {
+    const type = await useCraftingStore.getState().useConsumable(id);
+    if (!type) return;
+    if (type === 'coin_cache') {
+      await useCoinStore.getState().addCoins(75, 'consumable');
+      Alert.alert('Coin Cache', '+75 coins added to your balance!');
+    } else if (type === 'xp_surge') {
+      Alert.alert('XP Surge Active', '+50% XP on your next 5 logs.');
+    } else if (type === 'lucky_boost') {
+      Alert.alert('Lucky Boost Active', '2x lucky drop for the next 24h.');
+    } else if (type === 'quest_boost') {
+      Alert.alert('Quest Boost Active', '+50% quest XP for today.');
+    } else if (type === 'grace_refill') {
+      const activeGoalNames = activeGoals.map(g => g.name);
+      if (activeGoalNames.length === 0) {
+        Alert.alert('No Goals', 'You have no active goals to refill grace for.');
+        return;
+      }
+      Alert.alert(
+        'Grace Refill',
+        'Grace day refilled! Active goals:\n' + activeGoalNames.slice(0, 5).join(', '),
+      );
+    }
+  };
+
+  const handleCraft = async () => {
+    const result = await useCraftingStore.getState().craft();
+    if (!result) {
+      Alert.alert('Not enough shards', `You need 3 shards to craft. You have ${shardCount}.`);
+      return;
+    }
+    const info = CONSUMABLE_LABELS[result.type];
+    Alert.alert('Crafted!', `You received: ${info?.label ?? result.type}\n${info?.desc ?? ''}`);
   };
 
   // Picker helpers
@@ -331,6 +424,12 @@ export default function ProfileScreen() {
           <AnimatedPressable style={styles.shareBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
           </AnimatedPressable>
+
+          {/* Coin chip */}
+          <View style={[styles.coinChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}>
+            <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>🪙 {coinBalance}</Text>
+          </View>
+
           <View style={styles.heroHeader}>
             <AnimatedPressable
               style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
@@ -339,15 +438,40 @@ export default function ProfileScreen() {
               <Ionicons name={tier.icon as any} size={48} color={tier.color} />
             </AnimatedPressable>
             <AnimatedPressable style={styles.heroInfo} onPress={() => setLevelLadderVisible(true)}>
-              <Text style={[styles.heroLevel, { color: tier.color }]}>{playerStats.level}</Text>
+              <Text style={[styles.heroLevel, { color: tier.color }]}>{adjustedStats.level}</Text>
+              {prestigeLevel > 0 && (
+                <Text style={[styles.prestigeStars, { color: Colors.accentBright }]}>
+                  {'⭐'.repeat(Math.min(prestigeLevel, 5))}
+                </Text>
+              )}
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
+              {/* Title display */}
+              {equippedTitle ? (
+                <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
+                  <Text style={[styles.titleLabel, { color: Colors.accentBright }]}>{equippedTitle.label}</Text>
+                </AnimatedPressable>
+              ) : (
+                <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
+                  <Text style={[styles.titleLabel, { color: Colors.textDisabled }]}>— Tap to set title —</Text>
+                </AnimatedPressable>
+              )}
               <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP total</Text>
-              <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(playerStats.xpForNextLevel - playerStats.xpIntoLevel).toLocaleString()} XP to Level {playerStats.level + 1}</Text>
+              <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(adjustedStats.xpForNextLevel - adjustedStats.xpIntoLevel).toLocaleString()} XP to Level {adjustedStats.level + 1}</Text>
             </AnimatedPressable>
           </View>
           <View style={{ width: '100%' }}>
-            <XPBar stats={playerStats} hideLevel />
+            <XPBar stats={adjustedStats} hideLevel />
           </View>
+
+          {/* Ascend button if eligible */}
+          {canPrestige(adjustedStats.level) && (
+            <AnimatedPressable
+              style={[styles.ascendBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: Colors.accentBright }]}
+              onPress={handlePrestige}
+            >
+              <Text style={[styles.ascendBtnText, { color: Colors.accentBright }]}>✨ Ascend</Text>
+            </AnimatedPressable>
+          )}
 
           {/* 3 feature slots */}
           <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Achievements</Text>
@@ -422,13 +546,35 @@ export default function ProfileScreen() {
 
         {/* Skill Tracks */}
         <Animated.View style={reveal2}>
-        {(activeCategories.length > 0 || customTracks.length > 0) && (
+        {(activeCategories.length > 0 || customTracks.length > 0 || currentSeason) && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
               <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Skill Tracks</Text>
             </View>
             <View style={styles.skillGrid}>
+              {/* Current Season card — shown first */}
+              {currentSeason && (
+                <AnimatedPressable
+                  onPress={() => navigation.navigate('Season')}
+                  style={[styles.trackCard, { backgroundColor: Colors.bg1, borderColor: currentSeason.accentColor, borderWidth: 1.5 }]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
+                    <View style={{ width: 40, height: 40, borderRadius: Radius.md, backgroundColor: hexAlpha(currentSeason.accentColor, 0.15), alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name={currentSeason.icon as any} size={22} color={currentSeason.accentColor} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.trackName, { color: Colors.textPrimary }]}>{currentSeason.name}</Text>
+                      <Text style={[styles.trackSub, { color: Colors.textSecondary }]}>
+                        {seasonChallengesCompleted}/{currentSeason.challenges.length} challenges
+                        {seasonClaimed ? ' · Claimed ✓' : ''}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+                  </View>
+                </AnimatedPressable>
+              )}
+
               {activeCategories.map(cat => {
                 const cs = categoryStats[cat]!;
                 return (
@@ -499,6 +645,71 @@ export default function ProfileScreen() {
         )}
         </Animated.View>
 
+        {/* Inventory section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
+            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Inventory</Text>
+          </View>
+
+          {/* Shard count + craft */}
+          <View style={[styles.shardRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <View style={styles.shardInfo}>
+              <Text style={[styles.shardCount, { color: Colors.textPrimary }]}>🔮 {shardCount} / 3 Shards</Text>
+              <View style={[styles.shardBarBg, { backgroundColor: Colors.border }]}>
+                <View style={[styles.shardBarFill, { backgroundColor: Colors.accentBright, width: `${Math.min((shardCount / 3) * 100, 100)}%` as any }]} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs }}>
+                {isSurgeActive() && (
+                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha('#FFD700', 0.20) }]}>
+                    <Text style={[styles.boostBadgeText, { color: '#FFD700' }]}>⚡ Surge Active</Text>
+                  </View>
+                )}
+                {isLuckyBoostActive() && (
+                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha('#9B59B6', 0.20) }]}>
+                    <Text style={[styles.boostBadgeText, { color: '#9B59B6' }]}>✨ Lucky Active</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            {shardCount >= 3 && (
+              <AnimatedPressable
+                style={[styles.craftBtn, { backgroundColor: Colors.accentBright }]}
+                onPress={handleCraft}
+              >
+                <Text style={[styles.craftBtnText, { color: Colors.bg0 }]}>Craft</Text>
+              </AnimatedPressable>
+            )}
+          </View>
+
+          {/* Consumables */}
+          {consumables.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.sm, paddingBottom: Spacing.xs }}>
+              {consumables.map(item => {
+                const info = CONSUMABLE_LABELS[item.type] ?? { label: item.type, icon: 'cube-outline', desc: '' };
+                return (
+                  <View
+                    key={item.id}
+                    style={[styles.consumableCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
+                  >
+                    <Ionicons name={info.icon as any} size={24} color={Colors.accentBright} />
+                    <Text style={[styles.consumableLabel, { color: Colors.textPrimary }]}>{info.label}</Text>
+                    <Text style={[styles.consumableDesc, { color: Colors.textSecondary }]}>{info.desc}</Text>
+                    <AnimatedPressable
+                      style={[styles.useBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: Colors.accentBright }]}
+                      onPress={() => handleUseConsumable(item.id)}
+                    >
+                      <Text style={[styles.useBtnText, { color: Colors.accentBright }]}>Use</Text>
+                    </AnimatedPressable>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <Text style={[styles.emptyInventory, { color: Colors.textDisabled }]}>No consumables — craft some with shards!</Text>
+          )}
+        </View>
+
         {renderBadgeSection('Streak Badges', streakBadges)}
         {renderBadgeSection('Log Count Badges', logBadges)}
         {renderBadgeSection('Consistency Badges', consistencyBadges)}
@@ -507,6 +718,11 @@ export default function ProfileScreen() {
         {renderBadgeSection('Todo Completions', todoBadges)}
         {renderBadgeSection('Journal Streaks', journalBadges)}
         {renderBadgeSection('Time of Day', timeBadges)}
+
+        {/* About card */}
+        <View style={{ marginTop: Spacing.lg }}>
+          <AboutCard />
+        </View>
       </ScrollView>
 
       {/* Theme picker modal */}
@@ -516,7 +732,7 @@ export default function ProfileScreen() {
       <BadgeDetailModal badgeId={selectedBadgeId} onClose={() => setSelectedBadgeId(null)} />
 
       {/* Level ladder modal */}
-      <LevelLadderModal visible={levelLadderVisible} currentLevel={playerStats.level} onClose={() => setLevelLadderVisible(false)} />
+      <LevelLadderModal visible={levelLadderVisible} currentLevel={adjustedStats.level} onClose={() => setLevelLadderVisible(false)} />
 
       {/* Feature picker modal */}
       <Modal visible={pickerVisible} animationType="slide" onRequestClose={() => setPickerVisible(false)}>
@@ -539,6 +755,55 @@ export default function ProfileScreen() {
           </AnimatedPressable>
         </SafeAreaView>
       </Modal>
+
+      {/* Title picker modal */}
+      <Modal visible={titlePickerVisible} animationType="slide" onRequestClose={() => setTitlePickerVisible(false)}>
+        <SafeAreaView style={[styles.pickerScreen, { backgroundColor: Colors.bg0 }]}>
+          <View style={styles.pickerTopBar}>
+            <Text style={[styles.pickerTitle, { color: Colors.textPrimary }]}>Choose a Title</Text>
+            <AnimatedPressable onPress={() => setTitlePickerVisible(false)} style={{ padding: Spacing.sm }}>
+              <Ionicons name="close" size={24} color={Colors.textSecondary} />
+            </AnimatedPressable>
+          </View>
+          {earnedTitleIds.length === 0 ? (
+            <Text style={[styles.pickerSubtitle, { color: Colors.textSecondary }]}>
+              Complete achievements to earn titles.
+            </Text>
+          ) : (
+            <ScrollView contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing.xxl }}>
+              {earnedTitleIds.map(id => {
+                const def = getTitleDefinition(id);
+                if (!def) return null;
+                const isEquipped = equippedTitleId === id;
+                return (
+                  <AnimatedPressable
+                    key={id}
+                    style={[
+                      styles.pickerRow,
+                      { backgroundColor: Colors.bg1, borderColor: Colors.border },
+                      isEquipped && { borderColor: Colors.accentBright, backgroundColor: Colors.accentDim },
+                    ]}
+                    onPress={async () => {
+                      await useTitleStore.getState().equipTitle(id);
+                      setTitlePickerVisible(false);
+                    }}
+                  >
+                    <Ionicons name="ribbon-outline" size={22} color={isEquipped ? Colors.accentBright : Colors.textSecondary} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.pickerLabel, { color: Colors.textPrimary }]}>{def.label}</Text>
+                      <Text style={[styles.consumableDesc, { color: Colors.textSecondary }]}>{def.description}</Text>
+                    </View>
+                    {isEquipped && <Ionicons name="checkmark-circle" size={20} color={Colors.accentBright} />}
+                  </AnimatedPressable>
+                );
+              })}
+            </ScrollView>
+          )}
+          <AnimatedPressable style={[styles.pickerDone, { backgroundColor: Colors.accent }]} onPress={() => setTitlePickerVisible(false)}>
+            <Text style={[styles.pickerDoneText, { color: Colors.textPrimary }]}>Done</Text>
+          </AnimatedPressable>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -556,6 +821,16 @@ const styles = StyleSheet.create({
   heroXP: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   heroNext: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   shareBtn: { position: 'absolute', top: Spacing.md, right: Spacing.md, padding: Spacing.xs, zIndex: 1 },
+
+  coinChip: { position: 'absolute', top: Spacing.md, left: Spacing.md, borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3, zIndex: 1 },
+  coinChipText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
+
+  prestigeStars: { fontSize: FontSize.sm, letterSpacing: 1 },
+
+  ascendBtn: { borderRadius: Radius.full, borderWidth: 1.5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, alignSelf: 'center' },
+  ascendBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold, letterSpacing: 0.5 },
+
+  titleLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, letterSpacing: 0.5, marginTop: 2 },
 
   pickerSublabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
@@ -594,6 +869,29 @@ const styles = StyleSheet.create({
   skillGoalCount: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   skillLevelBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   skillLevel: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+
+  // Season / track card
+  trackCard: { borderRadius: Radius.lg, padding: Spacing.md },
+  trackName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  trackSub: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
+
+  // Inventory
+  shardRow: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, gap: Spacing.sm },
+  shardInfo: { flex: 1, gap: 4 },
+  shardCount: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  shardBarBg: { height: 6, borderRadius: Radius.full, overflow: 'hidden' },
+  shardBarFill: { height: 6, borderRadius: Radius.full },
+  boostBadge: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  boostBadgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
+  craftBtn: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
+  craftBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
+
+  consumableCard: { width: 120, borderRadius: Radius.lg, padding: Spacing.sm, borderWidth: 1, gap: 4, alignItems: 'center' },
+  consumableLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textAlign: 'center' },
+  consumableDesc: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, textAlign: 'center', color: 'gray' },
+  useBtn: { borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3, marginTop: 4 },
+  useBtnText: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
+  emptyInventory: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center', paddingVertical: Spacing.sm },
 
   // Picker modal
   pickerScreen: { flex: 1 },

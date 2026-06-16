@@ -63,6 +63,23 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'level_20', category: 'level', rarity: 'legendary', label: 'Master',       description: 'Reach Level 20', icon: 'planet',          threshold: 20 },
   { id: 'level_25', category: 'level', rarity: 'legendary', label: 'Grand Master', description: 'Reach Level 25', icon: 'thunderstorm',    threshold: 25 },
   { id: 'level_50', category: 'level', rarity: 'legendary', label: 'Immortal',     description: 'Reach Level 50', icon: 'infinite',        threshold: 50 },
+
+  // Boss Raid badges
+  { id: 'raid_normal_1',    category: 'consistency', rarity: 'uncommon',  label: 'First Blood',           description: 'Defeat your first boss',            icon: 'skull-outline',    threshold: 1 },
+  { id: 'raid_elite_1',     category: 'consistency', rarity: 'rare',      label: 'Elite Slayer',          description: 'Defeat your first elite boss',      icon: 'skull',            threshold: 1 },
+  { id: 'raid_legendary_1', category: 'consistency', rarity: 'legendary', label: 'Legendary Vanquisher',  description: 'Defeat your first legendary boss',  icon: 'trophy',           threshold: 1 },
+  { id: 'raid_streak_3',    category: 'consistency', rarity: 'rare',      label: 'Raid Runner',           description: 'Defeat 3 raid bosses total',        icon: 'flame',            threshold: 3 },
+
+  // Seasonal badges
+  { id: 'season_winter_2026', category: 'consistency', rarity: 'legendary', label: 'Winter Warrior',   description: 'Complete all Winter 2026 challenges',  icon: 'snow-outline',          threshold: 1 },
+  { id: 'season_spring_2026', category: 'consistency', rarity: 'legendary', label: 'Spring Surge',     description: 'Complete all Spring 2026 challenges',  icon: 'leaf-outline',          threshold: 1 },
+  { id: 'season_summer_2026', category: 'consistency', rarity: 'legendary', label: 'Summer Grinder',   description: 'Complete all Summer 2026 challenges',  icon: 'sunny-outline',         threshold: 1 },
+  { id: 'season_fall_2026',   category: 'consistency', rarity: 'legendary', label: 'Fall Finisher',    description: 'Complete all Fall 2026 challenges',    icon: 'partly-sunny-outline',  threshold: 1 },
+
+  // Prestige badges
+  { id: 'prestige_1', category: 'level', rarity: 'legendary', label: 'First Ascension', description: 'Complete your first prestige',  icon: 'star',          threshold: 1 },
+  { id: 'prestige_2', category: 'level', rarity: 'legendary', label: 'Twice Reborn',    description: 'Complete your second prestige', icon: 'star-half',     threshold: 2 },
+  { id: 'prestige_3', category: 'level', rarity: 'legendary', label: 'The Eternal',     description: 'Complete your third prestige',  icon: 'infinite',      threshold: 3 },
 ];
 
 export const RARITY_COLORS: Record<string, string> = {

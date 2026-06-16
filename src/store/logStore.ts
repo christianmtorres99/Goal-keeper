@@ -4,9 +4,23 @@ import type { Log, LogEvent } from '../types';
 import { todayString, daysBetween } from '../utils/dateUtils';
 import { calculateXPForLog } from '../logic/xpEngine';
 import { computeStreakWithGrace, isAlreadyLoggedToday } from '../logic/streakEngine';
-import { BONUS_XP, DIFFICULTY_MULTIPLIERS, LUCKY_DROP_CHANCE } from '../constants/xp';
+import {
+  BONUS_XP,
+  DIFFICULTY_MULTIPLIERS,
+  LUCKY_DROP_CHANCE,
+  STREAK_MULTIPLIERS,
+  COIN_PER_LOG,
+  COIN_STREAK_TIER_BONUS,
+  SHARD_DROP_CHANCE,
+} from '../constants/xp';
 import { useGoalStore } from './goalStore';
 import { useRestDayStore } from './restDayStore';
+import { usePerkStore } from './perkStore';
+import { useGameStore } from './gameStore';
+import { useCoinStore } from './coinStore';
+import { useCraftingStore } from './craftingStore';
+import { useRaidStore } from './raidStore';
+import { getGoalRank } from '../utils/goalRank';
 
 function uuid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -24,7 +38,20 @@ interface LogStore {
   graceStates: Record<string, GraceState>;
   comebackAwardedDate: string | null;
   loadLogs: () => Promise<void>;
-  addLog: (goalId: string, note?: string, logDate?: string, allowMultiple?: boolean, count?: number) => Promise<{ log: Log; bonusXP: number; events: LogEvent[] } | null>;
+  addLog: (
+    goalId: string,
+    note?: string,
+    logDate?: string,
+    allowMultiple?: boolean,
+    count?: number,
+  ) => Promise<{
+    log: Log;
+    bonusXP: number;
+    events: LogEvent[];
+    coinsAwarded: number;
+    shardDropped: boolean;
+    rankUp: boolean;
+  } | null>;
   removeLog: (logId: string) => Promise<void>;
   getLogsForGoal: (goalId: string) => Log[];
   getLogsForDate: (date: string) => Log[];
@@ -80,31 +107,90 @@ export const useLogStore = create<LogStore>((set, get) => ({
       // Block duplicate logs on the same date (unless allowMultiple is true)
       if (!allowMultiple && goalLogs.some(l => l.logDate === dateToLog)) return null;
 
+      // Anti-cheat: For habit goals, only the first log of the day earns XP/coins/shards
+      const goalData = useGoalStore.getState().goals.find(g => g.id === goalId);
+      const isHabitDuplicate =
+        goalData?.type === 'habit' &&
+        goalLogs.some(l => l.logDate === dateToLog && l.xpAwarded > 0);
+      const isZeroAward = isHabitDuplicate && !isPastDay;
+
       const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
       const prevStreak = computeStreakWithGrace(goalLogs, grace.graceDayUsed, grace.graceDayRefillDate);
       const isFirst = goalLogs.length === 0;
 
-      const goalData = useGoalStore.getState().goals.find(g => g.id === goalId);
       const diffMult = DIFFICULTY_MULTIPLIERS[goalData?.difficulty ?? 'medium'] ?? 1.0;
 
       // For past-day logs, award base XP only (no retroactive streak bonuses)
       let xpAwarded: number;
+      let newStreak = 0;
       if (isPastDay) {
         xpAwarded = 15;
       } else {
-        const newStreak = prevStreak.currentStreak + 1;
+        newStreak = prevStreak.currentStreak + 1;
         xpAwarded = Math.round(calculateXPForLog(newStreak) * diffMult);
       }
 
-      // Lucky drop: 15% chance to double xpAwarded (only for today's logs)
+      // Lucky drop: use lucky_charm perk or crafting boost to adjust chance
       const events: LogEvent[] = [];
       let bonusXP = 0;
-      if (!isPastDay) {
-        const isLucky = Math.random() < LUCKY_DROP_CHANCE;
+      if (!isPastDay && !isZeroAward) {
+        const luckyBoostActive = useCraftingStore.getState().isLuckyBoostActive();
+        const baseChance = usePerkStore.getState().isEquipped('lucky_charm')
+          ? 0.25
+          : LUCKY_DROP_CHANCE;
+        const luckyChance = luckyBoostActive ? baseChance * 2 : baseChance;
+
+        const isLucky = Math.random() < luckyChance;
         if (isLucky) {
           xpAwarded = Math.round(xpAwarded * 2);
           events.push('luckyDrop');
+          useCraftingStore.getState().incrementLuckyDropCount().catch(() => {});
         }
+      } else if (!isPastDay) {
+        // isZeroAward: skip lucky drop
+      } else {
+        // isPastDay: skip lucky drop
+      }
+
+      // XP surge consumable
+      if (!isPastDay && !isZeroAward) {
+        const { isSurgeActive, consumeSurge, activeSurge } = useCraftingStore.getState();
+        if (isSurgeActive()) {
+          xpAwarded = Math.round(xpAwarded * (activeSurge?.multiplier ?? 1.5));
+          consumeSurge().catch(() => {});
+        }
+      }
+
+      // Scholar's Mark perk: +15% XP
+      if (usePerkStore.getState().isEquipped('scholars_mark') && !isPastDay && !isZeroAward) {
+        xpAwarded = Math.round(xpAwarded * 1.15);
+      }
+
+      // Prestige XP bonus
+      const prestigeBonus = useGameStore.getState().prestigeXPBonus;
+      if (prestigeBonus > 0 && !isPastDay && !isZeroAward) {
+        xpAwarded = Math.round(xpAwarded * (1 + prestigeBonus));
+      }
+
+      // Debuff effects on XP (from raid)
+      const debuff = useRaidStore.getState().getActiveDebuff();
+      if (debuff && !isPastDay && !isZeroAward) {
+        if (debuff.type === 'xp_penalty') {
+          xpAwarded = Math.round(xpAwarded * debuff.magnitude);
+        } else if (debuff.type === 'all_half') {
+          xpAwarded = Math.round(xpAwarded * (1 - (1 - 0.80) * debuff.magnitude));
+        }
+        if (debuff.type === 'streak_cap' && !isPastDay) {
+          const difficultyBonus = { easy: 0, medium: 2, hard: 5, extreme: 10 }[goalData?.difficulty ?? 'medium'] ?? 2;
+          // Cap multiplier: streak_cap.magnitude = max allowed streak tier multiplier
+          const cappedXP = Math.round(calculateXPForLog(Math.min(newStreak, 3)) * diffMult);
+          if (xpAwarded > cappedXP) xpAwarded = cappedXP;
+        }
+      }
+
+      // Zero-award: override all xp to 0 for extra habit logs
+      if (isZeroAward) {
+        xpAwarded = 0;
       }
 
       const log: Log = {
@@ -127,7 +213,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
       // For past-day logs: skip grace day update and bonus event detection
       if (isPastDay) {
         set(s => ({ logs: [...s.logs, log] }));
-        return { log, bonusXP: 0, events: [] };
+        return { log, bonusXP: 0, events: [], coinsAwarded: 0, shardDropped: false, rankUp: false };
       }
 
       // Recompute streak with the new log included
@@ -142,53 +228,55 @@ export const useLogStore = create<LogStore>((set, get) => ({
       // --- Detect bonus events ---
       // (events and bonusXP already initialized above)
 
-      // Time bonus: earlyBird before 9am, nightOwl after 10pm
-      const hour = new Date().getHours();
-      if (hour < 9) {
-        bonusXP += BONUS_XP.earlyBird;
-        events.push('earlyBird');
-      } else if (hour >= 22) {
-        bonusXP += BONUS_XP.nightOwl;
-        events.push('nightOwl');
-      }
+      if (!isZeroAward) {
+        // Time bonus: earlyBird before 9am, nightOwl after 10pm
+        const hour = new Date().getHours();
+        if (hour < 9) {
+          bonusXP += BONUS_XP.earlyBird;
+          events.push('earlyBird');
+        } else if (hour >= 22) {
+          bonusXP += BONUS_XP.nightOwl;
+          events.push('nightOwl');
+        }
 
-      // gap > 1 means streak was broken; comeback = they're logging again after a break
-      const wasGap = prevStreak.lastLogDate
-        ? daysBetween(prevStreak.lastLogDate, today) > 1
-        : false;
+        // gap > 1 means streak was broken; comeback = they're logging again after a break
+        const wasGap = prevStreak.lastLogDate
+          ? daysBetween(prevStreak.lastLogDate, today) > 1
+          : false;
 
-      if (isFirst) {
-        events.push('firstLog');
-        bonusXP += BONUS_XP.firstLog;
-      }
+        if (isFirst) {
+          events.push('firstLog');
+          bonusXP += BONUS_XP.firstLog;
+        }
 
-      if (!isFirst && wasGap && get().comebackAwardedDate !== today) {
-        events.push('comeback');
-        bonusXP += BONUS_XP.comeback;
-        set(s => ({ ...s, comebackAwardedDate: today }));
-      }
+        if (!isFirst && wasGap && get().comebackAwardedDate !== today) {
+          events.push('comeback');
+          bonusXP += BONUS_XP.comeback;
+          set(s => ({ ...s, comebackAwardedDate: today }));
+        }
 
-      // Bug fix: compare new streak against PREVIOUS longest streak
-      if (!isFirst && newGrace.currentStreak > prevStreak.longestStreak) {
-        events.push('newBest');
-        bonusXP += BONUS_XP.newPersonalBest;
-      }
+        // Bug fix: compare new streak against PREVIOUS longest streak
+        if (!isFirst && newGrace.currentStreak > prevStreak.longestStreak) {
+          events.push('newBest');
+          bonusXP += BONUS_XP.newPersonalBest;
+        }
 
-      const graceConsumedThisLog = !grace.graceDayUsed && newGrace.graceDayUsed;
-      if (newGrace.currentStreak > 0 && newGrace.currentStreak % 7 === 0 && !graceConsumedThisLog) {
-        events.push('perfectWeek');
-        bonusXP += BONUS_XP.perfectWeek;
-      }
+        const graceConsumedThisLog = !grace.graceDayUsed && newGrace.graceDayUsed;
+        if (newGrace.currentStreak > 0 && newGrace.currentStreak % 7 === 0 && !graceConsumedThisLog) {
+          events.push('perfectWeek');
+          bonusXP += BONUS_XP.perfectWeek;
+        }
 
-      // Perfect month: every day from the 1st to today has at least one log (unique dates)
-      const monthStart = `${today.slice(0, 7)}-01`;
-      const daysInRange = daysBetween(monthStart, today) + 1;
-      const uniqueDaysLogged = new Set(
-        updatedGoalLogs.filter(l => l.logDate >= monthStart && l.logDate <= today).map(l => l.logDate)
-      ).size;
-      if (uniqueDaysLogged >= daysInRange && daysInRange > 1) {
-        events.push('perfectMonth');
-        bonusXP += BONUS_XP.perfectMonth;
+        // Perfect month: every day from the 1st to today has at least one log (unique dates)
+        const monthStart = `${today.slice(0, 7)}-01`;
+        const daysInRange = daysBetween(monthStart, today) + 1;
+        const uniqueDaysLogged = new Set(
+          updatedGoalLogs.filter(l => l.logDate >= monthStart && l.logDate <= today).map(l => l.logDate)
+        ).size;
+        if (uniqueDaysLogged >= daysInRange && daysInRange > 1) {
+          events.push('perfectMonth');
+          bonusXP += BONUS_XP.perfectMonth;
+        }
       }
 
       // Persist bonus XP back to the log row
@@ -198,6 +286,17 @@ export const useLogStore = create<LogStore>((set, get) => ({
       }
 
       const hadAnyLogToday = get().logs.some(l => l.logDate === today);
+
+      // Rank-up detection (before updating state so we have previous count)
+      const prevCount = goalLogs.length;
+      const newCount = prevCount + 1;
+      const prevRankInfo = getGoalRank(prevCount);
+      const newRankInfo = getGoalRank(newCount);
+      const didRankUp = prevRankInfo.rank !== newRankInfo.rank;
+      if (didRankUp) {
+        events.push('rankUp');
+      }
+
       set(s => ({
         logs: [...s.logs, log],
         graceStates: {
@@ -213,7 +312,62 @@ export const useLogStore = create<LogStore>((set, get) => ({
         );
       }
 
-      return { log, bonusXP, events };
+      // --- Coin award ---
+      let coinsAwarded = 0;
+      if (!isZeroAward && !useGameStore.getState().timeManipulated) {
+        const streakTier = Math.max(
+          0,
+          STREAK_MULTIPLIERS.filter(m => newStreak >= m.minDay).length - 1,
+        );
+        let coinAmount = COIN_PER_LOG + streakTier * COIN_STREAK_TIER_BONUS;
+        if (usePerkStore.getState().isEquipped('coin_magnet')) {
+          coinAmount = Math.round(coinAmount * 1.5);
+        }
+        const coinDebuff = useRaidStore.getState().getActiveDebuff();
+        const noCoins =
+          coinDebuff?.type === 'no_coins' ||
+          (coinDebuff?.type === 'all_half' && Math.random() > 0.5);
+        if (!noCoins) {
+          useCoinStore.getState().addCoins(coinAmount, 'log').catch(() => {});
+          coinsAwarded = coinAmount;
+        }
+      }
+
+      // --- Shard drop ---
+      let shardDropped = false;
+      if (!isZeroAward && !useGameStore.getState().timeManipulated) {
+        if (Math.random() < SHARD_DROP_CHANCE) {
+          useCraftingStore.getState().addShard(1).catch(() => {});
+          events.push('shardDrop');
+          shardDropped = true;
+        }
+      }
+
+      // --- Raid damage ---
+      if (!isZeroAward) {
+        const raidState = useRaidStore.getState();
+        if (raidState.isRaidActive() && !raidState.isBossDefeated()) {
+          const difficultyBonus =
+            { easy: 0, medium: 2, hard: 5, extreme: 10 }[goalData?.difficulty ?? 'medium'] ?? 2;
+          const streakTierForDmg = Math.max(
+            0,
+            STREAK_MULTIPLIERS.filter(m => newStreak >= m.minDay).length - 1,
+          );
+          const damage = Math.round(10 + Math.max(0, streakTierForDmg - 1) * 5 + difficultyBonus);
+          const applied = await raidState.applyDamage(damage);
+          if (applied > 0) {
+            const currentState = useRaidStore.getState();
+            if (
+              currentState.damageDealt >= (currentState.currentBoss?.maxHP ?? Infinity) &&
+              !currentState.isBossDefeated()
+            ) {
+              await currentState.defeatBoss();
+            }
+          }
+        }
+      }
+
+      return { log, bonusXP, events, coinsAwarded, shardDropped, rankUp: didRankUp };
     } catch (e) {
       console.error('addLog failed:', e);
       throw e;

@@ -17,6 +17,9 @@ import AddGoalScreen from '../screens/AddGoalScreen';
 import ArchivedGoalsScreen from '../screens/ArchivedGoalsScreen';
 import SkillTrackScreen from '../screens/SkillTrackScreen';
 import JournalScreen from '../screens/JournalScreen';
+import BossRaidScreen from '../screens/BossRaidScreen';
+import SeasonScreen from '../screens/SeasonScreen';
+import ShopScreen from '../screens/ShopScreen';
 import type { GoalCategory } from '../types';
 
 export type RootStackParamList = {
@@ -26,6 +29,9 @@ export type RootStackParamList = {
   ArchivedGoals: undefined;
   SkillTrack: { category: GoalCategory; customLabel?: string };
   Journal: { date?: string } | undefined;
+  BossRaid: undefined;
+  Season: undefined;
+  Shop: undefined;
 };
 
 export type TabParamList = {
@@ -133,6 +139,9 @@ export default function AppNavigator() {
         component={JournalScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen name="BossRaid" component={BossRaidScreen} options={{ title: 'Boss Raid' }} />
+      <Stack.Screen name="Season" component={SeasonScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Shop" component={ShopScreen} options={{ title: 'Perk Shop', headerTitleAlign: 'center' }} />
     </Stack.Navigator>
   );
 }

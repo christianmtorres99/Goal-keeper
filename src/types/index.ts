@@ -87,7 +87,121 @@ export type LogEvent =
   | 'nightOwl'
   | 'hotStreak'
   | 'dailyDouble'
-  | 'streakRebuild';
+  | 'streakRebuild'
+  | 'rankUp'
+  | 'shardDrop';
+
+// ── Goal Ranks ────────────────────────────────────────────────────────────────
+export type GoalRank = 'novice' | 'apprentice' | 'journeyman' | 'expert' | 'master' | 'legend';
+
+export interface GoalRankInfo {
+  rank: GoalRank;
+  label: string;
+  logThreshold: number;       // logs needed to reach this rank
+  nextThreshold: number | null; // null at legend
+}
+
+// ── Boss Raids ────────────────────────────────────────────────────────────────
+export type BossTier = 'normal' | 'elite' | 'legendary';
+export type DebuffType = 'xp_penalty' | 'no_lucky_drop' | 'quest_penalty' | 'no_coins' | 'streak_cap' | 'all_half';
+
+export interface BossDefinition {
+  id: string;
+  tier: BossTier;
+  name: string;
+  icon: string;
+  flavor: string;
+  debuffType: DebuffType;
+  debuffMag: number;
+  debuffLabel: string;
+}
+
+export interface ActiveBoss {
+  definitionId: string;
+  maxHP: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface Debuff {
+  type: DebuffType;
+  magnitude: number;
+  label: string;
+  activeForDate: string;
+}
+
+// ── Seasonal Challenges ───────────────────────────────────────────────────────
+export type ChallengeType =
+  | 'total_logs_distinct'
+  | 'streak_reach'
+  | 'quest_count'
+  | 'boss_defeat'
+  | 'category_logs'
+  | 'consecutive_days';
+
+export interface SeasonChallenge {
+  id: string;
+  title: string;
+  description: string;
+  type: ChallengeType;
+  target: number;
+  category?: GoalCategory;  // for category_logs type
+  coinReward: number;
+}
+
+export interface SeasonDefinition {
+  id: string;
+  name: string;
+  theme: string;
+  accentColor: string;
+  icon: string;
+  startDate: string;
+  endDate: string;
+  challenges: SeasonChallenge[];
+  completionBadgeId: string;
+  completionCoinBonus: number;
+}
+
+// ── Perks ─────────────────────────────────────────────────────────────────────
+export type PerkCategory = 'xp' | 'streak' | 'quest' | 'coins';
+
+export interface PerkDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost: number;
+  category: PerkCategory;
+}
+
+// ── Titles ────────────────────────────────────────────────────────────────────
+export type TitleEarnCondition =
+  | { type: 'streak'; min: number }
+  | { type: 'badge'; badgeId: string }
+  | { type: 'category_logs'; category: GoalCategory; min: number }
+  | { type: 'quest_count'; min: number }
+  | { type: 'boss_defeat'; tier?: BossTier }
+  | { type: 'season_complete' }
+  | { type: 'goal_rank'; rank: GoalRank }
+  | { type: 'prestige' }
+  | { type: 'lifetime_coins'; min: number }
+  | { type: 'lucky_drop_count'; min: number };
+
+export interface TitleDefinition {
+  id: string;
+  label: string;
+  condition: TitleEarnCondition;
+  description: string;
+}
+
+// ── Crafting ──────────────────────────────────────────────────────────────────
+export type ConsumableType = 'xp_surge' | 'lucky_boost' | 'coin_cache' | 'grace_refill' | 'quest_boost';
+
+export interface Consumable {
+  id: string;
+  type: ConsumableType;
+  craftedAt: string;
+}
 
 export interface Quest {
   id: string;

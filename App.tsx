@@ -26,6 +26,14 @@ import { useScheduledTaskStore } from './src/store/scheduledTaskStore';
 import { useTodoStore } from './src/store/todoStore';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { useColors } from './src/hooks/useColors';
+import { useCoinStore } from './src/store/coinStore';
+import { useRaidStore } from './src/store/raidStore';
+import { useSeasonStore } from './src/store/seasonStore';
+import { usePerkStore } from './src/store/perkStore';
+import { useTitleStore } from './src/store/titleStore';
+import { useCraftingStore } from './src/store/craftingStore';
+import { getPlayerStats } from './src/logic/xpEngine';
+import { sumXP } from './src/utils/xpUtils';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -83,6 +91,26 @@ export default function App() {
         await useThemeStore.getState().loadTheme();
         await useScheduledTaskStore.getState().loadScheduledTasks();
         await useScheduledTaskStore.getState().generateTodaysTasks();
+
+        // New stores
+        await useCoinStore.getState().load();
+        await usePerkStore.getState().load();
+        await useTitleStore.getState().load();
+        await useSeasonStore.getState().load();
+        await useCraftingStore.getState().load();
+        await useRaidStore.getState().load();
+
+        // Date integrity check (anti-cheat)
+        await useGameStore.getState().checkDateIntegrity();
+
+        // Boss spawn check (uses player level)
+        const logs = useLogStore.getState().logs;
+        const todoXP = useTodoXPStore.getState().totalXP;
+        const rawXP = sumXP(logs) + todoXP;
+        const adjustedXP = useGameStore.getState().getAdjustedXP(rawXP);
+        const { level } = getPlayerStats(adjustedXP);
+        await useRaidStore.getState().checkSpawn(level);
+        await useRaidStore.getState().checkDebuff();
 
         // Apply the loaded theme to Colors immediately
         const { activeTheme, colorMode } = useThemeStore.getState();
