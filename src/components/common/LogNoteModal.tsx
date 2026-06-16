@@ -4,6 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FontFamily, FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { Spring } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 import { getStreakMultiplier, calculateXPForLog } from '../../logic/xpEngine';
 import { getMotivationalQuote } from '../../utils/motivationUtils';
@@ -45,7 +46,7 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
         runOnJS(handleCancel)();
         translateY.value = 0;
       } else {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        translateY.value = withSpring(0, Spring.cinematic);
       }
     });
 

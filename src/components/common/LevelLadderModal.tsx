@@ -4,6 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { Spring } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 import { xpThresholdForLevel } from '../../logic/xpEngine';
 import { getLevelTier } from './ProfileShareCard';
@@ -29,7 +30,7 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
         runOnJS(onClose)();
         translateY.value = 0;
       } else {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        translateY.value = withSpring(0, Spring.cinematic);
       }
     });
 

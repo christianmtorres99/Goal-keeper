@@ -18,6 +18,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   const { colors: Colors, isLight } = useColors();
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const flashAnim = useRef(new Animated.Value(0)).current;
   const levelAnim = useRef(new Animated.Value(newLevel - 1));
   const [displayLevel, setDisplayLevel] = useState(newLevel - 1);
 
@@ -27,14 +28,22 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
     if (visible) {
       levelAnim.current.setValue(newLevel - 1);
       setDisplayLevel(newLevel - 1);
+      scaleAnim.setValue(0.72);
+      flashAnim.setValue(0);
 
       const id = levelAnim.current.addListener(({ value }) => {
         setDisplayLevel(Math.round(value));
       });
 
+      // Flash then reveal
+      Animated.sequence([
+        Animated.timing(flashAnim, { toValue: 0.18, duration: 80, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(flashAnim, { toValue: 0, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+      ]).start();
+
       Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: 1, tension: 20, friction: 3, useNativeDriver: true }),
-        Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, tension: 35, friction: 7, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 1, duration: 180, useNativeDriver: true }),
         Animated.timing(levelAnim.current, {
           toValue: newLevel,
           duration: 400,
@@ -49,6 +58,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
     } else {
       scaleAnim.setValue(0.5);
       opacityAnim.setValue(0);
+      flashAnim.setValue(0);
     }
   }, [visible]);
 
@@ -56,6 +66,8 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+      {/* Screen flash */}
+      <Animated.View pointerEvents="none" style={[styles.flash, { opacity: flashAnim }]} />
       <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: overlayBg }]}>
         <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: tier.color, borderWidth: 1.5 }]}>
           <LinearGradient
@@ -92,6 +104,15 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 }
 
 const styles = StyleSheet.create({
+  flash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#ffffff',
+    zIndex: 999,
+  },
   overlay: {
     flex: 1,
     justifyContent: 'center',

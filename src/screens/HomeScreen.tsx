@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { NotePencil, ChartLineUp, Archive, DotsThree } from 'phosphor-react-native';
 import * as Haptics from 'expo-haptics';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +15,8 @@ import { useWeeklyChallengeStore } from '../store/weeklyChallengeStore';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
+import GameIcon from '../components/common/GameIcon';
+import AmbientBackground from '../components/common/AmbientBackground';
 import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -359,13 +362,13 @@ export default function HomeScreen() {
 
     if (result.rankUp) {
       const goal = goals.find(g => g.id === goalId);
-      if (goal) setRankUpMessage(`⭐ ${goal.name} leveled up!`);
+      if (goal) setRankUpMessage(`${goal.name} leveled up!`);
     }
 
     const totalDisplayXP = result.log.xpAwarded + result.bonusXP + extraXP;
     let toastMsg = getUndoToastMessage(goalName, totalDisplayXP, extraEvents);
-    if (result.coinsAwarded > 0) toastMsg += `  ·  +${result.coinsAwarded} 🪙`;
-    if (result.shardDropped) toastMsg += '  ·  💎 Shard!';
+    if (result.coinsAwarded > 0) toastMsg += `  ·  +${result.coinsAwarded} coins`;
+    if (result.shardDropped) toastMsg += '  ·  +1 Shard';
     setUndoEntry({ type: 'goal', logId: result.log.id, message: toastMsg });
 
     if (newBadges.length > 0 || result.bonusXP > 0 || extraXP > 0) {
@@ -492,6 +495,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
+      <AmbientBackground />
       <DraggableFlatList
         ref={listRef}
         data={pendingGoals}
@@ -520,6 +524,7 @@ export default function HomeScreen() {
                 onPress={() => setRankUpMessage(null)}
                 activeOpacity={0.8}
               >
+                <GameIcon type="star" size={14} />
                 <Text style={[styles.rankUpText, { color: Colors.accentBright }]}>{rankUpMessage}</Text>
               </TouchableOpacity>
             )}
@@ -537,18 +542,18 @@ export default function HomeScreen() {
                 <Text style={[styles.date, { color: Colors.textSecondary }]} numberOfLines={1}>{todayLabel}</Text>
               </View>
               <View style={styles.headerActions}>
-                <View style={[styles.progressChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.13) }]}>
+                <View style={[styles.progressChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.14), borderWidth: 1, borderColor: hexAlpha(Colors.accentBright, 0.22) }]}>
                   <Text style={[styles.progressChipText, { color: Colors.accentBright }]}>{dailyProgressCount} / {activeGoals.length}</Text>
                 </View>
                 <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('Journal')}>
-                  <Ionicons name="journal-outline" size={20} color={Colors.textSecondary} />
+                  <NotePencil size={20} color={Colors.textSecondary} weight="regular" />
                 </AnimatedPressable>
                 <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
-                  <Ionicons name="stats-chart" size={20} color={Colors.textSecondary} />
+                  <ChartLineUp size={20} color={Colors.textSecondary} weight="regular" />
                 </AnimatedPressable>
                 {hasArchived && (
                   <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('ArchivedGoals')}>
-                    <Ionicons name="archive-outline" size={20} color={Colors.textSecondary} />
+                    <Archive size={20} color={Colors.textSecondary} weight="regular" />
                   </AnimatedPressable>
                 )}
                 <AnimatedPressable scale={0.9} style={[styles.addBtn, { backgroundColor: Colors.accent }]} onPress={() => navigation.navigate('AddGoal', {})}>
@@ -587,9 +592,12 @@ export default function HomeScreen() {
             <TodoSection onComplete={handleTodoComplete} />
 
             {pendingGoals.length > 0 && (
-              <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>
-                {`Up next — ${pendingGoals.length} remaining`}
-              </Text>
+              <View style={styles.sectionLabelRow}>
+                <View style={[styles.sectionLabelBar, { backgroundColor: Colors.accent }]} />
+                <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>
+                  {`Up next — ${pendingGoals.length} remaining`}
+                </Text>
+              </View>
             )}
           </View>
         }
@@ -730,12 +738,25 @@ const styles = StyleSheet.create({
   greeting: { fontSize: FontSize.xxl, fontFamily: FontFamily.bold },
   date: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexShrink: 0 },
-  iconBtn: { padding: Spacing.sm },
-  addBtn: { borderRadius: Radius.full, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  iconBtn: { padding: Spacing.sm, minWidth: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
+  addBtn: {
+    borderRadius: Radius.full,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+  },
   progressChip: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
   progressChipText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   xpCard: { borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.sm, borderWidth: 1 },
   xpCaption: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  sectionLabelBar: { width: 2, height: 14, borderRadius: 1 },
   sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   manipBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },
   manipBannerText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, flex: 1 },

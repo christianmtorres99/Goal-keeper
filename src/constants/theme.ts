@@ -4,6 +4,7 @@ export const Colors = {
   bg2: '#16161F',
   bg3: '#222230',
   border: '#2E2E3E',
+  cardBorder: 'rgba(255,255,255,0.08)',
 
   accent: '#5551E8',
   accentBright: '#7B78F2',
@@ -31,6 +32,19 @@ export const Colors = {
   textDisabled: '#444C60',
 
   xpGradient: ['#5551E8', '#7B78F2'] as const,
+};
+
+// Global game-tier colors (not theme-aware — intentionally fixed)
+export const GameColors = {
+  rankLegend: '#F5C842',
+  rankMaster:  '#C0A060',
+  rankExpert:  '#909090',
+  boostGold:   '#FFD700',
+  boostPurple: '#9B59B6',
+  streakHot:   '#E8734A',
+  coinGold:    '#F5C842',
+  shardCyan:   '#22D3EE',
+  starGold:    '#F5C842',
 };
 
 export const Spacing = {

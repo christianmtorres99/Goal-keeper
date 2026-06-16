@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import GameIcon from '../common/GameIcon';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { FontFamily, FontSize, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
@@ -48,7 +49,10 @@ export default function RestDayModal({ visible, onClose, onActivate, streak, ban
       <View style={[styles.overlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.card, { backgroundColor: Colors.bg2, borderColor: Colors.accent + '70', shadowColor: Colors.accent }, sheetStyle]}>
-            <Text style={[styles.title, { color: Colors.textPrimary }]}>Rest Day Available 💤</Text>
+            <View style={styles.titleRow}>
+              <GameIcon type="moon" size={20} />
+              <Text style={[styles.title, { color: Colors.textPrimary }]}>Rest Day Available</Text>
+            </View>
             <Text style={[styles.body, { color: Colors.textSecondary }]}>{bodyText}</Text>
             <Text style={[styles.bankedLabel, { color: Colors.accentBright }]}>{bankedDays} rest {bankedDays === 1 ? 'day' : 'days'} banked</Text>
             <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: Colors.accent }]} onPress={onActivate} activeOpacity={0.85}>
@@ -82,6 +86,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
   },
   title: {
     fontSize: FontSize.xl,

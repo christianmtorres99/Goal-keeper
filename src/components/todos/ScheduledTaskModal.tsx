@@ -16,6 +16,7 @@ import ReanimatedAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOn
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontFamily, FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { Spring } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 import { useScheduledTaskStore } from '../../store/scheduledTaskStore';
 
@@ -48,7 +49,7 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
         runOnJS(onClose)();
         dragTranslateY.value = 0;
       } else {
-        dragTranslateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        dragTranslateY.value = withSpring(0, Spring.cinematic);
       }
     });
 

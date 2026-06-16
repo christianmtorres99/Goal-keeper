@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import GameIcon from '../components/common/GameIcon';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
@@ -156,7 +157,7 @@ function ChallengeCard({ challenge, progress, isClaimed, accentColor, onClaim }:
           )}
         </View>
         <View style={[styles.coinBadge, { backgroundColor: hexAlpha(accentColor, 0.15) }]}>
-          <Text style={styles.coinEmoji}>🪙</Text>
+          <GameIcon type="coin" size={13} />
           <Text style={[styles.coinAmount, { color: accentColor }]}>{challenge.coinReward}</Text>
         </View>
       </View>

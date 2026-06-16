@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { hexAlpha } from '../../constants/theme';
+import { hexAlpha, GameColors } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
 
 interface Props {
@@ -19,7 +19,7 @@ export default function StreakFlame({ streak, size = 40, children }: Props) {
     : isLong
     ? Colors.warning
     : isHot
-    ? '#E8734A'
+    ? GameColors.streakHot
     : Colors.warning;
   const iconSz = Math.round(size * 0.52);
 

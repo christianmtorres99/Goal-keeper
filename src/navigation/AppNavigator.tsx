@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
+import { View, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
-import { FontFamily } from '../constants/theme';
+import { BlurView } from 'expo-blur';
+import { House, CalendarDots, ChartBar, Trophy } from 'phosphor-react-native';
+import { FontFamily, hexAlpha } from '../constants/theme';
 import { Spring } from '../constants/motion';
 import { useColors } from '../hooks/useColors';
 
@@ -44,13 +46,15 @@ export type TabParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-function TabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
+type PhosphorIcon = React.ComponentType<{ size: number; color: string; weight: 'fill' | 'regular' }>;
+
+function TabIcon({ Icon, color, focused }: { Icon: PhosphorIcon; color: string; focused: boolean }) {
   const scale = useSharedValue(1);
 
   useEffect(() => {
     if (focused) {
       scale.value = withSequence(
-        withSpring(1.28, Spring.bouncy),
+        withSpring(1.24, Spring.bouncy),
         withSpring(1, Spring.snappy)
       );
     }
@@ -60,7 +64,7 @@ function TabIcon({ name, color, focused }: { name: string; color: string; focuse
 
   return (
     <Animated.View style={style}>
-      <Ionicons name={name as any} size={22} color={color} />
+      <Icon size={22} color={color} weight={focused ? 'fill' : 'regular'} />
     </Animated.View>
   );
 }
@@ -68,30 +72,43 @@ function TabIcon({ name, color, focused }: { name: string; color: string; focuse
 function TabNavigator() {
   const { colors: Colors } = useColors();
   const insets = useSafeAreaInsets();
+
+  const tabIcons: Record<string, PhosphorIcon> = {
+    Home: House,
+    Calendar: CalendarDots,
+    Stats: ChartBar,
+    Profile: Trophy,
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.bg1,
-          borderTopColor: Colors.border,
-          borderTopWidth: 1,
+          position: 'absolute',
+          backgroundColor: Platform.OS === 'ios' ? 'transparent' : hexAlpha(Colors.bg0, 0.94),
+          borderTopColor: hexAlpha(Colors.border, 0.5),
+          borderTopWidth: 0.5,
           paddingTop: 6,
           paddingBottom: Math.max(insets.bottom, 10),
           elevation: 0,
         },
+        tabBarBackground: () =>
+          Platform.OS === 'ios' ? (
+            <BlurView
+              intensity={60}
+              tint="dark"
+              style={{ flex: 1, borderTopColor: hexAlpha(Colors.border, 0.4), borderTopWidth: 0.5 }}
+            />
+          ) : (
+            <View style={{ flex: 1, backgroundColor: hexAlpha(Colors.bg0, 0.94) }} />
+          ),
         tabBarActiveTintColor: Colors.accentBright,
         tabBarInactiveTintColor: Colors.textSecondary,
         tabBarLabelStyle: { fontSize: 11, fontFamily: FontFamily.regular },
         tabBarIcon: ({ color, focused }) => {
-          const icons: Record<string, [string, string]> = {
-            Home:     ['home',       'home-outline'],
-            Calendar: ['calendar',   'calendar-outline'],
-            Stats:    ['bar-chart',  'bar-chart-outline'],
-            Profile:  ['trophy',     'trophy-outline'],
-          };
-          const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
-          return <TabIcon name={focused ? active : inactive} color={color} focused={focused} />;
+          const Icon = tabIcons[route.name] ?? House;
+          return <TabIcon Icon={Icon} color={color} focused={focused} />;
         },
       })}
     >

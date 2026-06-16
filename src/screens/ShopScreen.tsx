@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import GameIcon from '../components/common/GameIcon';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
@@ -76,7 +77,7 @@ function PerkCard({ perk, owned, equipped, canAfford, onPress }: PerkCardProps) 
                 },
               ]}
             >
-              <Text style={styles.costEmoji}>🪙</Text>
+              <GameIcon type="coin" size={12} />
               <Text
                 style={[
                   styles.costText,
@@ -208,7 +209,7 @@ export default function ShopScreen() {
 
         {/* ── Balance header ── */}
         <View style={[styles.balanceCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
-          <Text style={styles.balanceEmoji}>🪙</Text>
+          <GameIcon type="coin" size={32} />
           <Text style={[styles.balanceAmount, { color: Colors.textPrimary }]}>
             {balance}
           </Text>

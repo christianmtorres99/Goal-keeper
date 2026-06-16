@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import GameIcon from '../common/GameIcon';
 import { Ionicons } from '@expo/vector-icons';
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../hooks/useColors';
@@ -144,9 +145,14 @@ export default function WeeklyChallengesCard() {
                 <Text style={[styles.rowLabel, { color: claimed ? Colors.textDisabled : Colors.textPrimary }]} numberOfLines={1}>
                   {ch.label}
                 </Text>
-                <Text style={[styles.rowCoins, { color: claimed ? Colors.success : Colors.accentBright }]}>
-                  {claimed ? '✓' : `+${COIN_WEEKLY_CHALLENGE} 🪙`}
-                </Text>
+                {claimed ? (
+                  <Text style={[styles.rowCoins, { color: Colors.success }]}>✓</Text>
+                ) : (
+                  <View style={styles.coinsRow}>
+                    <Text style={[styles.rowCoins, { color: Colors.accentBright }]}>+{COIN_WEEKLY_CHALLENGE}</Text>
+                    <GameIcon type="coin" size={10} />
+                  </View>
+                )}
               </View>
               <View style={[styles.progressTrack, { backgroundColor: Colors.bg3 }]}>
                 <View style={[styles.progressFill, { width: `${pct * 100}%`, backgroundColor: complete ? Colors.success : Colors.accentBright }]} />
@@ -175,9 +181,10 @@ export default function WeeklyChallengesCard() {
           onPress={handleClaimAll}
         >
           <Ionicons name="trophy-outline" size={16} color={Colors.warning} />
-          <Text style={[styles.bonusBtnText, { color: Colors.warning }]}>
-            Complete all 3 — Claim +{COIN_WEEKLY_ALL} 🪙
-          </Text>
+          <View style={styles.bonusTextRow}>
+            <Text style={[styles.bonusBtnText, { color: Colors.warning }]}>Complete all 3 — Claim +{COIN_WEEKLY_ALL}</Text>
+            <GameIcon type="coin" size={12} color={Colors.warning} />
+          </View>
         </AnimatedPressable>
       )}
 
@@ -211,7 +218,9 @@ const styles = StyleSheet.create({
   rowCoins: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
   progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 2 },
-  progressLabel: { fontSize: 9, fontFamily: FontFamily.regular },
+  progressLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  coinsRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  bonusTextRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, flex: 1 },
   claimBtn: { borderRadius: Radius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
   claimBtnText: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
   bonusBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, padding: Spacing.sm, borderWidth: 1 },

@@ -7,12 +7,12 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { FontSize, FontFamily, hexAlpha, Radius, Spacing } from '../../constants/theme';
+import { Crown, Medal, DiamondsFour, CaretUp } from 'phosphor-react-native';
+import { FontSize, FontFamily, hexAlpha, Radius, Spacing, GameColors } from '../../constants/theme';
 import { Elevation } from '../../constants/elevation';
-import { Spring, Timing, Stagger } from '../../constants/motion';
+import { Spring, Timing, Stagger, EXPO_OUT } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 import type { Goal, Log, StreakInfo } from '../../types';
 import { getPlayerStats, getStreakMultiplier } from '../../logic/xpEngine';
@@ -90,10 +90,7 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, onRel
   const progressAnim = useSharedValue(fillPct / 100);
 
   useEffect(() => {
-    progressAnim.value = withTiming(fillPct / 100, {
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-    });
+    progressAnim.value = withSpring(fillPct / 100, { stiffness: 300, damping: 28 });
   }, [fillPct]);
 
   const progressFillStyle = useAnimatedStyle(() => ({
@@ -170,29 +167,35 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, onRel
           {
             backgroundColor: Colors.bg1,
             borderWidth: 1,
-            borderColor: isAtRisk ? hexAlpha(Colors.warning, 0.40) : Colors.border,
+            borderColor: isAtRisk ? hexAlpha(Colors.warning, 0.55) : Colors.border,
           },
         ]}
       >
+        {/* 3px top accent stripe — goal color */}
+        <View style={[styles.accentBar, { backgroundColor: goal.color }]} />
+
         {/* Color band header — always the goal's own color */}
-        <View style={[styles.header, { backgroundColor: hexAlpha(goal.color, 0.14) }]}>
+        <View style={[styles.header, { backgroundColor: hexAlpha(goal.color, 0.10) }]}>
           <View style={styles.topRow}>
             <View style={styles.iconName}>
-              <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.15) }]}>
+              <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.15), borderColor: hexAlpha(goal.color, 0.35) }]}>
                 <Ionicons name={goal.icon as any} size={20} color={goal.color} />
                 {rankInfo.rank !== 'novice' && (
                   <View style={[styles.rankDot, {
-                    backgroundColor: rankInfo.rank === 'legend' ? '#F5C842' :
-                                     rankInfo.rank === 'master'  ? '#C0A060' :
-                                     rankInfo.rank === 'expert'  ? '#909090' :
+                    backgroundColor: rankInfo.rank === 'legend' ? GameColors.rankLegend :
+                                     rankInfo.rank === 'master'  ? GameColors.rankMaster  :
+                                     rankInfo.rank === 'expert'  ? GameColors.rankExpert  :
                                      goal.color,
                   }]}>
-                    <Text style={styles.rankDotText}>
-                      {rankInfo.rank === 'legend' ? '★' :
-                       rankInfo.rank === 'master'  ? '★' :
-                       rankInfo.rank === 'expert'  ? '◆' :
-                       rankInfo.rank === 'journeyman' ? '▲' : '•'}
-                    </Text>
+                    {rankInfo.rank === 'legend' ? (
+                      <Crown size={8} color="#fff" weight="fill" />
+                    ) : rankInfo.rank === 'master' ? (
+                      <Medal size={8} color="#fff" weight="fill" />
+                    ) : rankInfo.rank === 'expert' ? (
+                      <DiamondsFour size={8} color="#fff" weight="fill" />
+                    ) : (
+                      <CaretUp size={8} color="#fff" weight="fill" />
+                    )}
                   </View>
                 )}
               </View>
@@ -349,13 +352,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardDragging: { opacity: 0.9 },
+  accentBar: { height: 3 },
   header: { paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   body: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm, paddingBottom: Spacing.md, gap: Spacing.xs },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconName: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1 },
-  iconWrap: { width: 42, height: 42, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  rankDot: { position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'transparent' },
-  rankDotText: { fontSize: 7, lineHeight: 9, fontFamily: FontFamily.bold, color: '#fff' },
+  iconWrap: { width: 44, height: 44, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', position: 'relative', borderWidth: 1 },
+  rankDot: { position: 'absolute', bottom: -3, right: -3, width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'transparent' },
   name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flex: 1, lineHeight: FontSize.md * 1.4 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   atRiskBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.sm, paddingHorizontal: Spacing.xs, paddingVertical: 2 },

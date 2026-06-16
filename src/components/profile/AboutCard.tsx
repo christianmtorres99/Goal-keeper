@@ -29,7 +29,7 @@ export default function AboutCard() {
         activeOpacity={0.8}
       >
         <Ionicons name="heart" size={16} color={Colors.textPrimary} />
-        <Text style={[styles.supportText, { color: Colors.textPrimary }]}>Support this app ♥</Text>
+        <Text style={[styles.supportText, { color: Colors.textPrimary }]}>Support this app</Text>
       </TouchableOpacity>
 
       {/* Version */}

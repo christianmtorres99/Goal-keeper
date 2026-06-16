@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../../store/themeStore';
 import { THEMES, LIGHT_THEMES, THEME_META, type ThemeName } from '../../constants/themes';
 import { FontFamily, Radius, Spacing, FontSize, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { Spring } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 
 type ColorMode = 'dark' | 'light' | 'system';
@@ -29,7 +30,7 @@ export default function ThemePickerModal({
         runOnJS(onClose)();
         translateY.value = 0;
       } else {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        translateY.value = withSpring(0, Spring.cinematic);
       }
     });
 

@@ -19,8 +19,10 @@ import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 import AboutCard from '../components/profile/AboutCard';
 
-import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
+import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle, GameColors } from '../constants/theme';
 import { Spring, Timing, Stagger } from '../constants/motion';
+import GameIcon from '../components/common/GameIcon';
+import AmbientBackground from '../components/common/AmbientBackground';
 import { useColors } from '../hooks/useColors';
 import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
@@ -400,6 +402,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['bottom', 'left', 'right']}>
+      <AmbientBackground />
       {/* Off-screen share card */}
       <ProfileShareCard
         ref={shareCardRef}
@@ -427,22 +430,28 @@ export default function ProfileScreen() {
 
           {/* Coin chip */}
           <View style={[styles.coinChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}>
-            <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>🪙 {coinBalance}</Text>
+            <GameIcon type="coin" size={11} />
+            <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>{coinBalance}</Text>
           </View>
 
           <View style={styles.heroHeader}>
-            <AnimatedPressable
-              style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
-              onPress={() => setLevelLadderVisible(true)}
-            >
-              <Ionicons name={tier.icon as any} size={48} color={tier.color} />
-            </AnimatedPressable>
+            <View style={styles.heroIconContainer}>
+              <View style={[styles.heroIconGlow, { backgroundColor: hexAlpha(tier.color, 0.22) }]} />
+              <AnimatedPressable
+                style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
+                onPress={() => setLevelLadderVisible(true)}
+              >
+                <Ionicons name={tier.icon as any} size={48} color={tier.color} />
+              </AnimatedPressable>
+            </View>
             <AnimatedPressable style={styles.heroInfo} onPress={() => setLevelLadderVisible(true)}>
               <Text style={[styles.heroLevel, { color: tier.color }]}>{adjustedStats.level}</Text>
               {prestigeLevel > 0 && (
-                <Text style={[styles.prestigeStars, { color: Colors.accentBright }]}>
-                  {'⭐'.repeat(Math.min(prestigeLevel, 5))}
-                </Text>
+                <View style={styles.prestigeStarsRow}>
+                  {Array.from({ length: Math.min(prestigeLevel, 5) }).map((_, i) => (
+                    <GameIcon key={i} type="star" size={14} color={GameColors.starGold} />
+                  ))}
+                </View>
               )}
               <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
               {/* Title display */}
@@ -655,19 +664,24 @@ export default function ProfileScreen() {
           {/* Shard count + craft */}
           <View style={[styles.shardRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
             <View style={styles.shardInfo}>
-              <Text style={[styles.shardCount, { color: Colors.textPrimary }]}>🔮 {shardCount} / 3 Shards</Text>
+              <View style={styles.shardCountRow}>
+                <GameIcon type="shard" size={16} />
+                <Text style={[styles.shardCount, { color: Colors.textPrimary }]}>{shardCount} / 3 Shards</Text>
+              </View>
               <View style={[styles.shardBarBg, { backgroundColor: Colors.border }]}>
                 <View style={[styles.shardBarFill, { backgroundColor: Colors.accentBright, width: `${Math.min((shardCount / 3) * 100, 100)}%` as any }]} />
               </View>
               <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs }}>
                 {isSurgeActive() && (
-                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha('#FFD700', 0.20) }]}>
-                    <Text style={[styles.boostBadgeText, { color: '#FFD700' }]}>⚡ Surge Active</Text>
+                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha(GameColors.boostGold, 0.20) }]}>
+                    <Ionicons name="flash" size={11} color={GameColors.boostGold} />
+                    <Text style={[styles.boostBadgeText, { color: GameColors.boostGold }]}>Surge Active</Text>
                   </View>
                 )}
                 {isLuckyBoostActive() && (
-                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha('#9B59B6', 0.20) }]}>
-                    <Text style={[styles.boostBadgeText, { color: '#9B59B6' }]}>✨ Lucky Active</Text>
+                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha(GameColors.boostPurple, 0.20) }]}>
+                    <Ionicons name="sparkles" size={11} color={GameColors.boostPurple} />
+                    <Text style={[styles.boostBadgeText, { color: GameColors.boostPurple }]}>Lucky Active</Text>
                   </View>
                 )}
               </View>
@@ -814,7 +828,9 @@ const styles = StyleSheet.create({
 
   heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  heroIconWrap: { width: 80, height: 80, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  heroIconContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  heroIconGlow: { position: 'absolute', width: 96, height: 96, borderRadius: 48 },
+  heroIconWrap: { width: 80, height: 80, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   heroInfo: { flex: 1, gap: 4, justifyContent: 'center', paddingRight: Spacing.lg },
   heroLevel: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold },
   heroTierTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
@@ -822,10 +838,10 @@ const styles = StyleSheet.create({
   heroNext: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   shareBtn: { position: 'absolute', top: Spacing.md, right: Spacing.md, padding: Spacing.xs, zIndex: 1 },
 
-  coinChip: { position: 'absolute', top: Spacing.md, left: Spacing.md, borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3, zIndex: 1 },
+  coinChip: { position: 'absolute', top: Spacing.md, left: Spacing.md, borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3, zIndex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
   coinChipText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
 
-  prestigeStars: { fontSize: FontSize.sm, letterSpacing: 1 },
+  prestigeStarsRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1 },
 
   ascendBtn: { borderRadius: Radius.full, borderWidth: 1.5, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, alignSelf: 'center' },
   ascendBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold, letterSpacing: 0.5 },
@@ -834,7 +850,7 @@ const styles = StyleSheet.create({
 
   pickerSublabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
-  featureSlot: { flex: 1, minHeight: 104, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
+  featureSlot: { flex: 1, minHeight: 96, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
   featureSlotFilled: { flex: 1, minHeight: 104, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
   featureSlotLabel: { fontSize: FontSize.sm, textAlign: 'center', fontFamily: FontFamily.semiBold },
   featureSlotEmpty: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
@@ -878,10 +894,11 @@ const styles = StyleSheet.create({
   // Inventory
   shardRow: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, gap: Spacing.sm },
   shardInfo: { flex: 1, gap: 4 },
+  shardCountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   shardCount: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   shardBarBg: { height: 6, borderRadius: Radius.full, overflow: 'hidden' },
   shardBarFill: { height: 6, borderRadius: Radius.full },
-  boostBadge: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
+  boostBadge: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 2, flexDirection: 'row', alignItems: 'center', gap: 3 },
   boostBadgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
   craftBtn: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   craftBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
