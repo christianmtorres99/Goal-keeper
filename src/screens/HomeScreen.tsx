@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,7 +8,9 @@ import * as Haptics from 'expo-haptics';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BossRaidCard from '../components/home/BossRaidCard';
+import WeeklyChallengesCard from '../components/home/WeeklyChallengesCard';
 import { useRaidStore } from '../store/raidStore';
+import { useWeeklyChallengeStore } from '../store/weeklyChallengeStore';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
@@ -169,6 +171,7 @@ export default function HomeScreen() {
       await useTodoXPStore.getState().load();
       await loadRestDay();
       await useJournalStore.getState().loadEntries();
+      await useWeeklyChallengeStore.getState().load();
       const storedDismiss = await AsyncStorage.getItem('moodSuggestionDismissed');
       setDismissedSuggestionId(storedDismiss);
     };
@@ -235,6 +238,26 @@ export default function HomeScreen() {
       setLogModalGoalId(goalId);
     }
   }, [goals]);
+
+  const handleRelapsePress = useCallback((goalId: string) => {
+    const goalName = goals.find(g => g.id === goalId)?.name ?? 'this goal';
+    Alert.alert(
+      'Confirm Relapse',
+      `This will reset your streak on "${goalName}" to 0. Stay strong next time.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'I relapsed',
+          style: 'destructive',
+          onPress: async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            await addLog(goalId, undefined, undefined, false, 1, true);
+            setUndoEntry({ type: 'goal', logId: '', message: `Streak reset on ${goalName}. You can do this.` });
+          },
+        },
+      ]
+    );
+  }, [goals, addLog]);
 
   const handleLogConfirm = useCallback(async (note?: string) => {
     const goalId = logModalGoalId;
@@ -319,6 +342,8 @@ export default function HomeScreen() {
     const goalLogs = logs.filter(l => l.goalId === goalId);
     const grace = graceStates[goalId] ?? { graceDayUsed: false, graceDayRefillDate: null };
     const streakInfo = computeStreakWithGrace([...goalLogs, result.log], grace.graceDayUsed, grace.graceDayRefillDate);
+    const loggingGoal = goals.find(g => g.id === goalId);
+    const quitGoalMaxStreak = loggingGoal?.type === 'quit' ? streakInfo.currentStreak : undefined;
     const newBadges = await checkAndAward({
       goalId,
       currentStreak: streakInfo.currentStreak,
@@ -329,6 +354,7 @@ export default function HomeScreen() {
       isComeback: result.events.includes('comeback'),
       isNewBest: result.events.includes('newBest'),
       logHour: new Date().getHours(),
+      quitGoalMaxStreak,
     });
 
     if (result.rankUp) {
@@ -428,6 +454,7 @@ export default function HomeScreen() {
           streakInfo={streakInfo}
           onPress={() => navigation.navigate('GoalDetail', { goalId: goal.id })}
           onLog={() => handleLogPress(goal.id)}
+          onRelapse={goal.type === 'quit' ? () => handleRelapsePress(goal.id) : undefined}
           isDragging={isActive}
           isDailyDouble={goal.id === dailyDoubleGoalId}
           animateSignal={animateSignals[goal.id]}
@@ -440,7 +467,7 @@ export default function HomeScreen() {
         />
       </ScaleDecorator>
     );
-  }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId]);
+  }, [logs, graceStates, navigation, handleLogPress, handleRelapsePress, dailyDoubleGoalId]);
 
   // Render a non-draggable GoalCard for logged goals
   const renderLoggedGoal = useCallback((goal: Goal, index: number) => {
@@ -455,12 +482,13 @@ export default function HomeScreen() {
         streakInfo={streakInfo}
         onPress={() => navigation.navigate('GoalDetail', { goalId: goal.id })}
         onLog={() => handleLogPress(goal.id)}
+        onRelapse={goal.type === 'quit' ? () => handleRelapsePress(goal.id) : undefined}
         isDailyDouble={goal.id === dailyDoubleGoalId}
         animateSignal={animateSignals[goal.id]}
         index={index}
       />
     );
-  }, [logs, graceStates, navigation, handleLogPress, dailyDoubleGoalId, animateSignals]);
+  }, [logs, graceStates, navigation, handleLogPress, handleRelapsePress, dailyDoubleGoalId, animateSignals]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
@@ -549,6 +577,8 @@ export default function HomeScreen() {
                 totalAvailable={questsAvailable}
               />
             )}
+
+            <WeeklyChallengesCard />
 
             {isRaidActive && !isBossDefeated && (
               <BossRaidCard onPress={() => navigation.navigate('BossRaid')} />

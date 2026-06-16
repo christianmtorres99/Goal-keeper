@@ -1,4 +1,4 @@
-export type GoalType = 'habit' | 'milestone' | 'count';
+export type GoalType = 'habit' | 'milestone' | 'count' | 'quit';
 export type GoalCategory = 'creative' | 'physical' | 'learning' | 'wellness' | 'other';
 export type GoalDifficulty = 'easy' | 'medium' | 'hard' | 'extreme';
 
@@ -33,6 +33,7 @@ export interface Log {
   xpAwarded: number;
   bonusXp: number;
   count: number;  // default 1 for habit/milestone, actual count for 'count' goals
+  isRelapse?: boolean;
 }
 
 export interface StreakInfo {
@@ -89,7 +90,24 @@ export type LogEvent =
   | 'dailyDouble'
   | 'streakRebuild'
   | 'rankUp'
-  | 'shardDrop';
+  | 'shardDrop'
+  | 'relapsed';
+
+// ── Weekly Challenges ─────────────────────────────────────────────────────────
+export type WeeklyChallengeType =
+  | 'log_days'
+  | 'streak_reach'
+  | 'log_total'
+  | 'category_logs'
+  | 'quit_checkin';
+
+export interface WeeklyChallengeDefinition {
+  id: string;
+  type: WeeklyChallengeType;
+  target: number;
+  label: string;
+  category?: GoalCategory;
+}
 
 // ── Goal Ranks ────────────────────────────────────────────────────────────────
 export type GoalRank = 'novice' | 'apprentice' | 'journeyman' | 'expert' | 'master' | 'legend';

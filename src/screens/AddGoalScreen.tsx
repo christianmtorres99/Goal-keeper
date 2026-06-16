@@ -209,7 +209,6 @@ export default function AddGoalScreen() {
           <AnimatedPressable
             style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'habit' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
             onPress={() => setGoalType('habit')}
-
           >
             <Ionicons name="repeat" size={22} color={goalType === 'habit' ? selectedColor : Colors.textSecondary} />
             <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'habit' && { color: selectedColor }]}>Habit</Text>
@@ -218,11 +217,18 @@ export default function AddGoalScreen() {
           <AnimatedPressable
             style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'count' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
             onPress={() => setGoalType('count')}
-
           >
             <Ionicons name="stats-chart" size={22} color={goalType === 'count' ? selectedColor : Colors.textSecondary} />
             <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'count' && { color: selectedColor }]}>Count</Text>
             <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Daily target (steps, pages, etc.)</Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            style={[styles.typeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }, goalType === 'quit' && { borderColor: selectedColor, backgroundColor: hexAlpha(selectedColor, 0.13) }]}
+            onPress={() => setGoalType('quit')}
+          >
+            <Ionicons name="shield-checkmark-outline" size={22} color={goalType === 'quit' ? selectedColor : Colors.textSecondary} />
+            <Text style={[styles.typeCardTitle, { color: Colors.textSecondary }, goalType === 'quit' && { color: selectedColor }]}>Quit</Text>
+            <Text style={[styles.typeCardSub, { color: Colors.textDisabled }]}>Track clean days</Text>
           </AnimatedPressable>
         </View>
 
@@ -246,6 +252,15 @@ export default function AddGoalScreen() {
               <Text style={[styles.sublabel, { color: Colors.textDisabled }]}>Allow logging this goal more than once daily</Text>
             </View>
             <Switch value={allowMultiple} onValueChange={setAllowMultiple} trackColor={{ true: Colors.accent, false: Colors.bg3 }} thumbColor={Colors.textPrimary} />
+          </View>
+        )}
+
+        {goalType === 'quit' && (
+          <View style={[styles.row, { backgroundColor: hexAlpha(Colors.warning, 0.08), borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1, borderColor: hexAlpha(Colors.warning, 0.25) }]}>
+            <Ionicons name="information-circle-outline" size={18} color={Colors.warning} />
+            <Text style={[styles.sublabel, { color: Colors.warning, flex: 1 }]}>
+              Check in each day you stay clean. An "I relapsed" button lets you reset your streak.
+            </Text>
           </View>
         )}
 

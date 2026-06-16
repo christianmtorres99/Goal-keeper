@@ -21,6 +21,7 @@ interface BadgeStore {
     isComeback?: boolean;
     isNewBest?: boolean;
     logHour?: number;
+    quitGoalMaxStreak?: number;
   }) => Promise<BadgeDefinition[]>;
   checkAndAwardGlobal: (params: {
     totalTodosCompleted?: number;

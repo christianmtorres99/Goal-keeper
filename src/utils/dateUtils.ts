@@ -81,3 +81,18 @@ export function getWeekStart(dateStr: string): string {
   d.setDate(diff);
   return formatDate(d);
 }
+
+export function getISOWeekNumber(dateStr: string): number {
+  const d = dateFromString(dateStr);
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const weekStart = new Date(jan4);
+  weekStart.setDate(jan4.getDate() - jan4.getDay() + 1);
+  const diff = d.getTime() - weekStart.getTime();
+  return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+}
+
+export function getWeekId(dateStr: string): string {
+  const weekNum = getISOWeekNumber(dateStr);
+  const year = dateFromString(dateStr).getFullYear();
+  return `${year}-W${String(weekNum).padStart(2, '0')}`;
+}

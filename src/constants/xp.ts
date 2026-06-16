@@ -65,3 +65,7 @@ export const SHARDS_PER_CRAFT = 3;
 // ── Anti-cheat ────────────────────────────────────────────────────────────────
 export const RAID_DAMAGE_DAILY_CAP = 120;
 export const PRESTIGE_LEVEL_THRESHOLD = 25;
+
+// ── Weekly Challenges ─────────────────────────────────────────────────────────
+export const COIN_WEEKLY_CHALLENGE = 25;
+export const COIN_WEEKLY_ALL = 30;

@@ -44,6 +44,7 @@ interface LogStore {
     logDate?: string,
     allowMultiple?: boolean,
     count?: number,
+    isRelapse?: boolean,
   ) => Promise<{
     log: Log;
     bonusXP: number;
@@ -87,6 +88,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         xpAwarded: r.xp_awarded,
         bonusXp: r.bonus_xp ?? 0,
         count: r.count ?? 1,
+        isRelapse: r.is_relapse === 1,
       }));
 
       set({ logs, graceStates });
@@ -96,7 +98,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     }
   },
 
-  addLog: async (goalId, note, logDate?, allowMultiple?, count = 1) => {
+  addLog: async (goalId, note, logDate?, allowMultiple?, count = 1, isRelapse = false) => {
     try {
       const { logs, graceStates } = get();
       const goalLogs = logs.filter(l => l.goalId === goalId);
@@ -105,7 +107,10 @@ export const useLogStore = create<LogStore>((set, get) => ({
       const isPastDay = dateToLog !== today;
 
       // Block duplicate logs on the same date (unless allowMultiple is true)
-      if (!allowMultiple && goalLogs.some(l => l.logDate === dateToLog)) return null;
+      if (!allowMultiple && !isRelapse && goalLogs.some(l => l.logDate === dateToLog)) return null;
+
+      // For quit goals: block duplicate same-day relapses
+      if (isRelapse && goalLogs.some((l: any) => l.logDate === dateToLog && l.isRelapse === 1)) return null;
 
       // Anti-cheat: For habit goals, only the first log of the day earns XP/coins/shards
       const goalData = useGoalStore.getState().goals.find(g => g.id === goalId);
@@ -191,6 +196,35 @@ export const useLogStore = create<LogStore>((set, get) => ({
       // Zero-award: override all xp to 0 for extra habit logs
       if (isZeroAward) {
         xpAwarded = 0;
+      }
+
+      // Relapse: record with 0 XP/coins/shards, reset grace, return early
+      if (isRelapse) {
+        const relapseLog: Log = {
+          id: uuid(),
+          goalId,
+          logDate: dateToLog,
+          note,
+          createdAt: new Date().toISOString(),
+          xpAwarded: 0,
+          bonusXp: 0,
+          count: 1,
+        };
+        const db = await getDb();
+        await db.runAsync(
+          'INSERT INTO logs (id, goal_id, log_date, note, created_at, xp_awarded, bonus_xp, count, is_relapse) VALUES (?,?,?,?,?,?,?,?,?)',
+          [relapseLog.id, relapseLog.goalId, relapseLog.logDate, relapseLog.note ?? null, relapseLog.createdAt, 0, 0, 1, 1]
+        );
+        // Reset grace day on relapse
+        await db.runAsync(
+          'INSERT OR REPLACE INTO grace_days (goal_id, grace_used, refill_date) VALUES (?,?,?)',
+          [goalId, 0, null]
+        );
+        set(s => ({
+          logs: [...s.logs, relapseLog],
+          graceStates: { ...s.graceStates, [goalId]: { graceDayUsed: false, graceDayRefillDate: null } },
+        }));
+        return { log: relapseLog, bonusXP: 0, events: ['relapsed'], coinsAwarded: 0, shardDropped: false, rankUp: false };
       }
 
       const log: Log = {

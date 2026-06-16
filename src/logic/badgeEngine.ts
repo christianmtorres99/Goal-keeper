@@ -18,6 +18,7 @@ export function checkBadges(params: {
   totalTodosCompleted?: number;
   journalStreak?: number;
   logHour?: number;
+  quitGoalMaxStreak?: number;
 }): BadgeDefinition[] {
   const {
     goalId, currentStreak, totalLogs, playerLevel, cycleCount = 0,
@@ -49,6 +50,10 @@ export function checkBadges(params: {
         if (def.id === 'perfect_month') return !!isPerfectMonth;
         if (def.id === 'comeback')      return !!isComeback;
         if (def.id === 'new_best')      return !!isNewBest;
+        // Quit goal badges use quitGoalMaxStreak
+        if (def.id === 'quit_first_day')   return (params.quitGoalMaxStreak ?? 0) >= 1;
+        if (def.id === 'quit_week_clean')  return (params.quitGoalMaxStreak ?? 0) >= 7;
+        if (def.id === 'quit_month_clean') return (params.quitGoalMaxStreak ?? 0) >= 30;
         return false;
       }
       case 'todos':

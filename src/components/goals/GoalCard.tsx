@@ -35,6 +35,7 @@ interface Props {
   streakInfo: StreakInfo;
   onPress: () => void;
   onLog: () => void;
+  onRelapse?: () => void;
   isDragging?: boolean;
   dragHandle?: React.ReactNode;
   isDailyDouble?: boolean;
@@ -42,7 +43,7 @@ interface Props {
   index?: number;
 }
 
-export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDragging, dragHandle, isDailyDouble, animateSignal, index = 0 }: Props) {
+export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, onRelapse, isDragging, dragHandle, isDailyDouble, animateSignal, index = 0 }: Props) {
   const { colors: Colors, isLight } = useColors();
   const totalXP = sumXP(logs);
   const stats = getPlayerStats(totalXP);
@@ -64,9 +65,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
     : false;
 
   const loggedToday = goal.type === 'count' ? countGoalComplete : baseLoggedToday;
-  const isAtRisk = goal.type === 'habit' && !loggedToday && hour >= 12;
+  const isAtRisk = (goal.type === 'habit' || goal.type === 'quit') && !loggedToday && hour >= 12;
 
-  const nextStreakBadge = goal.type === 'habit' ? getNextStreakBadge(streakInfo.currentStreak) : null;
+  const nextStreakBadge = (goal.type === 'habit' || goal.type === 'quit') ? getNextStreakBadge(streakInfo.currentStreak) : null;
   const nextLogBadge = getNextLogBadge(logs.length);
   const nextBadgeLabel = nextStreakBadge
     ? `${nextStreakBadge.daysLeft}d to ${nextStreakBadge.name}`
@@ -76,7 +77,9 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
 
   const rankInfo = getGoalRank(logs.length);
 
-  const streakDisplay = streakInfo.currentStreak === 0 && goal.type === 'habit' && !loggedToday
+  const streakDisplay = goal.type === 'quit'
+    ? `${streakInfo.currentStreak}d clean`
+    : streakInfo.currentStreak === 0 && goal.type === 'habit' && !loggedToday
     ? 'Start!'
     : `${streakInfo.currentStreak}d`;
 
@@ -268,6 +271,37 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, isDra
               <View style={[styles.restDayBadge, { backgroundColor: Colors.accentDim }]}>
                 <Text style={[styles.restDayText, { color: Colors.textSecondary }]}>Rest Day</Text>
               </View>
+            ) : goal.type === 'quit' ? (
+              <View style={styles.quitBtnGroup}>
+                <Animated.View style={animatedButtonStyle}>
+                  <AnimatedPressable
+                    scale={0.92}
+                    style={[
+                      styles.logBtn,
+                      { backgroundColor: Colors.accent },
+                      loggedToday && { backgroundColor: hexAlpha(Colors.success, 0.13), borderWidth: 1, borderColor: hexAlpha(Colors.success, 0.33) },
+                    ]}
+                    onPress={handleLog}
+                    disabled={loggedToday}
+                  >
+                    <Ionicons
+                      name={loggedToday ? 'checkmark-circle' : 'shield-checkmark-outline'}
+                      size={18}
+                      color={loggedToday ? Colors.success : Colors.textPrimary}
+                    />
+                    <Text style={[styles.logBtnText, { color: loggedToday ? Colors.success : Colors.textPrimary }]}>
+                      {loggedToday ? 'Clean ✓' : 'Still Clean'}
+                    </Text>
+                  </AnimatedPressable>
+                </Animated.View>
+                <AnimatedPressable
+                  scale={0.92}
+                  style={[styles.relapseBtn, { borderColor: hexAlpha(Colors.warning, 0.4) }]}
+                  onPress={onRelapse}
+                >
+                  <Text style={[styles.relapseBtnText, { color: Colors.warning }]}>I relapsed</Text>
+                </AnimatedPressable>
+              </View>
             ) : (
               <View style={styles.logBtnWrapper}>
                 <Animated.Text style={[styles.xpFloat, { color: Colors.accentBright }, animatedXPStyle]} pointerEvents="none">
@@ -347,6 +381,9 @@ const styles = StyleSheet.create({
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2 },
   logBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
   dragHandle: { marginLeft: Spacing.xs },
+  quitBtnGroup: { flexDirection: 'column', alignItems: 'flex-end', gap: Spacing.xs },
+  relapseBtn: { borderWidth: 1, borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+  relapseBtnText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
   restDayBadge: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   restDayText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   doubleBadge: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.sm, paddingHorizontal: 5, paddingVertical: 2, borderWidth: 1 },

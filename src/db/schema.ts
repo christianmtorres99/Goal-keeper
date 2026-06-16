@@ -3,7 +3,7 @@ export const CREATE_GOALS = `
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    type TEXT NOT NULL CHECK(type IN ('habit','milestone','count')),
+    type TEXT NOT NULL CHECK(type IN ('habit','milestone','count','quit')),
     color TEXT NOT NULL,
     icon TEXT NOT NULL,
     created_at TEXT NOT NULL,
@@ -70,6 +70,25 @@ export const MIGRATIONS_V5 = [
 
 export const MIGRATIONS_V6 = [
   `ALTER TABLE logs ADD COLUMN count INTEGER DEFAULT 1`,
+];
+
+export const MIGRATIONS_V7 = [
+  // Add is_relapse column (idempotent — fails silently if already exists)
+  `ALTER TABLE logs ADD COLUMN is_relapse INTEGER DEFAULT 0`,
+  // Recreate goals table to allow 'quit' type (no CHECK constraint = TypeScript enforces)
+  `CREATE TABLE IF NOT EXISTS _goals_v7 (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+    type TEXT NOT NULL, color TEXT NOT NULL, icon TEXT NOT NULL,
+    created_at TEXT NOT NULL, is_archived INTEGER NOT NULL DEFAULT 0,
+    target_count INTEGER, unit TEXT, sort_order INTEGER DEFAULT 0,
+    category TEXT DEFAULT 'other', notification_time TEXT, notification_id TEXT,
+    completed_at TEXT, cycle_count INTEGER DEFAULT 0,
+    allow_multiple_per_day INTEGER DEFAULT 0, difficulty TEXT DEFAULT 'medium',
+    custom_category_label TEXT
+  )`,
+  `INSERT OR IGNORE INTO _goals_v7 SELECT * FROM goals`,
+  `DROP TABLE goals`,
+  `ALTER TABLE _goals_v7 RENAME TO goals`,
 ];
 
 // Run these as ALTER TABLE in a try/catch — safe to call on existing DBs

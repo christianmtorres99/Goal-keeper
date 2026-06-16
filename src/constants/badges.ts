@@ -80,6 +80,11 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'prestige_1', category: 'level', rarity: 'legendary', label: 'First Ascension', description: 'Complete your first prestige',  icon: 'star',          threshold: 1 },
   { id: 'prestige_2', category: 'level', rarity: 'legendary', label: 'Twice Reborn',    description: 'Complete your second prestige', icon: 'star-half',     threshold: 2 },
   { id: 'prestige_3', category: 'level', rarity: 'legendary', label: 'The Eternal',     description: 'Complete your third prestige',  icon: 'infinite',      threshold: 3 },
+
+  // Quit goal badges
+  { id: 'quit_first_day',   category: 'consistency', rarity: 'common',    label: 'First 24h',       description: 'Check in on a quit goal for the first time',     icon: 'shield-outline',    threshold: 1 },
+  { id: 'quit_week_clean',  category: 'consistency', rarity: 'uncommon',  label: 'One Week Clean',  description: 'Reach a 7-day streak on a quit goal',            icon: 'shield-checkmark',  threshold: 7 },
+  { id: 'quit_month_clean', category: 'consistency', rarity: 'rare',      label: '30 Days Strong',  description: 'Reach a 30-day streak on a quit goal',           icon: 'shield',            threshold: 30 },
 ];
 
 export const RARITY_COLORS: Record<string, string> = {
