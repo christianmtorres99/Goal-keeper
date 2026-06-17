@@ -41,7 +41,6 @@ export default function BadgeItem({ badge, earned, earnedAt, size = 110 }: Props
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.6,
           shadowRadius: 8,
-          elevation: 6,
         },
       ]}>
         <Ionicons

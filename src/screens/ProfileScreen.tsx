@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
 import ThemePickerModal from '../components/profile/ThemePickerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
@@ -375,7 +376,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['bottom', 'left', 'right']}>
       {/* Off-screen share card */}
       <ProfileShareCard
         ref={shareCardRef}
@@ -391,21 +392,30 @@ export default function ProfileScreen() {
 
         {/* Hero card */}
         <Animated.View style={reveal0}>
-        <LinearGradient
-          colors={[bgColor + 'DD', Colors.bg1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={[styles.heroCard, { borderColor: Colors.accentDim }]}
-        >
+        <View style={[styles.heroCard, { borderColor: Colors.accentDim, overflow: 'hidden' }]}>
+          <BlurView
+            style={StyleSheet.absoluteFill}
+            intensity={18}
+            tint={isLight ? 'light' : 'dark'}
+          />
+          <LinearGradient
+            colors={[hexAlpha(bgColor, 0.45), hexAlpha(bgColor, 0.08)]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
           <AnimatedPressable style={styles.shareBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
           </AnimatedPressable>
 
           {/* Coin chip */}
-          <View style={[styles.coinChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}>
+          <AnimatedPressable
+            style={[styles.coinChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}
+            onPress={() => navigation.navigate('Shop')}
+          >
             <GameIcon type="coin" size={11} />
             <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>{coinBalance}</Text>
-          </View>
+          </AnimatedPressable>
 
           <View style={styles.heroHeader}>
             <View style={styles.heroIconContainer}>
@@ -506,7 +516,7 @@ export default function ProfileScreen() {
               ))}
             </View>
           </View>
-        </LinearGradient>
+        </View>
         </Animated.View>
 
         {/* Stats row */}

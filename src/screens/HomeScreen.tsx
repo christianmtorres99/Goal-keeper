@@ -12,6 +12,8 @@ import BossRaidCard from '../components/home/BossRaidCard';
 import WeeklyChallengesCard from '../components/home/WeeklyChallengesCard';
 import { useRaidStore } from '../store/raidStore';
 import { useWeeklyChallengeStore } from '../store/weeklyChallengeStore';
+import { useSeasonStore } from '../store/seasonStore';
+import { getCurrentSeason } from '../constants/seasons';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
@@ -141,6 +143,14 @@ export default function HomeScreen() {
     () => quests.reduce((s, q) => s + q.xpReward, 0),
     [quests],
   );
+
+  const { completedChallengeIds, claimedSeasonIds } = useSeasonStore();
+  const currentSeason = useMemo(() => getCurrentSeason(todayString()), []);
+  const seasonChallengesCompleted = useMemo(() => {
+    if (!currentSeason) return 0;
+    return currentSeason.challenges.filter(c => completedChallengeIds.includes(c.id)).length;
+  }, [currentSeason, completedChallengeIds]);
+  const seasonClaimed = currentSeason ? claimedSeasonIds.includes(currentSeason.id) : false;
 
   const prevLevelRef = useRef<number>(-1);
 
@@ -606,6 +616,23 @@ export default function HomeScreen() {
                 {isRaidActive && !isBossDefeated && (
                   <BossRaidCard onPress={() => navigation.navigate('BossRaid')} />
                 )}
+                {currentSeason && (
+                  <AnimatedPressable
+                    onPress={() => navigation.navigate('Season')}
+                    style={[styles.seasonCard, { backgroundColor: Colors.bg1, borderColor: currentSeason.accentColor }]}
+                  >
+                    <View style={[styles.seasonIcon, { backgroundColor: hexAlpha(currentSeason.accentColor, 0.15) }]}>
+                      <Ionicons name={currentSeason.icon as any} size={20} color={currentSeason.accentColor} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.seasonName, { color: Colors.textPrimary }]}>{currentSeason.name}</Text>
+                      <Text style={[styles.seasonSub, { color: Colors.textSecondary }]}>
+                        {seasonChallengesCompleted}/{currentSeason.challenges.length} challenges{seasonClaimed ? ' · Claimed ✓' : ''}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+                  </AnimatedPressable>
+                )}
               </View>
             )}
 
@@ -780,6 +807,10 @@ const styles = StyleSheet.create({
   missionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, borderTopWidth: 1, borderBottomWidth: 1, marginVertical: Spacing.xs },
   missionHeaderText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   missionsContent: { gap: Spacing.md },
+  seasonCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.lg, borderWidth: 1.5, padding: Spacing.md },
+  seasonIcon: { width: 40, height: 40, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+  seasonName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  seasonSub: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
   manipBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },
   manipBannerText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, flex: 1 },
   rankUpBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },
