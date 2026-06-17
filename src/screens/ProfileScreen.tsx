@@ -31,7 +31,6 @@ import { useGoalStore } from '../store/goalStore';
 import { useTodoXPStore } from '../store/todoXPStore';
 import { useCoinStore } from '../store/coinStore';
 import { useTitleStore } from '../store/titleStore';
-import { useSeasonStore } from '../store/seasonStore';
 import { useGameStore } from '../store/gameStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { computeStreakWithGrace } from '../logic/streakEngine';
@@ -39,7 +38,6 @@ import { sumXP, formatStatValue } from '../utils/xpUtils';
 import { getCategoryStats, getCategoryDisplayLabel, getCustomTracks, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import { shareViewAsImage } from '../utils/shareUtils';
 import { BADGE_DEFINITIONS, RARITY_COLORS } from '../constants/badges';
-import { getCurrentSeason } from '../constants/seasons';
 import { getTitleDefinition } from '../constants/titles';
 import { todayString } from '../utils/dateUtils';
 import BadgeItem from '../components/common/BadgeItem';
@@ -104,7 +102,6 @@ export default function ProfileScreen() {
   // Game systems
   const coinBalance = useCoinStore(s => s.balance);
   const { earnedTitleIds, equippedTitleId } = useTitleStore();
-  const { completedChallengeIds, claimedSeasonIds } = useSeasonStore();
   const { prestigeLevel, canPrestige, getAdjustedXP, prestigeXPBonus } = useGameStore();
 
   // Section reveal animations
@@ -131,13 +128,6 @@ export default function ProfileScreen() {
   const totalXP = useMemo(() => sumXP(logs) + todoXP, [logs, todoXP]);
   const playerStats = useMemo(() => getPlayerStats(totalXP), [totalXP]);
   const tier = useMemo(() => getLevelTier(playerStats.level), [playerStats.level]);
-
-  const currentSeason = useMemo(() => getCurrentSeason(todayString()), []);
-  const seasonChallengesCompleted = useMemo(() => {
-    if (!currentSeason) return 0;
-    return currentSeason.challenges.filter(c => completedChallengeIds.includes(c.id)).length;
-  }, [currentSeason, completedChallengeIds]);
-  const seasonClaimed = currentSeason ? claimedSeasonIds.includes(currentSeason.id) : false;
 
   const equippedTitle = equippedTitleId ? getTitleDefinition(equippedTitleId) : null;
 
@@ -542,35 +532,13 @@ export default function ProfileScreen() {
 
         {/* Skill Tracks */}
         <Animated.View style={reveal2}>
-        {(activeCategories.length > 0 || customTracks.length > 0 || currentSeason) && (
+        {(activeCategories.length > 0 || customTracks.length > 0) && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
               <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Skill Tracks</Text>
             </View>
             <View style={styles.skillGrid}>
-              {/* Current Season card — shown first */}
-              {currentSeason && (
-                <AnimatedPressable
-                  onPress={() => navigation.navigate('Season')}
-                  style={[styles.trackCard, { backgroundColor: Colors.bg1, borderColor: currentSeason.accentColor, borderWidth: 1.5 }]}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm }}>
-                    <View style={{ width: 40, height: 40, borderRadius: Radius.md, backgroundColor: hexAlpha(currentSeason.accentColor, 0.15), alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name={currentSeason.icon as any} size={22} color={currentSeason.accentColor} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.trackName, { color: Colors.textPrimary }]}>{currentSeason.name}</Text>
-                      <Text style={[styles.trackSub, { color: Colors.textSecondary }]}>
-                        {seasonChallengesCompleted}/{currentSeason.challenges.length} challenges
-                        {seasonClaimed ? ' · Claimed ✓' : ''}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
-                  </View>
-                </AnimatedPressable>
-              )}
-
               {activeCategories.map(cat => {
                 const cs = categoryStats[cat]!;
                 return (
@@ -778,15 +746,6 @@ const styles = StyleSheet.create({
   featureSlotLabel: { fontSize: FontSize.sm, textAlign: 'center', fontFamily: FontFamily.semiBold },
   featureSlotEmpty: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
-  swatchContainer: {
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    padding: Spacing.sm,
-    marginTop: 2,
-  },
-  colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
-  colorSwatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: 'transparent' },
-  swatchSelected: { transform: [{ scale: 1.2 }] },
 
   statRow: { flexDirection: 'row', gap: Spacing.sm },
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
@@ -814,10 +773,6 @@ const styles = StyleSheet.create({
   skillLevelBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2 },
   skillLevel: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
 
-  // Season / track card
-  trackCard: { borderRadius: Radius.lg, padding: Spacing.md },
-  trackName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
-  trackSub: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
 
   // Picker modal
   pickerScreen: { flex: 1 },
