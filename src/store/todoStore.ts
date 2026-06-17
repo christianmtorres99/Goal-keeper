@@ -3,6 +3,7 @@ import { getDb } from '../db/client';
 import type { Todo, SubItem } from '../types';
 import { todayString } from '../utils/dateUtils';
 import { useTodoXPStore } from './todoXPStore';
+import { useBadgeStore } from './badgeStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function uuid(): string {
@@ -150,7 +151,6 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       const existing = await AsyncStorage.getItem('totalTodosCompleted');
       const newCount = (parseInt(existing ?? '0', 10) || 0) + 1;
       await AsyncStorage.setItem('totalTodosCompleted', String(newCount));
-      const { useBadgeStore } = await import('./badgeStore');
       await useBadgeStore.getState().checkAndAwardGlobal({ totalTodosCompleted: newCount });
 
       set(s => ({

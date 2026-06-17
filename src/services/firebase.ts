@@ -1,6 +1,6 @@
 import { initializeApp } from '@firebase/app';
-import { initializeAuth } from '@firebase/auth';
-import type { Persistence } from '@firebase/auth';
+// @ts-ignore – TS resolves browser types; Metro resolves the RN build at runtime which exports getReactNativePersistence
+import { initializeAuth, getReactNativePersistence } from '@firebase/auth';
 import { getFirestore } from '@firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -15,23 +15,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Firebase's getReactNativePersistence lives in the Metro-resolved RN platform build
-// but TypeScript resolves firebase/auth to the browser types. We replicate it inline.
-const asyncStoragePersistence = {
-  type: 'LOCAL',
-  _isAvailable: async () => true,
-  _set: async (key: string, value: unknown) => {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  },
-  _get: async <T>(key: string): Promise<T | null> => {
-    const raw = await AsyncStorage.getItem(key);
-    return raw != null ? (JSON.parse(raw) as T) : null;
-  },
-  _remove: async (key: string) => { await AsyncStorage.removeItem(key); },
-  _addListener: (_key: string, _listener: unknown) => {},
-  _removeListener: (_key: string, _listener: unknown) => {},
-} as unknown as Persistence;
-
-export const auth = initializeAuth(app, { persistence: asyncStoragePersistence });
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
 
 export const db = getFirestore(app);
