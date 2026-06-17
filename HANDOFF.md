@@ -1,239 +1,443 @@
-# Goal Keeper — Handoff Document
-**Date:** 2026-06-02
-**Branch:** `claude/project-overview-planning-kXME1`
-**Repo:** `christianmtorres99/Goal-keeper`
-**CI Status:** EAS build triggered ✓
+# Goal Keeper — Developer Handoff
+
+**Last updated:** 2026-06-17  
+**Active branch:** `claude/project-familiarization-XUrOV`  
+**Remote:** `origin` → `https://github.com/christianmtorres99/Goal-keeper`  
+**EAS Project ID:** `9d40c864-8d00-4f75-8395-a6688b1b1359`  
+**Firebase Project:** `goalie-dfb0b` (Firebase Console → goalie-dfb0b)
 
 ---
 
-## What This App Is
+## 1. What This App Is
 
-React Native / Expo SDK ~56.0.3 goal-tracking app with:
-- Habit & count-based goals with streaks, XP, and leveling
-- Badge/achievement system (38 badges across 8 categories)
-- Journal with mood/energy tracking and drawing
-- Todo system with scheduled tasks
-- Skill tracking screen
-- Calendar heatmap
-- Weekly review modal
-- Daily quests
-- Light/dark themes with 6 color palettes each
-- Onboarding flow
+Goal Keeper is a gamified habit tracker for Android (React Native / Expo SDK 56). Users log daily completions of personal goals (Habit, Build, Quit types), earn XP, level up through 11 tiers, collect badges, unlock titles, and can compare stats with friends on a global leaderboard backed by Firebase.
+
+All personal habit data is stored **on-device only** (SQLite + AsyncStorage). Only a public stats snapshot (level, XP, streak, title, top badges) syncs to Firebase Firestore.
 
 ---
 
-## Tech Stack
+## 2. Tech Stack
 
-- **Framework:** Expo SDK ~56.0.3, React Native, TypeScript
-- **State:** Zustand stores (badgeStore, gameStore, goalStore, journalStore, logStore, questStore, restDayStore, scheduledTaskStore, themeStore, todoStore, todoXPStore)
-- **DB:** expo-sqlite (tables: `earned_badges`, `todos`, `logs`)
-- **Persistence:** AsyncStorage (theme, prefs, quests, todo XP)
-- **Animation:** react-native-reanimated v4 (useSharedValue, withRepeat, withSequence, withTiming, cancelAnimation) AND React Native Animated API (modal backdrops/sheets)
-- **Navigation:** @react-navigation/bottom-tabs + stack
-- **Other:** expo-linear-gradient, @expo/vector-icons (Ionicons), react-native-draggable-flatlist, react-native-safe-area-context
+| Layer | Technology |
+|---|---|
+| Framework | Expo SDK 56 / React Native 0.85.3 |
+| Language | TypeScript 6 |
+| State | Zustand 5 (19 stores) |
+| Local DB | expo-sqlite (goals, logs, journals, todos, badges) |
+| Persistence | @react-native-async-storage (lightweight store state) |
+| Cloud backend | Firebase JS SDK v12.15.0 (Anonymous Auth + Firestore) |
+| Navigation | React Navigation 7 (bottom tabs + native stack) |
+| Icons | Phosphor React Native 3 |
+| Fonts | Plus Jakarta Sans (expo-google-fonts) |
+| Animations | React Native Reanimated 4 |
+| Build/CI | EAS Build (GitHub Actions) |
 
 ---
 
-## Design System (`src/constants/theme.ts`)
+## 3. Current Branch & Git State
 
-```ts
-Spacing: { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 }
-FontSize: { xs: 11, sm: 13, md: 15, lg: 18, xl: 22, xxl: 28, xxxl: 36 }
-Radius: { sm, md, lg, full }
-Colors: { bg0, bg1, bg2, bg3, accent, accentBright, accentDim, border, textPrimary, textSecondary, success, warning, error, ... }
+### Branch
+```
+claude/project-familiarization-XUrOV
 ```
 
-Always use these constants. Never hardcode pixel values, hex colors, or font sizes when a constant exists.
-
----
-
-## Theme System
-
-### Architecture
-
-The app supports 6 themes (`violet`, `ocean`, `forest`, `crimson`, `golden`, `sakura`) each with a dark and a light variant. The user can choose dark / light / system.
-
-**Three layers, all kept in sync:**
-
-| Layer | File | Purpose |
-|-------|------|---------|
-| `THEMES` / `LIGHT_THEMES` | `src/constants/themes.ts` | Static palette records |
-| `ThemeContext` / `ThemeProvider` | `src/context/ThemeContext.tsx` | React context driven by `useThemeStore` |
-| `Colors` (mutable object) | `src/constants/theme.ts` | Legacy fallback for `StyleSheet.create` calls in error/loading states only |
-
-**`useColors()` hook** (`src/hooks/useColors.ts`) — the standard way every component reads colors:
-```ts
-const { colors, isLight } = useColors();
-// colors.bg0, colors.accent, etc.
+### Recent Commits (newest first)
+```
+2d1d4dc Fix crash: import from @firebase/* instead of firebase/* for React Native build resolution
+e6c3c3c Add Firebase backend: auth, Firestore profile sync, friends invite codes, global leaderboard
+0d6415b feat: interactive onboarding, friends leaderboard, and gamification polish
+45ceab1 feat: production readiness — Phase 1-3 hardening
+5951649 feat: Phase 2 revised — purposeful animations, no idle loops
+038c0a9 feat: full UI/UX overhaul — Cinema Dark, Phosphor icons, emoji purge, game-feel animations
+3dd8e7f feat: add Quit goal type and Weekly Mini-Challenges (Batch 5)
+18498ea Add full gamification expansion: coins, raids, seasons, perks, titles, crafting
 ```
 
-`ThemeProvider` in `App.tsx` wraps the whole navigation tree. It reads `useThemeStore` directly, so any theme/mode change triggers a React context update — **no navigation remount needed**.
-
-### Rule for new screens / components
-- Use `useColors()` at the top of the component for any color reference.
-- Never use the static `Colors` object in screen code (it's only kept for the bootstrap `StyleSheet.create` in `App.tsx`).
-- `StyleSheet.create({})` called inside a component body (not at module level) is fine — pass `colors.*` into it.
-
-### themeStore API
-```ts
-useThemeStore.getState().setTheme(name: ThemeName)       // persists to AsyncStorage
-useThemeStore.getState().setColorMode('dark'|'light'|'system')
+### Push Command
+```bash
+git push -u origin claude/project-familiarization-XUrOV
 ```
 
 ---
 
-## Project Structure
+## 4. Firebase Integration
 
+### Config (already in `src/services/firebase.ts`)
+```typescript
+const firebaseConfig = {
+  apiKey: 'AIzaSyCf-WEBxr3HOBFd0pizytZDmBABAljCm0k',
+  authDomain: 'goalie-dfb0b.firebaseapp.com',
+  projectId: 'goalie-dfb0b',
+  storageBucket: 'goalie-dfb0b.firebasestorage.app',
+  messagingSenderId: '4529977651',
+  appId: '1:4529977651:web:1b7b3a11c42126dfbce646',
+};
 ```
-src/
-  screens/           # Full screens
-    HomeScreen.tsx           — goal list (DraggableFlatList), collapsible "Done" section
-    AddGoalScreen.tsx        — habit/count goal creation
-    GoalDetailScreen.tsx     — per-goal stats, log history, badges
-    StatsScreen.tsx          — analytics, filter by goal/category
-    CalendarScreen.tsx       — monthly heatmap, Sunday-first
-    JournalScreen.tsx        — journal entries with mood/energy + drawing
-    ProfileScreen.tsx        — XP/level card, badge gallery, theme picker, share card
-    SkillTrackScreen.tsx     — skill heatmap per category
-    WeeklyReviewScreen.tsx   — weekly XP/streak summary modal
-    OnboardingScreen.tsx     — first-launch slides
-    ArchivedGoalsScreen.tsx  — archived goals list
 
-  components/
-    common/    BadgeItem, DailyQuestsCard, LevelUpModal, LevelLadderModal,
-               MilestoneCompleteModal, UndoToast, StreakFlame, XPBar,
-               LogCountModal, LogNoteModal, BadgeDetailModal, BadgeModal, EmptyState
-    goals/     GoalCard (animated flame icon, 2-line names)
-    home/      RestDayModal, MoodSuggestionCard
-    todos/     TodoSection, ScheduledTaskModal
-    calendar/  (calendar sub-components)
-    charts/    HeatmapGrid (and others)
-    journal/   (journal sub-components)
-    profile/   ThemePickerModal
+### Auth
+- Anonymous auth via `signInAnonymously` — no signup required
+- Persistence via custom AsyncStorage adapter (inline in `firebase.ts`) — survives app restarts
+- Each device gets a unique Firebase UID automatically
 
-  store/             # Zustand stores (see list above)
-  logic/             # Pure business logic
-    badgeEngine.ts   — checkBadges() — pure function, no side effects
-    streakEngine.ts  — computeStreakWithGrace()
-    xpEngine.ts      — getPlayerStats(), getStreakMultiplier()
-  utils/             # Helpers (dates, colors, journal, moods, XP, notifications)
-  constants/         # theme.ts, badges.ts, themes.ts, xp.ts
-  context/           # ThemeContext.tsx
-  hooks/             # useColors.ts
-  types/index.ts     # All shared TypeScript types
-  db/client.ts       # SQLite init + getDb()
+### Firestore Data Model
 ```
+/users/{uid}
+  displayName: string
+  inviteCode: string        ← 6-char alphanumeric, e.g. "A7K2XP"
+  level: number
+  xp: number
+  bestStreak: number
+  equippedTitle: string
+  topBadgeIds: string[]     ← up to 3 most recent badges
+  updatedAt: Timestamp
+
+/inviteCodes/{code}
+  userId: string            ← reverse lookup: code → uid
+
+/users/{uid}/friends/{friendUid}
+  uid: string
+  inviteCode: string
+  displayName: string
+  level: number
+  xp: number
+  bestStreak: number
+  equippedTitle: string
+  topBadgeIds: string[]
+  addedAt: Timestamp
+
+/leaderboard/{uid}
+  (same fields as /users/{uid} plus uid)
+  ← indexed on xp desc for top-100 query
+```
+
+### Service Files (`src/services/`)
+
+| File | Purpose |
+|---|---|
+| `firebase.ts` | App init, Auth, Firestore exports |
+| `authService.ts` | `ensureAuth()` (anon sign-in), `getCurrentUid()` |
+| `profileService.ts` | `initUserProfile()`, `syncProfile(inviteCode)` |
+| `friendsService.ts` | `addFriendByCode()`, `getFriends()`, `removeFriend()` |
+| `leaderboardService.ts` | `getTopLeaderboard(count=100)` |
+
+### Store: `src/store/friendsStore.ts`
+The Zustand store that ties all Firebase services together:
+- `load()` — called at app startup in `App.tsx`; runs `ensureAuth → initUserProfile → getFriends → background syncProfile`
+- `addFriend(code)` — returns `'success' | 'not_found' | 'self' | 'already_friends' | 'error'`
+- `removeFriend(uid)` — removes from Firestore + local state
+- `loadLeaderboard()` — fetches top 100 from `/leaderboard`
+- `syncMyProfile()` — manually push local stats to cloud
+- Caches invite code locally under AsyncStorage key `firebaseInviteCode_v1` so it shows immediately before Firebase loads
 
 ---
 
-## Badge System
+## 5. CRITICAL: Firebase Import Gotcha
 
-**Definitions:** `src/constants/badges.ts` — `BADGE_DEFINITIONS[]`
-**Engine:** `src/logic/badgeEngine.ts` — `checkBadges(params)` pure function
-**Store:** `src/store/badgeStore.ts`
+**Always import from `@firebase/*`, never `firebase/*`.**
 
-### Badge Categories (38 total)
-| Category | IDs | Trigger |
-|----------|-----|---------|
-| streak | streak_1/3/7/14/21/30/45/60/90/120/180/240/365 | currentStreak ≥ threshold |
-| logs | logs_1/5/10/25/50/100/250/500 | totalLogs ≥ threshold |
-| consistency | perfect_week, perfect_month, comeback, new_best | boolean flags |
-| cycle | cycle_1/3/5 | cycleCount ≥ threshold |
-| todos | todos_10/50/100/250 | totalTodosCompleted ≥ threshold |
-| journal | journal_3/7/30 | journalStreak ≥ threshold |
-| time | early_bird (before 8am), night_owl (after 10pm) | logHour |
-| level | level_1/3/5/7/10/15/20/25/50 | playerLevel ≥ threshold |
+The `firebase` npm package's sub-paths (e.g. `firebase/auth`) do NOT have a `react-native` export condition. Metro falls back to the browser ESM build, which accesses `window.localStorage` — **this crashes the app immediately on launch**.
 
-### How to award badges
-- **Per-goal:** `useBadgeStore.getState().checkAndAward({ goalId, currentStreak, totalLogs, playerLevel, cycleCount?, isPerfectWeek?, isPerfectMonth?, isComeback?, isNewBest?, logHour? })`
-- **Global (todos/journal/time):** `useBadgeStore.getState().checkAndAwardGlobal({ totalTodosCompleted?, journalStreak?, logHour? })`
-- Both return `BadgeDefinition[]` of newly earned badges (show in UI)
-- Global badges always get `goalId = null` in the DB
+The `@firebase/*` packages (e.g. `@firebase/auth`) are the underlying implementations and DO have `react-native` export conditions pointing to their RN builds.
+
+```typescript
+// CORRECT
+import { signInAnonymously } from '@firebase/auth';
+import { getFirestore } from '@firebase/firestore';
+
+// WRONG — crashes the app on launch
+import { signInAnonymously } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+```
+
+This applies to all 5 service files. The fix is already in place as of the latest commit.
 
 ---
 
-## Key Patterns & Gotchas
+## 6. Architecture Overview
 
-### Async/Zustand
-- **Never** call `AsyncStorage.setItem` inside Zustand's `set()` callback — `set()` is synchronous. Always move async ops OUTSIDE `set()`:
-  ```ts
-  setTheme: async (name) => {
-    set(s => ({ ...s, activeTheme: name })); // sync state update
-    await AsyncStorage.setItem(KEY, ...);    // async persistence
+```
+App.tsx
+├── Bootstrap sequence (fonts, stores, Firebase auth)
+├── Navigation (AppNavigator.tsx)
+│   ├── Bottom Tabs: Home | Calendar | Stats | Journal | Profile
+│   └── Stack screens: AddGoal, GoalDetail, ArchivedGoals, Settings,
+│                       SkillTrack, Shop, BossRaid, Season,
+│                       OnboardingScreen, WeeklyReview, Friends
+│
+├── Screens (src/screens/)   ← 16 screens
+├── Stores (src/store/)      ← 19 Zustand stores
+├── Services (src/services/) ← 5 Firebase services
+├── Logic (src/logic/)       ← xpEngine, badgeEngine, questEngine, etc.
+└── Utils (src/utils/)       ← xpUtils, dateUtils, hexAlpha, etc.
+```
+
+### XP & Level Formula
+```typescript
+// src/logic/xpEngine.ts
+BASE_XP = 15
+xpForLevel(n) = 80 * n^1.65
+
+// Total XP = sumXP(logs) + todoXPStore.totalXP
+// Adjusted XP = gameStore.getAdjustedXP(rawXP)  ← applies any multiplier perks
+```
+
+### 11 Level Tiers
+Seedling (1–5) → Sprout → Apprentice → Journeyman → Adept → Expert → Master → Grandmaster → Legend → Champion → Transcendent (51–55)
+
+---
+
+## 7. All Screens
+
+| Screen | File | Notes |
+|---|---|---|
+| Home | `HomeScreen.tsx` | Dashboard: active goals, streak, daily log |
+| Calendar | `CalendarScreen.tsx` | Month view, log history |
+| Stats | `StatsScreen.tsx` | XP chart, skill breakdown, achievements |
+| Journal | `JournalScreen.tsx` | Freeform note entries per day |
+| Profile | `ProfileScreen.tsx` | Level, badges, titles, coins, Friends nav button |
+| Add Goal | `AddGoalScreen.tsx` | Create Habit/Build/Quit goal |
+| Goal Detail | `GoalDetailScreen.tsx` | Edit goal, view history |
+| Archived Goals | `ArchivedGoalsScreen.tsx` | Completed/deleted goals |
+| Settings | `SettingsScreen.tsx` | Notifications, username, data export |
+| Skill Track | `SkillTrackScreen.tsx` | Skill tree progression |
+| Shop | `ShopScreen.tsx` | Spend coins on perks/titles |
+| Boss Raid | `BossRaidScreen.tsx` | Weekly boss challenge |
+| Season | `SeasonScreen.tsx` | Seasonal pass/rewards |
+| Onboarding | `OnboardingScreen.tsx` | First-launch setup (needs tour rewrite — see §9) |
+| Weekly Review | `WeeklyReviewScreen.tsx` | End-of-week summary |
+| Friends | `FriendsScreen.tsx` | Friends list + global leaderboard (Firebase-backed) |
+
+---
+
+## 8. All Stores
+
+| Store | Persistence | Notes |
+|---|---|---|
+| `gameStore` | AsyncStorage | XP multiplier, userName, personal records |
+| `goalStore` | SQLite | Goals list |
+| `logStore` | SQLite | Daily completion logs |
+| `badgeStore` | SQLite | Earned badges |
+| `journalStore` | SQLite | Journal entries |
+| `todoStore` | SQLite | Quick todos |
+| `todoXPStore` | AsyncStorage | XP from todo completions |
+| `coinStore` | AsyncStorage | Coin balance |
+| `titleStore` | AsyncStorage | Unlocked/equipped titles |
+| `perkStore` | AsyncStorage | Unlocked perks |
+| `craftingStore` | AsyncStorage | Crafting recipes used |
+| `raidStore` | AsyncStorage | Boss raid state |
+| `seasonStore` | AsyncStorage | Season pass state |
+| `questStore` | AsyncStorage | Active quests |
+| `weeklyChallengeStore` | AsyncStorage | Weekly mini-challenges |
+| `restDayStore` | AsyncStorage | Rest day tracking |
+| `scheduledTaskStore` | AsyncStorage | Notification schedule |
+| `themeStore` | AsyncStorage | Light/dark theme |
+| `friendsStore` | Firebase + AsyncStorage cache | Friends, leaderboard |
+
+---
+
+## 9. Pending Features (Next Steps)
+
+### A. Onboarding Tour (Priority 1)
+**File:** `src/screens/OnboardingScreen.tsx`
+
+Rewrite as interactive 7-step tour:
+1. Welcome + app name intro
+2. Name entry → calls `gameStore.setUserName(name)` (function already exists)
+3. Create first goal (mini AddGoal form)
+4. Feature tour — Home tab
+5. Feature tour — Calendar tab
+6. Feature tour — Stats tab
+7. Feature tour — Profile tab → "You're ready!"
+
+### B. Gamification Polish (Priority 2)
+- **Confetti on level-up:** Add confetti burst to `LevelUpModal.tsx` when it opens after a tier change
+- **Tier progression timeline:** Redesign `LevelLadderModal.tsx` as a horizontal-scroll timeline showing all 11 tiers with the user's position highlighted
+- **Extract tiers constant:** Move tier data to `src/constants/tiers.ts` so both `xpEngine.ts` and the timeline UI can share it
+
+### C. Profile Sync on Goal Log (Priority 3)
+**Problem:** `syncProfile()` is only called at app startup. Logging a goal mid-session doesn't update the leaderboard until the next launch.
+
+**Fix:** In the log store (or wherever goal completions are recorded), call `useFriendsStore.getState().syncMyProfile()` after a successful write. Fire-and-forget so it doesn't block the UI.
+
+### D. EAS Update / OTA Auto-Deploy (Priority 4)
+See §10 below for full step-by-step instructions.
+
+---
+
+## 10. EAS Update — Auto-Deploy to expo.dev
+
+Currently `app.json` has `"updates": { "enabled": false }` and GitHub Actions only builds APKs. To push OTA JavaScript updates to the installed app automatically on every push:
+
+### Step 1: Install expo-updates
+```bash
+npx expo install expo-updates
+```
+
+### Step 2: Update `app.json`
+```json
+{
+  "expo": {
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/9d40c864-8d00-4f75-8395-a6688b1b1359"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
-  ```
-
-### Animation Libraries
-- **Reanimated v4** (`useSharedValue`, `useAnimatedStyle`, `withTiming`, `withRepeat`, `withSequence`) — used in GoalCard flame, progress bars, ThemePickerModal sheet.
-- **React Native Animated API** — used in modal backdrops and sheet slide-ins (TodoSection, ScheduledTaskModal). Do NOT mix the two in the same animated value.
-
-### GoalCard Flame
-`src/components/goals/GoalCard.tsx` — `FlameIcon` component with 4 tiers:
-- 0 streak: gray, static
-- 1–6: yellow, gentle pulse
-- 7–29: orange, pulse
-- 30–89: red, shake + particles
-- 90+: white/hot, fast shake + more particles
-
-### HomeScreen Collapsible Done Section
-`src/screens/HomeScreen.tsx`:
-- `pendingGoals` = goals not logged today → DraggableFlatList
-- `loggedGoals` = goals logged today → collapsible section in `ListFooterComponent`
-- `loggedCollapsed` state controls visibility
-
-### Calendar
-Sunday-first week. `firstDow = d.getDay()` (not `(d.getDay()+6)%7`).
-
-### Journal Badge Check
-After saving a journal entry, call:
-```ts
-const streak = computeJournalStreak(entries);
-useBadgeStore.getState().checkAndAwardGlobal({ journalStreak: streak });
+}
 ```
 
-### Todo XP / Badge Check
-`todoStore.completeTodo()` increments `AsyncStorage('totalTodosCompleted')` and calls `checkAndAwardGlobal`.
+> `runtimeVersion` with `"appVersion"` policy ties OTA updates to users on the same app version (1.2.0). When you add a native package or change permissions, bump `version` in `app.json` and build a new APK — existing installs won't receive that update over-the-air.
 
-### ThemePickerModal
-- `animationType="fade"` (NOT "slide") — slide causes a dark-box artifact on transparent modals.
-- The internal `Animated.View` handles its own slide-up animation via `useSharedValue`.
-- Preview card palette: `isLight ? LIGHT_THEMES[key] : THEMES[key]`.
+### Step 3: Add channels to `eas.json`
+```json
+{
+  "cli": { "version": ">= 16.0.0" },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "channel": "production",
+      "android": { "buildType": "app-bundle" }
+    }
+  }
+}
+```
 
----
+### Step 4: Update `.github/workflows/eas-build.yml`
+Replace the existing workflow with:
 
-## Session History Summary
+```yaml
+name: EAS Build + Update (Android Preview)
 
-| Session | Key Work |
-|---------|----------|
-| 1–8 | Core app build: goals, logs, streaks, XP, badges, journal, todos, calendar, stats, profile, themes |
-| 9 | Log animation, progress bar, accent bar, 1-min time picker increments |
-| 10 | Animated flame icon (4-tier), collapsible "Done" section, journal fixes, todo modal flash fix, ScheduledTaskModal keyboard fix, Calendar sunday-start, Profile gradient, new badges (streak 45/120/240, todos, journal, time-of-day) |
-| 11 | metro.config.js fix, code audit (async/Zustand bug, questStore, badgeStore), design audit (tap targets ≥44px, spacing/typography/shadow constants) |
-| 12 | Full light mode: migrated all 34 files to `useColors()` + `ThemeContext`; added `ThemeProvider`, `useColors` hook, 6 LIGHT_THEMES palettes; `OVERLAY_LIGHT_MODE`/`OVERLAY_DARK_MODE` constants; `isLight` guard throughout |
-| 13 | Light mode polish: chart & badge slot colors, XP bar, share card swatches (+6 light, −2 redundant dark); nav reset fix (removed `key={themeKey}` from NavigationContainer); ThemePickerModal fade animation; light-mode preview cards in theme picker |
+on:
+  push:
+    branches:
+      - claude/goal-tracking-app-QiCgn
+      - claude/project-overview-planning-kXME1
+      - claude/project-familiarization-XUrOV
 
----
+jobs:
+  build:
+    name: Build Android Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-## What's NOT Done / Possible Next Steps
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-- No end-to-end tests exist
-- No Storybook or component docs
-- Push notifications (`src/utils/notifications.ts`) exists but untested on real device
-- Weekly review modal is not auto-triggered (must be opened manually from Profile)
-- EAS build is configured (Android Preview workflow)
+      - name: Install dependencies
+        run: npm ci
 
----
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
-## Running Locally
+      - name: Build
+        run: eas build --platform android --profile preview --non-interactive
+
+      - name: Publish OTA Update
+        run: eas update --branch preview --message "Auto update from ${{ github.sha }}" --non-interactive
+```
+
+### Step 5: Rebuild the app once
+After adding `expo-updates` and modifying `app.json`, you must build a new APK and install it. The OTA channel URL is embedded in the native binary at build time.
 
 ```bash
-cd /home/user/Goal-keeper
-npx expo start
+eas build --platform android --profile preview
 ```
 
-TypeScript check:
-```bash
-npx tsc --noEmit
+### After That
+Every push to the branch will:
+1. Build a new APK (native changes) — or skip the build step if you remove it for JS-only pushes
+2. Run `eas update` → pushes a new JS bundle to the `preview` channel on expo.dev
+3. The app auto-applies the update on next launch (when online)
+
+### Verify OTA Is Working
+In [expo.dev](https://expo.dev) → Your Project → Updates — each push creates a new update entry. On device: launch the app twice after a push (first launch downloads, second applies).
+
+---
+
+## 11. EAS Build — Existing Setup
+
+The current workflow (`.github/workflows/eas-build.yml`) triggers an Android Preview APK build on every push to the three active branches. The `EXPO_TOKEN` secret must be set in GitHub → Repo Settings → Secrets and Variables → Actions → `EXPO_TOKEN`.
+
+To add a new branch to auto-builds, add it under `branches:` in the workflow file.
+
+---
+
+## 12. Known Gotchas & Decisions
+
+### Firebase imports must use `@firebase/*`
+See §5. This is the single most important thing to remember when working with Firebase in this codebase.
+
+### No user accounts
+Auth is fully anonymous — no login screen, no email, no password. Each install gets a unique Firebase UID automatically.
+
+### Local-first architecture
+All habit data stays on device. Firebase holds only a public profile snapshot. The app works offline; friends see your stats as of the last sync.
+
+### AsyncStorage cache for invite code
+The invite code is cached under `firebaseInviteCode_v1` so the Friends screen shows it immediately, before Firebase initializes.
+
+### XP is adjusted by perks
+The XP value synced to Firebase uses `gameStore.getAdjustedXP(rawXP)` which applies any multiplier perks. The leaderboard shows effective XP, not raw logged XP — this is intentional.
+
+### Top badges are last 3, reversed
+`topBadgeIds` = last 3 entries from `badgeStore.earnedBadges`, reversed (most recent first).
+
+### Firestore security rules — update before production
+Rules are currently in test mode (open read/write). Before public release, apply these rules in the Firebase Console → Firestore → Rules:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if request.auth.uid == uid;
+
+      match /friends/{friendId} {
+        allow read, write: if request.auth.uid == uid;
+      }
+    }
+    match /inviteCodes/{code} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /leaderboard/{uid} {
+      allow read: if true;
+      allow write: if request.auth.uid == uid;
+    }
+  }
+}
 ```
 
-**Important:** Read `https://docs.expo.dev/versions/v56.0.0/` before writing any Expo-specific code (per AGENTS.md).
+---
+
+## 13. Verification Checklist
+
+After picking up and making changes, verify these manually:
+
+- [ ] `expo start --clear` — app launches without crash
+- [ ] Profile screen → "Friends & Leaderboard" button navigates to FriendsScreen
+- [ ] Invite code card shows a 6-char code (e.g. "A7K2XP")
+- [ ] Copy button copies the code to clipboard
+- [ ] Share button opens the native share sheet
+- [ ] Sync button calls `syncMyProfile()` with brief loading indicator
+- [ ] "Add Friend" modal — entering own code shows "That's you!" error
+- [ ] Entering a nonexistent code shows "No user found" error
+- [ ] Global Top 100 tab loads the leaderboard
+- [ ] Firebase Console → Authentication → Users shows anonymous user entries
+- [ ] Firebase Console → Firestore → leaderboard collection shows your user document
