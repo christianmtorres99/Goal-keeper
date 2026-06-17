@@ -74,7 +74,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       const todos = todoRows.map(r => rowToTodo(r, subItems));
       set({ todos });
     } catch (e) {
-      console.error('loadTodos failed:', e);
+      if (__DEV__) console.error('loadTodos failed:', e);
     }
   },
 
@@ -127,7 +127,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         set(s => ({ todos: [finalTodo, ...s.todos] }));
       }
     } catch (e) {
-      console.error('addTodo failed:', e);
+      if (__DEV__) console.error('addTodo failed:', e);
     }
   },
 
@@ -159,7 +159,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         ),
       }));
     } catch (e) {
-      console.error('completeTodo failed:', e);
+      if (__DEV__) console.error('completeTodo failed:', e);
     }
   },
 
@@ -176,7 +176,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         ),
       }));
     } catch (e) {
-      console.error('uncompleteTodo failed:', e);
+      if (__DEV__) console.error('uncompleteTodo failed:', e);
     }
   },
 
@@ -203,7 +203,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         ),
       }));
     } catch (e) {
-      console.error('toggleSubItem failed:', e);
+      if (__DEV__) console.error('toggleSubItem failed:', e);
     }
   },
 
@@ -233,7 +233,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         ),
       }));
     } catch (e) {
-      console.error('addSubItem failed:', e);
+      if (__DEV__) console.error('addSubItem failed:', e);
     }
   },
 
@@ -252,7 +252,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         }));
       }
     } catch (e) {
-      console.error('rescheduleTodo failed:', e);
+      if (__DEV__) console.error('rescheduleTodo failed:', e);
     }
   },
 
@@ -263,7 +263,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await db.runAsync('DELETE FROM todos WHERE id=?', [id]);
       set(s => ({ todos: s.todos.filter(t => t.id !== id) }));
     } catch (e) {
-      console.error('deleteTodo failed:', e);
+      if (__DEV__) console.error('deleteTodo failed:', e);
     }
   },
 
@@ -273,7 +273,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
       await db.runAsync('UPDATE todos SET title = ? WHERE id = ?', [title, id]);
       set(s => ({ todos: s.todos.map(t => t.id === id ? { ...t, title } : t) }));
     } catch (e) {
-      console.error('updateTodo failed:', e);
+      if (__DEV__) console.error('updateTodo failed:', e);
     }
   },
 
@@ -292,7 +292,7 @@ export const useTodoStore = create<TodoStore>((set, get) => ({
         [today + 'T00:00:00']
       );
     } catch (e) {
-      console.error('clearExpiredTodos failed:', e);
+      if (__DEV__) console.error('clearExpiredTodos failed:', e);
     }
   },
 }));

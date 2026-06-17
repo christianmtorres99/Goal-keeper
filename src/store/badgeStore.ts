@@ -40,7 +40,7 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
       const rows = await db.getAllAsync<any>('SELECT * FROM earned_badges ORDER BY earned_at ASC');
       set({ earnedBadges: rows.map((r: any) => ({ id: r.id, badgeId: r.badge_id, goalId: r.goal_id, earnedAt: r.earned_at })) });
     } catch (e) {
-      console.error('loadBadges failed:', e);
+      if (__DEV__) console.error('loadBadges failed:', e);
       throw e;
     }
   },
@@ -80,7 +80,7 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
       set(s => ({ earnedBadges: [...s.earnedBadges, ...badgesToInsert] }));
       return newBadgeDefs;
     } catch (e) {
-      console.error('checkAndAward failed:', e);
+      if (__DEV__) console.error('checkAndAward failed:', e);
       throw e;
     }
   },
@@ -124,7 +124,7 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
       set(s => ({ earnedBadges: [...s.earnedBadges, ...badgesToInsert] }));
       return newBadgeDefs;
     } catch (e) {
-      console.error('checkAndAwardGlobal failed:', e);
+      if (__DEV__) console.error('checkAndAwardGlobal failed:', e);
       return [];
     }
   },

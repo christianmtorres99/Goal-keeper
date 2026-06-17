@@ -3,6 +3,7 @@ import { getDb } from '../db/client';
 import type { Goal, GoalCategory, GoalDifficulty } from '../types';
 import { todayString } from '../utils/dateUtils';
 import { cancelGoalReminder } from '../utils/notifications';
+import { useQuestStore } from './questStore';
 
 function uuid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -57,7 +58,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       const rows = await db.getAllAsync<any>('SELECT * FROM goals WHERE is_archived = 0 ORDER BY sort_order ASC, created_at ASC');
       set({ goals: rows.map(rowToGoal) });
     } catch (e) {
-      console.error('loadGoals failed:', e);
+      if (__DEV__) console.error('loadGoals failed:', e);
       throw e;
     }
   },
@@ -68,7 +69,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       const rows = await db.getAllAsync<any>('SELECT * FROM goals WHERE is_archived = 1 ORDER BY created_at DESC');
       set({ archivedGoals: rows.map(rowToGoal) });
     } catch (e) {
-      console.error('loadArchivedGoals failed:', e);
+      if (__DEV__) console.error('loadArchivedGoals failed:', e);
       throw e;
     }
   },
@@ -99,7 +100,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       set(s => ({ goals: [...s.goals, goal] }));
       return goal;
     } catch (e) {
-      console.error('addGoal failed:', e);
+      if (__DEV__) console.error('addGoal failed:', e);
       throw e;
     }
   },
@@ -126,7 +127,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         archivedGoals: s.archivedGoals.map(g => g.id === id ? updated : g),
       }));
     } catch (e) {
-      console.error('updateGoal failed:', e);
+      if (__DEV__) console.error('updateGoal failed:', e);
       throw e;
     }
   },
@@ -145,7 +146,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         archivedGoals: archived ? [{ ...archived, isArchived: true }, ...s.archivedGoals] : s.archivedGoals,
       }));
     } catch (e) {
-      console.error('archiveGoal failed:', e);
+      if (__DEV__) console.error('archiveGoal failed:', e);
       throw e;
     }
   },
@@ -163,7 +164,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         goals: [...s.goals, updatedGoal],
       }));
     } catch (e) {
-      console.error('restoreGoal failed:', e);
+      if (__DEV__) console.error('restoreGoal failed:', e);
       throw e;
     }
   },
@@ -175,16 +176,19 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       if (goal?.notificationId) {
         await cancelGoalReminder(goal.notificationId).catch(() => {});
       }
-      await db.runAsync('DELETE FROM logs WHERE goal_id=?', [id]);
-      await db.runAsync('DELETE FROM earned_badges WHERE goal_id=?', [id]);
-      await db.runAsync('DELETE FROM grace_days WHERE goal_id=?', [id]);
-      await db.runAsync('DELETE FROM goals WHERE id=?', [id]);
+      await db.withTransactionAsync(async () => {
+        await db.runAsync('DELETE FROM logs WHERE goal_id=?', [id]);
+        await db.runAsync('DELETE FROM earned_badges WHERE goal_id=?', [id]);
+        await db.runAsync('DELETE FROM grace_days WHERE goal_id=?', [id]);
+        await db.runAsync('DELETE FROM goals WHERE id=?', [id]);
+      });
       set(s => ({
         goals: s.goals.filter(g => g.id !== id),
         archivedGoals: s.archivedGoals.filter(g => g.id !== id),
       }));
+      useQuestStore.getState().invalidateGoal(id);
     } catch (e) {
-      console.error('deleteGoal failed:', e);
+      if (__DEV__) console.error('deleteGoal failed:', e);
       throw e;
     }
   },
@@ -202,7 +206,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         return { goals: [...s.goals].sort((a, b) => (orderMap[a.id] ?? 0) - (orderMap[b.id] ?? 0)).map((g, i) => ({ ...g, sortOrder: i })) };
       });
     } catch (e) {
-      console.error('reorderGoals failed:', e);
+      if (__DEV__) console.error('reorderGoals failed:', e);
       throw e;
     }
   },
@@ -213,7 +217,7 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       await db.runAsync('DELETE FROM logs WHERE goal_id=?', [goalId]);
       await db.runAsync('DELETE FROM grace_days WHERE goal_id=?', [goalId]);
     } catch (e) {
-      console.error('resetMilestoneLogs failed:', e);
+      if (__DEV__) console.error('resetMilestoneLogs failed:', e);
       throw e;
     }
   },

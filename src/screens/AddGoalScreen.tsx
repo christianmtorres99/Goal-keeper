@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, Alert, Switch, useWindowDimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -97,6 +97,8 @@ export default function AddGoalScreen() {
   const [difficulty, setDifficulty] = useState<GoalDifficulty>(existing?.difficulty ?? 'medium');
   const [reminderEnabled, setReminderEnabled] = useState(!!existing?.notificationTime);
   const [allowMultiple, setAllowMultiple] = useState(existing?.allowMultiplePerDay ?? false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   // 12hr time picker state
   const initTime = parseTime24(existing?.notificationTime ?? '09:00');
@@ -116,6 +118,7 @@ export default function AddGoalScreen() {
   }, [editingId]);
 
   const handleSave = async () => {
+    if (savingRef.current) return;
     if (!name.trim()) {
       Alert.alert('Required', 'Please enter a goal name.');
       return;
@@ -124,6 +127,8 @@ export default function AddGoalScreen() {
       Alert.alert('Required', 'Please enter a valid target count.');
       return;
     }
+    savingRef.current = true;
+    setSaving(true);
 
     let notificationId = existing?.notificationId;
 
@@ -160,22 +165,24 @@ export default function AddGoalScreen() {
       customCategoryLabel: category === 'other' && customCategoryLabel.trim() ? customCategoryLabel.trim() : undefined,
     };
 
-    if (editingId) {
-      await updateGoal(editingId, data);
-    } else {
-      const newGoal = await addGoal(data);
-      // Re-schedule with real goal id once we have it
-      if (notificationId && reminderEnabled) {
-        try {
-          await cancelGoalReminder(notificationId).catch(() => {});
-          const realId = await scheduleGoalReminder(newGoal.id, reminderTime24, name.trim());
-          await updateGoal(newGoal.id, { notificationId: realId });
-        } catch {
-          // Non-fatal: goal is saved, reminder just won't fire
+    try {
+      if (editingId) {
+        await updateGoal(editingId, data);
+      } else {
+        const newGoal = await addGoal(data);
+        if (notificationId && reminderEnabled) {
+          try {
+            await cancelGoalReminder(notificationId).catch(() => {});
+            const realId = await scheduleGoalReminder(newGoal.id, reminderTime24, name.trim());
+            await updateGoal(newGoal.id, { notificationId: realId });
+          } catch {}
         }
       }
+      navigation.goBack();
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
-    navigation.goBack();
   };
 
   return (
@@ -202,6 +209,7 @@ export default function AddGoalScreen() {
           placeholderTextColor={Colors.textDisabled}
           multiline
           numberOfLines={3}
+          maxLength={200}
         />
 
         <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Type</Text>
@@ -240,7 +248,7 @@ export default function AddGoalScreen() {
             </View>
             <View style={[styles.flex1, { marginLeft: Spacing.md }]}>
               <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Unit (optional)</Text>
-              <TextInput style={[styles.input, { marginTop: 4, backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]} value={unit} onChangeText={setUnit} placeholder="songs, pages..." placeholderTextColor={Colors.textDisabled} />
+              <TextInput style={[styles.input, { marginTop: 4, backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]} value={unit} onChangeText={setUnit} placeholder="songs, pages..." placeholderTextColor={Colors.textDisabled} maxLength={20} />
             </View>
           </View>
         )}
@@ -387,8 +395,14 @@ export default function AddGoalScreen() {
           </View>
         )}
 
-        <AnimatedPressable style={[styles.saveBtn, { backgroundColor: Colors.accent }]} onPress={handleSave}>
-          <Text style={[styles.saveBtnText, { color: Colors.textPrimary }]}>{editingId ? 'Save Changes' : 'Create Goal'}</Text>
+        <AnimatedPressable
+          style={[styles.saveBtn, { backgroundColor: saving ? Colors.accentDim : Colors.accent, opacity: saving ? 0.7 : 1 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Text style={[styles.saveBtnText, { color: Colors.textPrimary }]}>
+            {saving ? 'Saving…' : editingId ? 'Save Changes' : 'Create Goal'}
+          </Text>
         </AnimatedPressable>
 
       </ScrollView>

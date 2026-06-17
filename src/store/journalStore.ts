@@ -58,7 +58,7 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
 
       set({ entries, todayEntry });
     } catch (e) {
-      console.error('loadEntries failed:', e);
+      if (__DEV__) console.error('loadEntries failed:', e);
     }
   },
 
@@ -102,7 +102,7 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
         }));
       }
     } catch (e) {
-      console.error('saveEntry failed:', e);
+      if (__DEV__) console.error('saveEntry failed:', e);
     }
   },
 

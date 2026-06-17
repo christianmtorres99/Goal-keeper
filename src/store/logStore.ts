@@ -93,7 +93,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
 
       set({ logs, graceStates });
     } catch (e) {
-      console.error('loadLogs failed:', e);
+      if (__DEV__) console.error('loadLogs failed:', e);
       throw e;
     }
   },
@@ -341,9 +341,9 @@ export const useLogStore = create<LogStore>((set, get) => ({
 
       // Increment active day count when the very first log of the day is added
       if (!hadAnyLogToday) {
-        useRestDayStore.getState().incrementActiveDay().catch(e =>
-          console.error('incrementActiveDay failed:', e)
-        );
+        useRestDayStore.getState().incrementActiveDay().catch(e => {
+          if (__DEV__) console.error('incrementActiveDay failed:', e);
+        });
       }
 
       // --- Coin award ---
@@ -403,7 +403,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
 
       return { log, bonusXP, events, coinsAwarded, shardDropped, rankUp: didRankUp };
     } catch (e) {
-      console.error('addLog failed:', e);
+      if (__DEV__) console.error('addLog failed:', e);
       throw e;
     }
   },
@@ -414,7 +414,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
       await db.runAsync('DELETE FROM logs WHERE id = ?', [logId]);
       set(s => ({ logs: s.logs.filter(l => l.id !== logId) }));
     } catch (e) {
-      console.error('removeLog failed:', e);
+      if (__DEV__) console.error('removeLog failed:', e);
       throw e;
     }
   },
@@ -436,7 +436,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         logs: s.logs.map(l => l.id === logId ? { ...l, bonusXp: l.bonusXp + amount } : l),
       }));
     } catch (e) {
-      console.error('addBonusXP failed:', e);
+      if (__DEV__) console.error('addBonusXP failed:', e);
     }
   },
 }));

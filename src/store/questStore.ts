@@ -18,6 +18,7 @@ interface QuestStore {
   markProgress: (type: Quest['type'], goalId?: string) => void; // updates progress
   markAllGoals: (uniqueCount: number) => void;
   complete: (questId: string) => { xp: number } | null; // returns XP if newly completed
+  invalidateGoal: (goalId: string) => void;
   getTotalAvailableXP: () => number;
   getTotalEarnedXP: () => number;
 }
@@ -171,4 +172,14 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
 
   getTotalAvailableXP: () => get().quests.reduce((s, q) => s + q.xpReward, 0),
   getTotalEarnedXP: () => get().quests.filter(q => q.completed).reduce((s, q) => s + q.xpReward, 0),
+
+  invalidateGoal: (goalId) => {
+    set(s => {
+      const updated = s.quests.filter(q => q.type !== 'log_specific' || q.goalId !== goalId);
+      if (updated.length === s.quests.length) return s;
+      const today = todayString();
+      AsyncStorage.setItem(KEY, JSON.stringify({ date: today, quests: updated })).catch(() => {});
+      return { quests: updated };
+    });
+  },
 }));

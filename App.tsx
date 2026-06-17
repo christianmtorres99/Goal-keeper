@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, useColorScheme, AppState, AppStateStatus } from 'react-native';
 import { useFonts, PlusJakartaSans_400Regular, PlusJakartaSans_500Medium,
   PlusJakartaSans_600SemiBold, PlusJakartaSans_700Bold, PlusJakartaSans_800ExtraBold }
@@ -7,7 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, NavigationContainerRef } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 
 import { runMigrations } from './src/db/client';
 import { useGoalStore } from './src/store/goalStore';
@@ -18,6 +19,8 @@ import { useTodoXPStore } from './src/store/todoXPStore';
 import { useJournalStore } from './src/store/journalStore';
 import { setupNotificationHandler } from './src/utils/notifications';
 import AppNavigator from './src/navigation/AppNavigator';
+import ErrorBoundary from './src/components/common/ErrorBoundary';
+import type { RootStackParamList } from './src/navigation/AppNavigator';
 import OnboardingScreen, { ONBOARDING_KEY } from './src/screens/OnboardingScreen';
 import { Colors } from './src/constants/theme';
 import { THEMES, LIGHT_THEMES } from './src/constants/themes';
@@ -39,6 +42,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
 
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
@@ -142,6 +146,14 @@ export default function App() {
     };
     const appStateSub = AppState.addEventListener('change', handleAppState);
 
+    // Navigate to goal when user taps a notification
+    const notifSub = Notifications.addNotificationResponseReceivedListener(response => {
+      const goalId = response.notification.request.content.data?.goalId as string | undefined;
+      if (goalId && navigationRef.current) {
+        navigationRef.current.navigate('GoalDetail', { goalId });
+      }
+    });
+
     // Keep static Colors object in sync for StyleSheet.create references
     const unsub = useThemeStore.subscribe((state) => {
       const effectiveMode = state.colorMode === 'system' ? (systemScheme ?? 'dark') : state.colorMode;
@@ -151,6 +163,7 @@ export default function App() {
     return () => {
       unsub();
       appStateSub.remove();
+      notifSub.remove();
     };
   }, [systemScheme]);
 
@@ -184,16 +197,18 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer theme={NAV_THEME}>
-        <ThemeProvider>
-          <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg1 }}>
-            <StatusBar style={isLight ? 'dark' : 'light'} />
-            <AppNavigator />
-          </GestureHandlerRootView>
-        </ThemeProvider>
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
+          <ThemeProvider>
+            <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg1 }}>
+              <StatusBar style={isLight ? 'dark' : 'light'} />
+              <AppNavigator />
+            </GestureHandlerRootView>
+          </ThemeProvider>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 

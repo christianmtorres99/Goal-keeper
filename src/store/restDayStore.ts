@@ -50,7 +50,7 @@ export const useRestDayStore = create<RestDayStore>((set, get) => ({
         dismissCount: saved.dismissCount ?? 0,
       });
     } catch (e) {
-      console.error('loadRestDay failed:', e);
+      if (__DEV__) console.error('loadRestDay failed:', e);
     }
   },
 
@@ -117,6 +117,6 @@ export const useRestDayStore = create<RestDayStore>((set, get) => ({
       dismissCount: get().dismissCount,
     };
     set(next);
-    persist(next).catch(e => console.error('resetRestDay persist failed:', e));
+    persist(next).catch(e => { if (__DEV__) console.error('resetRestDay persist failed:', e); });
   },
 }));

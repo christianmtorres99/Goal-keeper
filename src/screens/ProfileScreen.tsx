@@ -210,16 +210,19 @@ export default function ProfileScreen() {
     navigation.setOptions({
       headerRight: () => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginRight: Spacing.md }}>
-          <AnimatedPressable onPress={() => navigation.navigate('Shop')}>
+          <AnimatedPressable onPress={() => navigation.navigate('Shop')} accessibilityLabel="Open shop">
             <Ionicons name="storefront-outline" size={22} color={Colors.textPrimary} />
           </AnimatedPressable>
-          <AnimatedPressable onPress={() => setThemePickerVisible(true)}>
+          <AnimatedPressable onPress={() => setThemePickerVisible(true)} accessibilityLabel="Change theme">
             <Ionicons name="color-palette-outline" size={22} color={Colors.textPrimary} />
+          </AnimatedPressable>
+          <AnimatedPressable onPress={() => navigation.navigate('Settings')} accessibilityLabel="Settings">
+            <Ionicons name="settings-outline" size={22} color={Colors.textPrimary} />
           </AnimatedPressable>
         </View>
       ),
     });
-  }, [navigation, Colors.textPrimary]);
+  }, [navigation, Colors.textPrimary, setThemePickerVisible]);
 
   const savePrefs = useCallback((f: SelectedFeature[], darkC: string, lightC: string) => {
     AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ features: f, bgColorDark: darkC, bgColorLight: lightC }));

@@ -18,7 +18,7 @@ export const useTodoXPStore = create<TodoXPStore>((set, get) => ({
       const raw = await AsyncStorage.getItem(KEY);
       if (raw) set({ totalXP: parseInt(raw, 10) || 0 });
     } catch (e) {
-      console.error('todoXPStore.load failed:', e);
+      if (__DEV__) console.error('todoXPStore.load failed:', e);
     }
   },
 
@@ -28,7 +28,7 @@ export const useTodoXPStore = create<TodoXPStore>((set, get) => ({
       set({ totalXP: next });
       await AsyncStorage.setItem(KEY, String(next));
     } catch (e) {
-      console.error('todoXPStore.addXP failed:', e);
+      if (__DEV__) console.error('todoXPStore.addXP failed:', e);
     }
   },
 
@@ -38,7 +38,7 @@ export const useTodoXPStore = create<TodoXPStore>((set, get) => ({
       set({ totalXP: next });
       await AsyncStorage.setItem(KEY, String(next));
     } catch (e) {
-      console.error('todoXPStore.subtractXP failed:', e);
+      if (__DEV__) console.error('todoXPStore.subtractXP failed:', e);
     }
   },
 }));

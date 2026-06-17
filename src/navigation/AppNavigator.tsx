@@ -22,6 +22,7 @@ import JournalScreen from '../screens/JournalScreen';
 import BossRaidScreen from '../screens/BossRaidScreen';
 import SeasonScreen from '../screens/SeasonScreen';
 import ShopScreen from '../screens/ShopScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import type { GoalCategory } from '../types';
 
 export type RootStackParamList = {
@@ -34,6 +35,7 @@ export type RootStackParamList = {
   BossRaid: undefined;
   Season: undefined;
   Shop: undefined;
+  Settings: undefined;
 };
 
 export type TabParamList = {
@@ -159,6 +161,7 @@ export default function AppNavigator() {
       <Stack.Screen name="BossRaid" component={BossRaidScreen} options={{ title: 'Boss Raid' }} />
       <Stack.Screen name="Season" component={SeasonScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Shop" component={ShopScreen} options={{ title: 'Perk Shop', headerTitleAlign: 'center' }} />
+      <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings', headerTitleAlign: 'center' }} />
     </Stack.Navigator>
   );
 }

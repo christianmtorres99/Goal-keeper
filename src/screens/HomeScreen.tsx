@@ -545,14 +545,14 @@ export default function HomeScreen() {
                 <View style={[styles.progressChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.14), borderWidth: 1, borderColor: hexAlpha(Colors.accentBright, 0.22) }]}>
                   <Text style={[styles.progressChipText, { color: Colors.accentBright }]}>{dailyProgressCount} / {activeGoals.length}</Text>
                 </View>
-                <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('Journal')}>
+                <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('Journal')} accessibilityLabel="Open journal">
                   <NotePencil size={20} color={Colors.textSecondary} weight="regular" />
                 </AnimatedPressable>
-                <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)}>
+                <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => setShowWeeklyReview(true)} accessibilityLabel="Weekly review">
                   <ChartLineUp size={20} color={Colors.textSecondary} weight="regular" />
                 </AnimatedPressable>
                 {hasArchived && (
-                  <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('ArchivedGoals')}>
+                  <AnimatedPressable scale={0.9} style={styles.iconBtn} onPress={() => navigation.navigate('ArchivedGoals')} accessibilityLabel="Archived goals">
                     <Archive size={20} color={Colors.textSecondary} weight="regular" />
                   </AnimatedPressable>
                 )}
