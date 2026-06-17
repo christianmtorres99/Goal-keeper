@@ -387,7 +387,7 @@ export default function ProfileScreen() {
         badgeDefs={BADGE_DEFINITIONS}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
         {/* Hero card */}
         <Animated.View style={reveal0}>

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +38,7 @@ type FilterMode = 'all' | 'goal' | 'category';
 
 export default function StatsScreen() {
   const { colors: Colors } = useColors();
+  const insets = useSafeAreaInsets();
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
   const todoXP = useTodoXPStore(s => s.totalXP);
@@ -259,7 +260,7 @@ export default function StatsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
       <AmbientBackground />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}>
         <Text style={[styles.title, { color: Colors.textPrimary }]}>Stats</Text>
 
         {/* Section 0 — Global stats + filters */}

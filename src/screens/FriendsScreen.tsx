@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   tabActive: {},
   tabText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
 
-  list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: 32 },
+  list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: 112 },
 
   addFriendBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

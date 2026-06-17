@@ -94,6 +94,9 @@ export default function HomeScreen() {
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
 
+  // Missions section collapsible (collapsed by default)
+  const [missionsExpanded, setMissionsExpanded] = useState(false);
+
   // Logged goals collapsible
   const [loggedCollapsed, setLoggedCollapsed] = useState(false);
   const listRef = useRef<any>(null);
@@ -499,7 +502,7 @@ export default function HomeScreen() {
         keyExtractor={g => g.id}
         onDragEnd={handleDragEnd}
         renderItem={renderItem}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}
         onContentSizeChange={() => {
           if (justExpandedRef.current) {
             justExpandedRef.current = false;
@@ -572,21 +575,39 @@ export default function HomeScreen() {
               />
             )}
 
-            {quests.length > 0 && (
-              <DailyQuestsCard
-                quests={quests}
-                totalEarned={questsEarned}
-                totalAvailable={questsAvailable}
-              />
-            )}
-
-            <WeeklyChallengesCard />
-
-            {isRaidActive && !isBossDefeated && (
-              <BossRaidCard onPress={() => navigation.navigate('BossRaid')} />
-            )}
-
             <TodoSection onComplete={handleTodoComplete} />
+
+            {/* Collapsible Missions section */}
+            <TouchableOpacity
+              style={[styles.missionHeader, { borderColor: Colors.border }]}
+              onPress={() => setMissionsExpanded(v => !v)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="shield-outline" size={16} color={Colors.textSecondary} />
+              <Text style={[styles.missionHeaderText, { color: Colors.textSecondary }]}>Missions</Text>
+              <View style={{ flex: 1 }} />
+              <Ionicons
+                name={missionsExpanded ? 'chevron-up' : 'chevron-down'}
+                size={14}
+                color={Colors.textDisabled}
+              />
+            </TouchableOpacity>
+
+            {missionsExpanded && (
+              <View style={styles.missionsContent}>
+                {quests.length > 0 && (
+                  <DailyQuestsCard
+                    quests={quests}
+                    totalEarned={questsEarned}
+                    totalAvailable={questsAvailable}
+                  />
+                )}
+                <WeeklyChallengesCard />
+                {isRaidActive && !isBossDefeated && (
+                  <BossRaidCard onPress={() => navigation.navigate('BossRaid')} />
+                )}
+              </View>
+            )}
 
             {pendingGoals.length > 0 && (
               <View style={styles.sectionLabelRow}>
@@ -695,6 +716,7 @@ export default function HomeScreen() {
         visible={!!pendingLevelUp}
         oldLevel={pendingLevelUp?.oldLevel ?? 0}
         newLevel={pendingLevelUp?.newLevel ?? 1}
+        currentXP={totalXP}
         onClose={() => {
           if (pendingAnimGoalId) {
             setAnimateSignals(s => ({ ...s, [pendingAnimGoalId]: (s[pendingAnimGoalId] ?? 0) + 1 }));
@@ -728,7 +750,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { padding: Spacing.md, paddingBottom: Spacing.xxl },
+  content: { padding: Spacing.md },
   headerSection: { gap: Spacing.md, marginBottom: Spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerLeft: { flex: 1, marginRight: Spacing.sm },
@@ -755,6 +777,9 @@ const styles = StyleSheet.create({
   sectionLabelRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   sectionLabelBar: { width: 2, height: 14, borderRadius: 1 },
   sectionLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  missionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, borderTopWidth: 1, borderBottomWidth: 1, marginVertical: Spacing.xs },
+  missionHeaderText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  missionsContent: { gap: Spacing.md },
   manipBanner: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },
   manipBannerText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, flex: 1 },
   rankUpBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1 },

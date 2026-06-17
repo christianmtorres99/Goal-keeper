@@ -728,6 +728,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
     paddingTop: Spacing.md,
     borderWidth: 1,
+    elevation: 0,
+    shadowColor: 'transparent',
   },
   actionHandle: {
     width: 36,

@@ -160,7 +160,7 @@ export default function SkillTrackScreen({ route }: Props) {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['left', 'right', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
         {/* Hero header */}
         <Animated.View style={reveal0}>

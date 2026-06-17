@@ -9,11 +9,13 @@ import { FontSize, FontFamily, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVE
 import AnimatedPressable from './AnimatedPressable';
 import { useColors } from '../../hooks/useColors';
 import { getLevelTier } from './ProfileShareCard';
+import { useFriendsStore } from '../../store/friendsStore';
 
 interface Props {
   visible: boolean;
   oldLevel: number;
   newLevel: number;
+  currentXP: number;
   onClose: () => void;
 }
 
@@ -107,7 +109,7 @@ function Particle({ spec, active }: { spec: ParticleSpec; active: boolean }) {
 
 // ─── Main modal ──────────────────────────────────────────────────────────────
 
-export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: Props) {
+export default function LevelUpModal({ visible, oldLevel, newLevel, currentXP, onClose }: Props) {
   const { colors: Colors, isLight } = useColors();
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -119,6 +121,13 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
   const tier = getLevelTier(newLevel);
   const oldTier = getLevelTier(oldLevel);
   const isTierUp = oldTier.title !== tier.title;
+
+  const leaderboard = useFriendsStore(s => s.leaderboard);
+  const rankedPercent = useMemo(() => {
+    if (leaderboard.length < 2) return null;
+    const belowCount = leaderboard.filter(p => p.xp < currentXP).length;
+    return Math.round((belowCount / leaderboard.length) * 100);
+  }, [leaderboard, currentXP]);
 
   const overlayBg = isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE;
 
@@ -195,6 +204,12 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, onClose }: P
 
           <Text style={[styles.tierName, { color: tier.color }]}>{tier.title}</Text>
 
+          {rankedPercent !== null && (
+            <Text style={[styles.rankedStat, { color: Colors.textDisabled }]}>
+              🌍 Ranked higher than {rankedPercent}% of tracked players
+            </Text>
+          )}
+
           <AnimatedPressable
             scale={0.97}
             style={[styles.button, { backgroundColor: tier.color }]}
@@ -257,6 +272,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xl,
     fontFamily: FontFamily.extraBold,
     letterSpacing: 0.5,
+  },
+  rankedStat: {
+    fontSize: FontSize.xs,
+    fontFamily: FontFamily.regular,
+    textAlign: 'center',
+    opacity: 0.75,
   },
   button: {
     borderRadius: Radius.md,

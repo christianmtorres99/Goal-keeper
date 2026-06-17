@@ -257,7 +257,7 @@ export default function GoalDetailScreen() {
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
         {/* Group 0: Hero card — revealed immediately */}
         <Animated.View style={reveal0}>

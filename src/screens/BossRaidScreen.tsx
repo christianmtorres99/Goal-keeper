@@ -120,7 +120,7 @@ export default function BossRaidScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 80 }]} showsVerticalScrollIndicator={false}>
 
         {/* ── Boss Header ─────────────────────────────────────────────── */}
         <View style={[styles.heroCard, { backgroundColor: hexAlpha(tc, 0.07), borderColor: hexAlpha(tc, 0.35) }]}>

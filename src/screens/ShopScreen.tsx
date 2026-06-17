@@ -205,7 +205,7 @@ export default function ShopScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
         {/* ── Balance header ── */}
         <View style={[styles.balanceCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>

@@ -12,7 +12,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
@@ -141,6 +141,7 @@ export default function JournalScreen() {
   const isSavingRef = useRef(false);
 
   const { colors: Colors, isLight } = useColors();
+  const insets = useSafeAreaInsets();
 
   const paperBg        = isLight ? PAPER_BG_LIGHT : PAPER_BG_DARK;
   const paperLine      = isLight ? PAPER_LINE_LIGHT : PAPER_LINE_DARK;
@@ -442,7 +443,7 @@ export default function JournalScreen() {
 
         {/* Stats tab */}
         {tab === 'stats' && (
-          <ScrollView contentContainerStyle={styles.statsContent}>
+          <ScrollView contentContainerStyle={[styles.statsContent, { paddingBottom: insets.bottom + 80 }]}>
             <Text style={[styles.statsTitle, { color: Colors.textPrimary }]}>Mood & Energy Overview</Text>
 
             <View style={styles.statsRow}>
