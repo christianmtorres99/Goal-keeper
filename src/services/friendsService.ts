@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, getDocs, collection, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, deleteDoc, serverTimestamp } from '@firebase/firestore';
 import { db, auth } from './firebase';
 import type { PublicProfile } from './profileService';
 

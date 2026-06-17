@@ -1,5 +1,5 @@
-import { signInAnonymously } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+import { signInAnonymously } from '@firebase/auth';
+import type { User } from '@firebase/auth';
 import { auth } from './firebase';
 
 export async function ensureAuth(): Promise<User> {

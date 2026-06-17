@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from '@firebase/firestore';
 import { db, auth } from './firebase';
 import { useGameStore } from '../store/gameStore';
 import { useLogStore } from '../store/logStore';
