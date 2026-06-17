@@ -785,4 +785,5 @@ const styles = StyleSheet.create({
   pickerLabel: { flex: 1, fontSize: FontSize.md, fontFamily: FontFamily.regular },
   pickerDone: { margin: Spacing.md, borderRadius: Radius.lg, padding: Spacing.md, alignItems: 'center' },
   pickerDoneText: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
+  consumableDesc: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
 });
