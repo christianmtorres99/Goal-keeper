@@ -503,19 +503,6 @@ export default function ProfileScreen() {
             })}
           </View>
 
-          {/* Color picker */}
-          <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Background</Text>
-          <View style={[styles.swatchContainer, { backgroundColor: Colors.bg3 + 'BB', borderColor: Colors.border }]}>
-            <View style={styles.colorRow}>
-              {shareBgColors.map(c => (
-                <AnimatedPressable
-                  key={c}
-                  style={[styles.colorSwatch, { backgroundColor: c }, bgColor === c && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]}
-                  onPress={() => setAndSaveBgColor(c)}
-                />
-              ))}
-            </View>
-          </View>
         </View>
         </Animated.View>
 
@@ -670,7 +657,13 @@ export default function ProfileScreen() {
       </ScrollView>
 
       {/* Theme picker modal */}
-      <ThemePickerModal visible={themePickerVisible} onClose={() => setThemePickerVisible(false)} />
+      <ThemePickerModal
+        visible={themePickerVisible}
+        onClose={() => setThemePickerVisible(false)}
+        shareBgColor={bgColor}
+        shareBgColors={shareBgColors}
+        onShareBgChange={setAndSaveBgColor}
+      />
 
       {/* Badge detail modal */}
       <BadgeDetailModal badgeId={selectedBadgeId} onClose={() => setSelectedBadgeId(null)} />

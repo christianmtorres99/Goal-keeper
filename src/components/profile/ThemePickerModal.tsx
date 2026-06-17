@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,16 +10,26 @@ import { Spring } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 
 type ColorMode = 'dark' | 'light' | 'system';
+type Tab = 'theme' | 'share';
+
+interface Props {
+  visible: boolean;
+  onClose: () => void;
+  shareBgColor?: string;
+  shareBgColors?: string[];
+  onShareBgChange?: (color: string) => void;
+}
 
 export default function ThemePickerModal({
   visible,
   onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) {
+  shareBgColor,
+  shareBgColors = [],
+  onShareBgChange,
+}: Props) {
   const { colors: Colors, isLight } = useColors();
   const { activeTheme, setTheme, colorMode, setColorMode } = useThemeStore();
+  const [activeTab, setActiveTab] = useState<Tab>('theme');
 
   const translateY = useSharedValue(0);
 
@@ -39,8 +49,13 @@ export default function ThemePickerModal({
   }));
 
   useEffect(() => {
-    if (!visible) translateY.value = 0;
+    if (!visible) {
+      translateY.value = 0;
+      setActiveTab('theme');
+    }
   }, [visible]);
+
+  const hasShareTab = shareBgColors.length > 0 && onShareBgChange;
 
   return (
     <Modal
@@ -53,63 +68,104 @@ export default function ThemePickerModal({
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.sheet, { backgroundColor: Colors.bg1 }, sheetStyle]}>
             <View style={[styles.handle, { backgroundColor: Colors.border }]} />
-            <Text style={[styles.title, { color: Colors.textPrimary }]}>App Theme</Text>
+            <Text style={[styles.title, { color: Colors.textPrimary }]}>Appearance</Text>
 
-            {/* Display Mode selector */}
-            <View style={styles.modeRow}>
-              {(['dark', 'light', 'system'] as const).map((m: ColorMode) => (
-                <TouchableOpacity
-                  key={m}
-                  style={[
-                    styles.modeBtn,
-                    { borderColor: Colors.border, backgroundColor: Colors.bg2 },
-                    colorMode === m && { borderColor: Colors.accent, backgroundColor: Colors.bg3 },
-                  ]}
-                  onPress={() => setColorMode(m)}
-                >
-                  <Ionicons
-                    name={m === 'dark' ? 'moon' : m === 'light' ? 'sunny' : 'phone-portrait'}
-                    size={16}
-                    color={colorMode === m ? Colors.accent : Colors.textSecondary}
-                  />
-                  <Text style={[styles.modeBtnText, { color: colorMode === m ? Colors.accent : Colors.textSecondary }]}>
-                    {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'System'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {/* Tab switcher */}
+            {hasShareTab && (
+              <View style={[styles.tabRow, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
+                {(['theme', 'share'] as Tab[]).map(tab => (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[styles.tabBtn, activeTab === tab && { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
+                    onPress={() => setActiveTab(tab)}
+                  >
+                    <Text style={[styles.tabBtnText, { color: activeTab === tab ? Colors.textPrimary : Colors.textSecondary }]}>
+                      {tab === 'theme' ? 'App Theme' : 'Share Card'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
-            <View style={styles.grid}>
-              {(Object.entries(THEME_META) as [ThemeName, { label: string; preview: string }][]).map(
-                ([key, meta]) => {
-                  const isActive = activeTheme === key;
-                  const palette = isLight ? LIGHT_THEMES[key] : THEMES[key];
-                  return (
+            {activeTab === 'theme' ? (
+              <>
+                {/* Display Mode selector */}
+                <View style={styles.modeRow}>
+                  {(['dark', 'light', 'system'] as const).map((m: ColorMode) => (
                     <TouchableOpacity
-                      key={key}
+                      key={m}
                       style={[
-                        styles.card,
-                        { borderColor: isActive ? meta.preview : Colors.border },
+                        styles.modeBtn,
+                        { borderColor: Colors.border, backgroundColor: Colors.bg2 },
+                        colorMode === m && { borderColor: Colors.accent, backgroundColor: Colors.bg3 },
                       ]}
-                      onPress={() => setTheme(key)}
+                      onPress={() => setColorMode(m)}
                     >
-                      <View style={[styles.preview, { backgroundColor: palette.bg1 }]}>
-                        <View style={[styles.accentDot, { backgroundColor: meta.preview }]} />
-                      </View>
-                      <Text style={[styles.label, { color: Colors.textPrimary }]}>{meta.label}</Text>
-                      {isActive && (
-                        <Ionicons
-                          name="checkmark-circle"
-                          size={16}
-                          color={meta.preview}
-                          style={styles.check}
-                        />
-                      )}
+                      <Ionicons
+                        name={m === 'dark' ? 'moon' : m === 'light' ? 'sunny' : 'phone-portrait'}
+                        size={16}
+                        color={colorMode === m ? Colors.accent : Colors.textSecondary}
+                      />
+                      <Text style={[styles.modeBtnText, { color: colorMode === m ? Colors.accent : Colors.textSecondary }]}>
+                        {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'System'}
+                      </Text>
                     </TouchableOpacity>
-                  );
-                },
-              )}
-            </View>
+                  ))}
+                </View>
+
+                <View style={styles.grid}>
+                  {(Object.entries(THEME_META) as [ThemeName, { label: string; preview: string }][]).map(
+                    ([key, meta]) => {
+                      const isActive = activeTheme === key;
+                      const palette = isLight ? LIGHT_THEMES[key] : THEMES[key];
+                      return (
+                        <TouchableOpacity
+                          key={key}
+                          style={[
+                            styles.card,
+                            { borderColor: isActive ? meta.preview : Colors.border },
+                          ]}
+                          onPress={() => setTheme(key)}
+                        >
+                          <View style={[styles.preview, { backgroundColor: palette.bg1 }]}>
+                            <View style={[styles.accentDot, { backgroundColor: meta.preview }]} />
+                          </View>
+                          <Text style={[styles.label, { color: Colors.textPrimary }]}>{meta.label}</Text>
+                          {isActive && (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={16}
+                              color={meta.preview}
+                              style={styles.check}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    },
+                  )}
+                </View>
+              </>
+            ) : (
+              <ScrollView contentContainerStyle={styles.shareTabContent} showsVerticalScrollIndicator={false}>
+                <Text style={[styles.shareTabLabel, { color: Colors.textSecondary }]}>
+                  Pick a background for your share card
+                </Text>
+                <View style={styles.swatchGrid}>
+                  {shareBgColors.map(c => (
+                    <TouchableOpacity
+                      key={c}
+                      style={[
+                        styles.swatch,
+                        { backgroundColor: c },
+                        shareBgColor === c && styles.swatchSelected,
+                        shareBgColor === c && { borderColor: Colors.textPrimary },
+                      ]}
+                      onPress={() => onShareBgChange!(c)}
+                    />
+                  ))}
+                </View>
+              </ScrollView>
+            )}
           </Animated.View>
         </GestureDetector>
       </TouchableOpacity>
@@ -140,6 +196,25 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontFamily: FontFamily.bold,
     textAlign: 'center',
+  },
+  tabRow: {
+    flexDirection: 'row',
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    padding: 3,
+    gap: 3,
+  },
+  tabBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  tabBtnText: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.semiBold,
   },
   grid: {
     flexDirection: 'row',
@@ -198,5 +273,30 @@ const styles = StyleSheet.create({
   modeBtnText: {
     fontSize: FontSize.sm,
     fontFamily: FontFamily.semiBold,
+  },
+  shareTabContent: {
+    gap: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  shareTabLabel: {
+    fontSize: FontSize.sm,
+    fontFamily: FontFamily.regular,
+    textAlign: 'center',
+  },
+  swatchGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    justifyContent: 'center',
+  },
+  swatch: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  swatchSelected: {
+    transform: [{ scale: 1.2 }],
   },
 });
