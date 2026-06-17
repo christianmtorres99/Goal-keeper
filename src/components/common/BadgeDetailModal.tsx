@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, OVERLAY_DARK_MODE, OVERLAY_LIGHT_MODE } from '../../constants/theme';
+import { Spring } from '../../constants/motion';
 import AnimatedPressable from './AnimatedPressable';
 import { useColors } from '../../hooks/useColors';
 import { BADGE_DEFINITIONS, RARITY_COLORS, RARITY_LABELS, RARITY_BG } from '../../constants/badges';
@@ -52,16 +53,13 @@ interface ParticleProps {
   total: number;
   color: string;
   rarity: BadgeRarity;
-  trigger: number; // increments to re-trigger animation
+  trigger: number;
 }
 
 function Particle({ index, total, color, rarity, trigger }: ParticleProps) {
   const angle = (index / total) * 2 * Math.PI;
-  const startX = 0;
-  const startY = 0;
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
-  // Project onto rectangle: scale so the longer dimension equals PARTICLE_RADIUS
   const absC = Math.abs(cosA);
   const absS = Math.abs(sinA);
   const rectScale = absC > 0.001 && absS > 0.001
@@ -80,13 +78,12 @@ function Particle({ index, total, color, rarity, trigger }: ParticleProps) {
 
   const animate = useCallback(() => {
     'worklet';
-    translateX.value = startX;
-    translateY.value = startY;
+    translateX.value = 0;
+    translateY.value = 0;
     opacity.value = 0;
     scale.value = 0;
 
     if (rarity === 'common') {
-      // Single burst: scale 0→1.5→0, opacity 1→0
       opacity.value = withDelay(delay, withSequence(
         withTiming(1, { duration: 100 }),
         withTiming(0, { duration: 600 }),
@@ -104,7 +101,6 @@ function Particle({ index, total, color, rarity, trigger }: ParticleProps) {
         withTiming(endY, { duration: 300 }),
       ));
     } else {
-      // Radiate outward
       opacity.value = withDelay(delay, withSequence(
         withTiming(1, { duration: 150 }),
         withTiming(0, { duration: 550 }),
@@ -174,34 +170,62 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
     ? hexAlpha(Colors.textSecondary, 0.8)
     : rarityColor;
 
-  // Goal name lookup
   const goalName = earnedBadge?.goalId
     ? goals.find(g => g.id === earnedBadge.goalId)?.name ?? null
     : null;
 
+  // Icon scale-in (springs in from 0.3 to 1.0 on open — one-time)
   const iconScale = useSharedValue(1);
+  // Rarity pill pop-in with bounce (delayed)
+  const rarityPillScale = useSharedValue(0);
+  // Description fade-in (delayed further)
+  const descOpacity = useSharedValue(0);
+
   const [jsTrigger, setJsTrigger] = React.useState(0);
+  const [displayCount, setDisplayCount] = React.useState(0);
 
   const triggerAnimations = useCallback(() => {
     'worklet';
-    if (rarity === 'rare' || rarity === 'legendary') {
-      iconScale.value = withSequence(
-        withTiming(1.12, { duration: 280 }),
-        withSpring(1, { damping: 8, stiffness: 100 }),
-      );
-    }
-  }, [rarity, iconScale]);
+    iconScale.value = withSequence(
+      withSpring(1.08, Spring.bouncy),
+      withSpring(1.0, Spring.snappy),
+    );
+    rarityPillScale.value = withDelay(280, withSpring(1, Spring.bouncy));
+    descOpacity.value = withDelay(450, withTiming(1, { duration: 260 }));
+  }, [iconScale, rarityPillScale, descOpacity]);
 
   useEffect(() => {
-    if (badgeId) {
-      iconScale.value = 1;
+    if (badgeId && def) {
+      iconScale.value = 0.3;
+      rarityPillScale.value = 0;
+      descOpacity.value = 0;
+      setDisplayCount(0);
       setJsTrigger(t => t + 1);
       triggerAnimations();
+
+      // Letter-by-letter label typeout
+      const total = def.label.length;
+      let count = 0;
+      const interval = setInterval(() => {
+        count++;
+        setDisplayCount(count);
+        if (count >= total) clearInterval(interval);
+      }, 45);
+      return () => clearInterval(interval);
     }
   }, [badgeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const iconContainerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],
+  }));
+
+  const rarityPillAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: rarityPillScale.value }],
+    opacity: rarityPillScale.value,
+  }));
+
+  const descAnimStyle = useAnimatedStyle(() => ({
+    opacity: descOpacity.value,
   }));
 
   if (!def) return null;
@@ -228,13 +252,13 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               alignItems: 'center',
               gap: Spacing.md,
               borderWidth: 1,
-              borderColor: Colors.border,
+              borderColor: hexAlpha(rarityColor, 0.35),
               overflow: 'hidden',
             }}
           >
             {/* Icon area with particles */}
             <View style={{ width: ICON_CONTAINER_SIZE, height: ICON_CONTAINER_SIZE, alignItems: 'center', justifyContent: 'center' }}>
-              {/* Particles */}
+              {/* Particles — fire once on open */}
               {Array.from({ length: numParticles }).map((_, i) => (
                 <Particle
                   key={i}
@@ -246,7 +270,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
                 />
               ))}
 
-              {/* Icon container */}
+              {/* Icon container — springs in from 0.3 */}
               <Animated.View
                 style={[
                   {
@@ -282,31 +306,27 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               </Animated.View>
             </View>
 
-            {/* Badge name */}
-            <Text style={{ color: Colors.textPrimary, fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center' }}>
-              {def.label}
+            {/* Badge name — types out letter by letter */}
+            <Text style={{ color: Colors.textPrimary, fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center', minHeight: FontSize.xl * 1.3 }}>
+              {def.label.slice(0, displayCount)}
             </Text>
 
-            {/* Rarity tier label */}
-            <View style={{
+            {/* Rarity tier label — bounces in after 280ms */}
+            <Animated.View style={[rarityPillAnimStyle, s.rarityPill, {
               backgroundColor: hexAlpha(rarityColor, 0.13),
-              borderRadius: Radius.full,
-              paddingHorizontal: Spacing.md,
-              paddingVertical: Spacing.xs,
-              borderWidth: 1,
               borderColor: hexAlpha(rarityColor, 0.40),
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+            }]}>
               <Text style={{ color: rarityColor, fontSize: FontSize.sm, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 1 }}>
                 {RARITY_LABELS[rarity]}
               </Text>
-            </View>
+            </Animated.View>
 
-            {/* Description */}
-            <Text style={{ color: Colors.textSecondary, fontSize: FontSize.md, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: 22 }}>
-              {def.description}
-            </Text>
+            {/* Description — fades in after 450ms */}
+            <Animated.View style={descAnimStyle}>
+              <Text style={{ color: Colors.textSecondary, fontSize: FontSize.md, fontFamily: FontFamily.regular, textAlign: 'center', lineHeight: 22 }}>
+                {def.description}
+              </Text>
+            </Animated.View>
 
             {/* Earned date or not earned */}
             {isEarned && earnedBadge ? (
@@ -322,7 +342,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
               </Text>
             )}
 
-            {/* Goal name (only if earnedBadge.goalId is not null and goal found) */}
+            {/* Goal name */}
             {isEarned && goalName && (
               <Text style={{ color: Colors.textSecondary, fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center' }}>
                 Earned with:{' '}
@@ -356,3 +376,14 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
     </Modal>
   );
 }
+
+const s = StyleSheet.create({
+  rarityPill: {
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

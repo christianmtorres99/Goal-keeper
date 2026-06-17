@@ -14,7 +14,7 @@ interface Props {
   size?: number;
 }
 
-export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props) {
+export default function BadgeItem({ badge, earned, earnedAt, size = 110 }: Props) {
   const { colors: Colors } = useColors();
   const iconWrap = Math.floor(size * 0.76);
   const iconSz   = Math.floor(iconWrap * 0.50);
@@ -65,16 +65,24 @@ export default function BadgeItem({ badge, earned, earnedAt, size = 90 }: Props)
         {badge.label}
       </Text>
 
-      {earned ? (
-        earnedAt ? (
-          <Text style={[s.sub, { fontSize: labelSz - 1, color: Colors.textDisabled }]}>{formatCompactDate(earnedAt)}</Text>
-        ) : (
-          <Text style={[s.rarityTag, { fontSize: labelSz - 1, color: rarityColor }]}>
-            {RARITY_LABELS[badge.rarity]}
-          </Text>
-        )
-      ) : (
-        <Text style={[s.sub, { fontSize: labelSz - 1, color: Colors.textDisabled }]} numberOfLines={2}>{badge.description}</Text>
+      {/* Rarity pill — always visible */}
+      <View style={[
+        s.rarityPill,
+        {
+          backgroundColor: hexAlpha(rarityColor, earned ? 0.18 : 0.08),
+          borderColor: hexAlpha(rarityColor, earned ? 0.50 : 0.25),
+        },
+      ]}>
+        <Text style={[s.rarityPillText, { fontSize: labelSz - 2, color: earned ? rarityColor : hexAlpha(rarityColor, 0.60) }]}>
+          {RARITY_LABELS[badge.rarity]}
+        </Text>
+      </View>
+
+      {/* Earned date — below pill */}
+      {earned && earnedAt && (
+        <Text style={[s.sub, { fontSize: labelSz - 1, color: Colors.textDisabled }]}>
+          {formatCompactDate(earnedAt)}
+        </Text>
       )}
     </View>
   );
@@ -88,6 +96,7 @@ const s = StyleSheet.create({
   lockOverlay:  { position: 'absolute', bottom: 4, right: 4 },
   crownWrap:    { position: 'absolute', top: -4, right: -4, borderRadius: 8, padding: 1 },
   label:        { fontFamily: FontFamily.semiBold, textAlign: 'center' },
+  rarityPill:   { borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: 5, paddingVertical: 2 },
+  rarityPillText: { fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'center' },
   sub:          { textAlign: 'center', lineHeight: 13 },
-  rarityTag:    { fontFamily: FontFamily.bold, textAlign: 'center' },
 });

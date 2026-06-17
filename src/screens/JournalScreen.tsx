@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -22,6 +24,7 @@ import { useJournalStore } from '../store/journalStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeJournalStreak } from '../utils/journalUtils';
 import DrawingCanvas from '../components/journal/DrawingCanvas';
+import AmbientBackground from '../components/common/AmbientBackground';
 import { todayString, formatDisplayDate, formatShortDate, addDays } from '../utils/dateUtils';
 import type { DrawingPath, JournalEntry } from '../types';
 
@@ -33,12 +36,20 @@ const ENERGY_ICONS: Array<'battery-dead-outline' | 'battery-half-outline' | 'bat
   ['battery-dead-outline', 'battery-half-outline', 'battery-full-outline', 'flash-outline', 'flash'];
 const ENERGY_LABELS = ['Low', 'Fair', 'Good', 'High', 'Max'];
 const PEN_SIZES = [2, 4, 8];
+const TABS: Tab[] = ['write', 'draw', 'stats'];
 
-const PAPER_BG_DARK    = '#111111';
-const PAPER_LINE_DARK  = '#1A1A1A';
-const PAPER_BG_LIGHT   = '#FEFEFE';
-const PAPER_LINE_LIGHT = '#E5E7EB';
+const PAPER_BG_DARK    = '#0F1520';
+const PAPER_LINE_DARK  = '#182030';
+const PAPER_BG_LIGHT   = '#FEFDF8';
+const PAPER_LINE_LIGHT = '#EBE8DF';
 const LINE_H = FontSize.md * 1.8; // 27px — shared by paper lines AND textInput lineHeight
+
+// Tab bar width for sliding indicator
+const SCREEN_W = Dimensions.get('window').width;
+const TAB_W = SCREEN_W / TABS.length;
+
+// Animated TouchableOpacity for chip scale spring
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 // ── Plain-text extraction helper ──────────────────────────────────────────────
 
@@ -63,14 +74,26 @@ interface ChipProps {
 
 function RatingChip({ selected, onPress, label, icon, dotColor }: ChipProps) {
   const { colors: Colors } = useColors();
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePress = useCallback(() => {
+    Animated.sequence([
+      Animated.spring(scale, { toValue: 0.90, useNativeDriver: true, damping: 20, stiffness: 400, mass: 0.8 } as any),
+      Animated.spring(scale, { toValue: 1.0,  useNativeDriver: true, damping: 12, stiffness: 280, mass: 0.9 } as any),
+    ]).start();
+    Haptics.selectionAsync();
+    onPress();
+  }, [scale, onPress]);
+
   return (
-    <TouchableOpacity
+    <AnimatedTouchable
       style={[
         styles.chip,
         { backgroundColor: Colors.bg2, borderColor: Colors.border },
-        selected && { backgroundColor: Colors.accentDim, borderColor: Colors.accent, transform: [{ scale: 1.06 }] },
+        selected && { backgroundColor: Colors.accentDim, borderColor: Colors.accent },
+        { transform: [{ scale }] },
       ]}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.75}
     >
       {dotColor ? (
@@ -81,7 +104,7 @@ function RatingChip({ selected, onPress, label, icon, dotColor }: ChipProps) {
       <Text style={[styles.chipLabel, { color: selected ? Colors.accentBright : Colors.textSecondary }, selected && styles.chipLabelSelected]}>
         {label}
       </Text>
-    </TouchableOpacity>
+    </AnimatedTouchable>
   );
 }
 
@@ -106,6 +129,14 @@ export default function JournalScreen() {
   const [penColor, setPenColor] = useState('#F1F5F9');
   const [penSize, setPenSize] = useState(1);
   const [saving, setSaving] = useState(false);
+
+  // Stats counter display values (count up when entering stats tab)
+  const [displayStreak, setDisplayStreak] = useState(0);
+  const [displayEntries, setDisplayEntries] = useState(0);
+
+  // Tab transition animation
+  const tabOpacity = useRef(new Animated.Value(1)).current;
+  const tabIndicatorX = useRef(new Animated.Value(0)).current;
 
   const isSavingRef = useRef(false);
 
@@ -149,6 +180,40 @@ export default function JournalScreen() {
   useEffect(() => {
     setPenColor(penColors[0].value);
   }, [isLight]);
+
+  // Slide the tab indicator to match the active tab
+  useEffect(() => {
+    const idx = TABS.indexOf(tab);
+    Animated.timing(tabIndicatorX, {
+      toValue: idx * TAB_W,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [tab]);
+
+  // Stats counters — count up from 0 when entering stats tab
+  useEffect(() => {
+    if (tab !== 'stats') {
+      setDisplayStreak(0);
+      setDisplayEntries(0);
+      return;
+    }
+    const streakTarget = statsData.streak;
+    const entriesTarget = entries.length;
+    if (streakTarget === 0 && entriesTarget === 0) return;
+
+    const maxTarget = Math.max(streakTarget, entriesTarget, 1);
+    const intervalMs = Math.max(16, Math.floor(600 / maxTarget));
+    let s = 0;
+    let e = 0;
+    const interval = setInterval(() => {
+      let done = true;
+      if (s < streakTarget) { s++; setDisplayStreak(s); done = false; }
+      if (e < entriesTarget) { e++; setDisplayEntries(e); done = false; }
+      if (done) clearInterval(interval);
+    }, intervalMs);
+    return () => clearInterval(interval);
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Unsaved changes guard
   useEffect(() => {
@@ -197,11 +262,14 @@ export default function JournalScreen() {
     ]);
   }, []);
 
-  const switchTab = async (newTab: Tab) => {
+  const switchTab = useCallback(async (newTab: Tab) => {
     if (newTab === tab) return;
     await saveEntry(activeDate, mood, energy, text, drawingPaths);
-    setTab(newTab);
-  };
+    Animated.timing(tabOpacity, { toValue: 0, duration: 110, useNativeDriver: true }).start(() => {
+      setTab(newTab);
+      Animated.timing(tabOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    });
+  }, [tab, saveEntry, activeDate, mood, energy, text, drawingPaths, tabOpacity]);
 
   // Stats data
   const statsData = useMemo(() => {
@@ -227,6 +295,8 @@ export default function JournalScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['top', 'left', 'right']}>
+      <AmbientBackground />
+
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: Colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
@@ -238,179 +308,191 @@ export default function JournalScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Tab switcher */}
+      {/* Tab switcher with sliding indicator */}
       <View style={[styles.tabRow, { backgroundColor: Colors.bg1, borderBottomColor: Colors.border }]}>
-        {(['write', 'draw', 'stats'] as Tab[]).map(t => (
-          <TouchableOpacity key={t} style={[styles.tab, tab === t && { borderBottomWidth: 2, borderBottomColor: Colors.accent }]} onPress={() => switchTab(t)}>
+        {TABS.map(t => (
+          <TouchableOpacity key={t} style={styles.tab} onPress={() => switchTab(t)}>
             <Text style={[styles.tabText, { color: Colors.textSecondary }, tab === t && { color: Colors.accentBright, fontFamily: FontFamily.bold }]}>
               {t === 'write' ? 'Write' : t === 'draw' ? 'Draw' : 'Stats'}
             </Text>
           </TouchableOpacity>
         ))}
+        {/* Sliding colored bar */}
+        <Animated.View
+          style={[
+            styles.tabIndicator,
+            { backgroundColor: Colors.accent, transform: [{ translateX: tabIndicatorX }] },
+          ]}
+        />
       </View>
 
-      {/* Write tab */}
-      {tab === 'write' && (
-        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
-          <View style={styles.flex}>
-            {/* Journal header — mood, energy, date */}
-            <View style={[styles.journalHeader, { borderBottomColor: Colors.border }]}>
-              <TouchableOpacity
-                style={styles.moodToggleRow}
-                onPress={() => setMoodCollapsed(c => !c)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.dateLabel, { color: Colors.textSecondary }]}>{formatDisplayDate(activeDate)}</Text>
-                <Ionicons
-                  name={moodCollapsed ? 'chevron-down' : 'chevron-up'}
-                  size={14}
-                  color={Colors.textSecondary}
+      {/* Tab content — crossfades on switch */}
+      <Animated.View style={[styles.flex, { opacity: tabOpacity }]}>
+
+        {/* Write tab */}
+        {tab === 'write' && (
+          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
+            <View style={styles.flex}>
+              {/* Journal header — mood, energy, date */}
+              <View style={[styles.journalHeader, { borderBottomColor: Colors.border }]}>
+                <TouchableOpacity
+                  style={styles.moodToggleRow}
+                  onPress={() => setMoodCollapsed(c => !c)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.dateLabel, { color: Colors.textSecondary }]}>{formatDisplayDate(activeDate)}</Text>
+                  <Ionicons
+                    name={moodCollapsed ? 'chevron-down' : 'chevron-up'}
+                    size={14}
+                    color={Colors.textSecondary}
+                  />
+                </TouchableOpacity>
+
+                {!moodCollapsed && (
+                  <>
+                    {/* Mood chips */}
+                    <View style={styles.ratingSection}>
+                      <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Mood</Text>
+                      <View style={styles.chipRow}>
+                        {MOOD_DOT_COLORS.map((color, idx) => (
+                          <RatingChip
+                            key={idx}
+                            selected={mood === idx + 1}
+                            onPress={() => setMood(idx + 1)}
+                            dotColor={color}
+                            label={MOOD_LABELS[idx]}
+                          />
+                        ))}
+                      </View>
+                    </View>
+
+                    {/* Energy chips */}
+                    <View style={styles.ratingSection}>
+                      <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Energy</Text>
+                      <View style={styles.chipRow}>
+                        {ENERGY_ICONS.map((icon, idx) => (
+                          <RatingChip
+                            key={idx}
+                            selected={energy === idx + 1}
+                            onPress={() => setEnergy(idx + 1)}
+                            icon={icon}
+                            label={ENERGY_LABELS[idx]}
+                          />
+                        ))}
+                      </View>
+                    </View>
+                  </>
+                )}
+              </View>
+
+              {/* Paper — fills remaining space */}
+              <View style={[styles.paperWrapper, { backgroundColor: paperBg }]}>
+                {/* Paper lines */}
+                <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                  {Array.from({ length: 40 }, (_, i) => (
+                    <View key={i} style={[styles.paperLine, { top: Spacing.md + (i + 1) * LINE_H, backgroundColor: paperLine }]} />
+                  ))}
+                </View>
+
+                <TextInput
+                  style={[styles.paperInput, { color: paperTextColor, lineHeight: LINE_H }]}
+                  multiline
+                  value={text}
+                  onChangeText={setText}
+                  placeholder="Write something..."
+                  placeholderTextColor={Colors.textDisabled}
+                  selectionColor={Colors.accent}
+                  scrollEnabled={false}
+                  autoCorrect
+                  spellCheck
                 />
-              </TouchableOpacity>
-
-              {!moodCollapsed && (
-                <>
-                  {/* Mood chips */}
-                  <View style={styles.ratingSection}>
-                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Mood</Text>
-                    <View style={styles.chipRow}>
-                      {MOOD_DOT_COLORS.map((color, idx) => (
-                        <RatingChip
-                          key={idx}
-                          selected={mood === idx + 1}
-                          onPress={() => setMood(idx + 1)}
-                          dotColor={color}
-                          label={MOOD_LABELS[idx]}
-                        />
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Energy chips */}
-                  <View style={styles.ratingSection}>
-                    <Text style={[styles.ratingLabel, { color: Colors.textPrimary }]}>Energy</Text>
-                    <View style={styles.chipRow}>
-                      {ENERGY_ICONS.map((icon, idx) => (
-                        <RatingChip
-                          key={idx}
-                          selected={energy === idx + 1}
-                          onPress={() => setEnergy(idx + 1)}
-                          icon={icon}
-                          label={ENERGY_LABELS[idx]}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                </>
-              )}
+              </View>
             </View>
+          </KeyboardAvoidingView>
+        )}
 
-            {/* Paper — fills remaining space */}
-            <View style={[styles.paperWrapper, { backgroundColor: paperBg }]}>
-              {/* Paper lines */}
-              <View style={StyleSheet.absoluteFill} pointerEvents="none">
-                {Array.from({ length: 40 }, (_, i) => (
-                  <View key={i} style={[styles.paperLine, { top: Spacing.md + (i + 1) * LINE_H, backgroundColor: paperLine }]} />
+        {/* Draw tab */}
+        {tab === 'draw' && (
+          <View style={styles.flex}>
+            <View style={[styles.canvasWrapper, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+              <DrawingCanvas paths={drawingPaths} onPathsChange={setDrawingPaths} penColor={penColor} penWidth={PEN_SIZES[penSize]} style={styles.canvas} />
+            </View>
+            <View style={[styles.drawToolbar, { borderTopColor: Colors.border, backgroundColor: Colors.bg1 }]}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.colorScroll} contentContainerStyle={styles.colorScrollContent}>
+                {penColors.map(c => (
+                  <TouchableOpacity key={c.value} style={[styles.colorSwatch, { backgroundColor: c.value }, penColor === c.value && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]} onPress={() => setPenColor(c.value)} />
+                ))}
+              </ScrollView>
+              <View style={[styles.sizeBtns, { backgroundColor: Colors.bg2 }]}>
+                {PEN_SIZES.map((size, idx) => (
+                  <TouchableOpacity key={size} style={[styles.sizeBtn, penSize === idx && { backgroundColor: Colors.bg3 }]} onPress={() => setPenSize(idx)}>
+                    <View style={[styles.sizeDot, { width: size * 2, height: size * 2, borderRadius: size, backgroundColor: Colors.textSecondary }, penSize === idx && { backgroundColor: penColor }]} />
+                  </TouchableOpacity>
                 ))}
               </View>
-
-              <TextInput
-                style={[styles.paperInput, { color: paperTextColor, lineHeight: LINE_H }]}
-                multiline
-                value={text}
-                onChangeText={setText}
-                placeholder="Write something..."
-                placeholderTextColor={Colors.textDisabled}
-                selectionColor={Colors.accent}
-                scrollEnabled={false}
-                autoCorrect
-                spellCheck
-              />
+              <TouchableOpacity style={styles.toolBtn} onPress={handleUndo} disabled={drawingPaths.length === 0}>
+                <Ionicons name="arrow-undo" size={20} color={drawingPaths.length === 0 ? Colors.textDisabled : Colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolBtn} onPress={handleClear} disabled={drawingPaths.length === 0}>
+                <Ionicons name="trash-outline" size={20} color={drawingPaths.length === 0 ? Colors.textDisabled : Colors.danger} />
+              </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      )}
+        )}
 
-      {/* Draw tab */}
-      {tab === 'draw' && (
-        <View style={styles.flex}>
-          <View style={[styles.canvasWrapper, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-            <DrawingCanvas paths={drawingPaths} onPathsChange={setDrawingPaths} penColor={penColor} penWidth={PEN_SIZES[penSize]} style={styles.canvas} />
-          </View>
-          <View style={[styles.drawToolbar, { borderTopColor: Colors.border, backgroundColor: Colors.bg1 }]}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.colorScroll} contentContainerStyle={styles.colorScrollContent}>
-              {penColors.map(c => (
-                <TouchableOpacity key={c.value} style={[styles.colorSwatch, { backgroundColor: c.value }, penColor === c.value && { borderColor: Colors.textPrimary, transform: [{ scale: 1.2 }] }]} onPress={() => setPenColor(c.value)} />
-              ))}
-            </ScrollView>
-            <View style={[styles.sizeBtns, { backgroundColor: Colors.bg2 }]}>
-              {PEN_SIZES.map((size, idx) => (
-                <TouchableOpacity key={size} style={[styles.sizeBtn, penSize === idx && { backgroundColor: Colors.bg3 }]} onPress={() => setPenSize(idx)}>
-                  <View style={[styles.sizeDot, { width: size * 2, height: size * 2, borderRadius: size, backgroundColor: Colors.textSecondary }, penSize === idx && { backgroundColor: penColor }]} />
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.toolBtn} onPress={handleUndo} disabled={drawingPaths.length === 0}>
-              <Ionicons name="arrow-undo" size={20} color={drawingPaths.length === 0 ? Colors.textDisabled : Colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.toolBtn} onPress={handleClear} disabled={drawingPaths.length === 0}>
-              <Ionicons name="trash-outline" size={20} color={drawingPaths.length === 0 ? Colors.textDisabled : Colors.danger} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+        {/* Stats tab */}
+        {tab === 'stats' && (
+          <ScrollView contentContainerStyle={styles.statsContent}>
+            <Text style={[styles.statsTitle, { color: Colors.textPrimary }]}>Mood & Energy Overview</Text>
 
-      {/* Stats tab */}
-      {tab === 'stats' && (
-        <ScrollView contentContainerStyle={styles.statsContent}>
-          <Text style={[styles.statsTitle, { color: Colors.textPrimary }]}>Mood & Energy Overview</Text>
-
-          <View style={styles.statsRow}>
-            <View style={[styles.statCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.statCardValue, { color: Colors.accentBright }]}>{statsData.streak}</Text>
-              <Text style={[styles.statCardLabel, { color: Colors.textSecondary }]}>Day Streak</Text>
-              <Ionicons name="flame" size={16} color={Colors.warning} style={{ marginTop: 2 }} />
-            </View>
-            <View style={[styles.statCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.statCardValue, { color: Colors.accentBright }]}>{entries.length}</Text>
-              <Text style={[styles.statCardLabel, { color: Colors.textSecondary }]}>Total Entries</Text>
-              <Ionicons name="book" size={16} color={Colors.accent} style={{ marginTop: 2 }} />
-            </View>
-          </View>
-
-          <View style={[styles.compareCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-            <Text style={[styles.compareTitle, { color: Colors.textPrimary }]}>This Week vs Last Week</Text>
-            <View style={styles.compareRow}>
-              <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>Mood</Text>
-              <Text style={[styles.compareValue, { color: Colors.textPrimary }]}>{statsData.thisWeekMood}</Text>
-              <Text style={[styles.compareArrow, { color: Colors.textDisabled }]}>→</Text>
-              <Text style={[styles.compareValue, { color: Colors.textSecondary }]}>{statsData.lastWeekMood}</Text>
-            </View>
-            <View style={styles.compareRow}>
-              <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>Energy</Text>
-              <Text style={[styles.compareValue, { color: Colors.textPrimary }]}>{statsData.thisWeekEnergy}</Text>
-              <Text style={[styles.compareArrow, { color: Colors.textDisabled }]}>→</Text>
-              <Text style={[styles.compareValue, { color: Colors.textSecondary }]}>{statsData.lastWeekEnergy}</Text>
-            </View>
-          </View>
-
-          <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Last 14 Days</Text>
-          <View style={styles.moodGrid}>
-            {statsData.recent.map(e => (
-              <View key={e.id} style={styles.moodGridDay}>
-                <Text style={[styles.moodGridDate, { color: Colors.textDisabled }]}>{formatShortDate(e.entryDate)}</Text>
-                <View style={[styles.moodGridDot, { backgroundColor: MOOD_DOT_COLORS[e.mood - 1] }]} />
-                <View style={[styles.moodEnergyBar, { backgroundColor: Colors.bg3 }]}>
-                  <View style={[styles.moodEnergyFill, { height: (e.energy / 5) * 24, backgroundColor: Colors.accent }]} />
-                </View>
+            <View style={styles.statsRow}>
+              <View style={[styles.statCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+                <Text style={[styles.statCardValue, { color: Colors.accentBright }]}>{displayStreak}</Text>
+                <Text style={[styles.statCardLabel, { color: Colors.textSecondary }]}>Day Streak</Text>
+                <Ionicons name="flame" size={16} color={Colors.warning} style={{ marginTop: 2 }} />
               </View>
-            ))}
-            {statsData.recent.length === 0 && (
-              <Text style={[styles.noData, { color: Colors.textDisabled }]}>No journal entries yet. Start writing!</Text>
-            )}
-          </View>
-        </ScrollView>
-      )}
+              <View style={[styles.statCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+                <Text style={[styles.statCardValue, { color: Colors.accentBright }]}>{displayEntries}</Text>
+                <Text style={[styles.statCardLabel, { color: Colors.textSecondary }]}>Total Entries</Text>
+                <Ionicons name="book" size={16} color={Colors.accent} style={{ marginTop: 2 }} />
+              </View>
+            </View>
+
+            <View style={[styles.compareCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+              <Text style={[styles.compareTitle, { color: Colors.textPrimary }]}>This Week vs Last Week</Text>
+              <View style={styles.compareRow}>
+                <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>Mood</Text>
+                <Text style={[styles.compareValue, { color: Colors.textPrimary }]}>{statsData.thisWeekMood}</Text>
+                <Text style={[styles.compareArrow, { color: Colors.textDisabled }]}>→</Text>
+                <Text style={[styles.compareValue, { color: Colors.textSecondary }]}>{statsData.lastWeekMood}</Text>
+              </View>
+              <View style={styles.compareRow}>
+                <Text style={[styles.compareLabel, { color: Colors.textSecondary }]}>Energy</Text>
+                <Text style={[styles.compareValue, { color: Colors.textPrimary }]}>{statsData.thisWeekEnergy}</Text>
+                <Text style={[styles.compareArrow, { color: Colors.textDisabled }]}>→</Text>
+                <Text style={[styles.compareValue, { color: Colors.textSecondary }]}>{statsData.lastWeekEnergy}</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Last 14 Days</Text>
+            <View style={styles.moodGrid}>
+              {statsData.recent.map(e => (
+                <View key={e.id} style={styles.moodGridDay}>
+                  <Text style={[styles.moodGridDate, { color: Colors.textDisabled }]}>{formatShortDate(e.entryDate)}</Text>
+                  <View style={[styles.moodGridDot, { backgroundColor: MOOD_DOT_COLORS[e.mood - 1] }]} />
+                  <View style={[styles.moodEnergyBar, { backgroundColor: Colors.bg3 }]}>
+                    <View style={[styles.moodEnergyFill, { height: (e.energy / 5) * 24, backgroundColor: Colors.accent }]} />
+                  </View>
+                </View>
+              ))}
+              {statsData.recent.length === 0 && (
+                <Text style={[styles.noData, { color: Colors.textDisabled }]}>No journal entries yet. Start writing!</Text>
+              )}
+            </View>
+          </ScrollView>
+        )}
+
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -429,9 +511,16 @@ const styles = StyleSheet.create({
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
 
-  tabRow: { flexDirection: 'row', borderBottomWidth: 1 },
+  tabRow: { flexDirection: 'row', borderBottomWidth: 1, position: 'relative' },
   tab: { flex: 1, paddingVertical: Spacing.sm, alignItems: 'center' },
   tabText: { fontSize: FontSize.md, fontFamily: FontFamily.medium },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: TAB_W,
+    height: 2,
+  },
 
   // Journal header (mood/energy/date)
   journalHeader: {
@@ -447,7 +536,7 @@ const styles = StyleSheet.create({
   ratingSection: { gap: Spacing.xs, width: '100%' },
   ratingLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
 
-  // Chip row (mood + energy)
+  // Chip row (mood + energy) — flex:1 on each chip so they share the row evenly
   chipRow: { flexDirection: 'row', gap: Spacing.xs },
   chip: {
     flex: 1,
@@ -473,7 +562,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: FontSize.md,
     fontFamily: FontFamily.regular,
-    // lineHeight is set inline as LINE_H so it matches the paper line spacing
     padding: Spacing.md,
     textAlignVertical: 'top',
   },

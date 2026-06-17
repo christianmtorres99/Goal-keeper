@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useRef, useState, useLayoutEffect } from 'react';
+import React, { useMemo, useCallback, useRef, useState, useLayoutEffect, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -6,8 +6,16 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
+import { Spring, Timing, Stagger } from '../constants/motion';
 import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -49,6 +57,32 @@ export default function GoalDetailScreen() {
 
   const shareCardRef = useRef<View>(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
+
+  // ── Staggered section reveal on mount ────────────────────────────────
+  const revealY0  = useSharedValue(14);
+  const revealOp0 = useSharedValue(0);
+  const revealY1  = useSharedValue(14);
+  const revealOp1 = useSharedValue(0);
+  const revealY2  = useSharedValue(14);
+  const revealOp2 = useSharedValue(0);
+  const revealY3  = useSharedValue(14);
+  const revealOp3 = useSharedValue(0);
+
+  useEffect(() => {
+    revealY0.value  = withSpring(0, Spring.snappy);
+    revealOp0.value = withTiming(1, { duration: Timing.fast });
+    revealY1.value  = withDelay(Stagger.section * 1, withSpring(0, Spring.snappy));
+    revealOp1.value = withDelay(Stagger.section * 1, withTiming(1, { duration: Timing.fast }));
+    revealY2.value  = withDelay(Stagger.section * 2, withSpring(0, Spring.snappy));
+    revealOp2.value = withDelay(Stagger.section * 2, withTiming(1, { duration: Timing.fast }));
+    revealY3.value  = withDelay(Stagger.section * 3, withSpring(0, Spring.snappy));
+    revealOp3.value = withDelay(Stagger.section * 3, withTiming(1, { duration: Timing.fast }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reveal0 = useAnimatedStyle(() => ({ opacity: revealOp0.value, transform: [{ translateY: revealY0.value }] }));
+  const reveal1 = useAnimatedStyle(() => ({ opacity: revealOp1.value, transform: [{ translateY: revealY1.value }] }));
+  const reveal2 = useAnimatedStyle(() => ({ opacity: revealOp2.value, transform: [{ translateY: revealY2.value }] }));
+  const reveal3 = useAnimatedStyle(() => ({ opacity: revealOp3.value, transform: [{ translateY: revealY3.value }] }));
 
   useLayoutEffect(() => {
     if (!goal) return;
@@ -107,7 +141,6 @@ export default function GoalDetailScreen() {
     const labels: string[] = [];
     const data: number[] = [];
     let cumXP = 0;
-    // Sort logs oldest first for cumulative sum
     const sortedLogs = [...goalLogs].sort((a, b) => a.logDate.localeCompare(b.logDate));
     for (let i = DAYS - 1; i >= 0; i--) {
       const date = addDays(today, -i);
@@ -133,7 +166,6 @@ export default function GoalDetailScreen() {
 
   const relevantBadges = BADGE_DEFINITIONS.filter(b => b.category === 'streak' || b.category === 'logs' || b.category === 'cycle');
 
-  // Next badge progress per category
   const nextBadgeProgress = useMemo(() => {
     const streakBadges = BADGE_DEFINITIONS.filter(b => b.category === 'streak').sort((a, b) => a.threshold - b.threshold);
     const logsBadges = BADGE_DEFINITIONS.filter(b => b.category === 'logs').sort((a, b) => a.threshold - b.threshold);
@@ -210,9 +242,6 @@ export default function GoalDetailScreen() {
     ? Math.min(goalLogs.length / goal.targetCount * 100, 100)
     : null;
 
-  // Guard: goal was deleted while screen is still mounted during navigation
-  if (!goal) return null;
-
   const chartConfig = makeChartConfig(goal.color, Colors.bg1, Colors);
 
   return (
@@ -230,205 +259,211 @@ export default function GoalDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
 
-        {/* Goal header */}
-        <View style={[styles.heroCard, { backgroundColor: Colors.bg1, borderColor: hexAlpha(goal.color, 0.33) }]}>
-          <View style={styles.heroTop}>
-            <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
-              <Ionicons name={goal.icon as any} size={36} color={goal.color} />
-            </View>
-            <View style={styles.heroText}>
-              <Text style={[styles.goalName, { color: Colors.textPrimary }]}>{goal.name}</Text>
-              {goal.description ? <Text style={[styles.goalDesc, { color: Colors.textSecondary }]}>{goal.description}</Text> : null}
-              <View style={styles.tagRow}>
-                <View style={[styles.typeBadge, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
-                  <Text style={[styles.typeText, { color: goal.color }]}>
-                    {goal.type === 'habit' ? 'Daily Habit' : 'Milestone'}
-                  </Text>
-                </View>
-                <View style={[styles.typeBadge, { backgroundColor: Colors.bg3 }]}>
-                  <Ionicons name={require('../utils/categoryXP').CATEGORY_ICONS[goal.category] as any} size={10} color={Colors.textSecondary} />
-                  <Text style={[styles.categoryText, { color: Colors.textSecondary }]}>{goal.category}</Text>
+        {/* Group 0: Hero card — revealed immediately */}
+        <Animated.View style={reveal0}>
+          <View style={[styles.heroCard, { backgroundColor: Colors.bg1, borderColor: hexAlpha(goal.color, 0.33) }]}>
+            <View style={styles.heroTop}>
+              <View style={[styles.iconWrap, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
+                <Ionicons name={goal.icon as any} size={36} color={goal.color} />
+              </View>
+              <View style={styles.heroText}>
+                <Text style={[styles.goalName, { color: Colors.textPrimary }]}>{goal.name}</Text>
+                {goal.description ? <Text style={[styles.goalDesc, { color: Colors.textSecondary }]}>{goal.description}</Text> : null}
+                <View style={styles.tagRow}>
+                  <View style={[styles.typeBadge, { backgroundColor: hexAlpha(goal.color, 0.13) }]}>
+                    <Text style={[styles.typeText, { color: goal.color }]}>
+                      {goal.type === 'habit' ? 'Daily Habit' : 'Milestone'}
+                    </Text>
+                  </View>
+                  <View style={[styles.typeBadge, { backgroundColor: Colors.bg3 }]}>
+                    <Ionicons name={require('../utils/categoryXP').CATEGORY_ICONS[goal.category] as any} size={10} color={Colors.textSecondary} />
+                    <Text style={[styles.categoryText, { color: Colors.textSecondary }]}>{goal.category}</Text>
+                  </View>
                 </View>
               </View>
+              <View style={styles.heroActions}>
+                <AnimatedPressable onPress={handleShare} style={styles.headerBtn}>
+                  <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+                </AnimatedPressable>
+                <AnimatedPressable onPress={() => navigation.navigate('AddGoal', { goalId })} style={styles.headerBtn}>
+                  <Ionicons name="create-outline" size={20} color={Colors.textSecondary} />
+                </AnimatedPressable>
+              </View>
             </View>
-            <View style={styles.heroActions}>
-              <AnimatedPressable onPress={handleShare} style={styles.headerBtn}>
-                <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
-              </AnimatedPressable>
-              <AnimatedPressable onPress={() => navigation.navigate('AddGoal', { goalId })} style={styles.headerBtn}>
-                <Ionicons name="create-outline" size={20} color={Colors.textSecondary} />
-              </AnimatedPressable>
-            </View>
+
+            {progressPercent !== null && (
+              <View style={styles.milestoneSection}>
+                <View style={styles.milestoneHeader}>
+                  <Text style={[styles.milestoneLabel, { color: Colors.textSecondary }]}>Progress{goal.cycleCount > 0 ? ` · Cycle ${goal.cycleCount + 1}` : ''}</Text>
+                  <Text style={[styles.milestoneValue, { color: Colors.textPrimary }]}>{goalLogs.length} / {goal.targetCount} {goal.unit ?? ''}</Text>
+                </View>
+                <View style={[styles.milestoneTrack, { backgroundColor: Colors.bg3 }]}>
+                  <View style={[styles.milestoneFill, { width: `${progressPercent}%`, backgroundColor: goal.color }]} />
+                </View>
+              </View>
+            )}
+
+            <XPBar stats={playerStats} />
+          </View>
+        </Animated.View>
+
+        {/* Group 1: Stats row + grace card — 80ms delay */}
+        <Animated.View style={[reveal1, styles.revealGroup]}>
+          <View style={styles.statRow}>
+            {[
+              { label: 'Streak', value: `${streakInfo.currentStreak}d` },
+              { label: 'Best', value: `${streakInfo.longestStreak}d` },
+              { label: 'Total Logs', value: formatStatValue(goalLogs.length) },
+              { label: 'Total XP', value: formatStatValue(totalXP) },
+            ].map(s => (
+              <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+                <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{s.value}</Text>
+                <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
+              </View>
+            ))}
           </View>
 
-          {progressPercent !== null && (
-            <View style={styles.milestoneSection}>
-              <View style={styles.milestoneHeader}>
-                <Text style={[styles.milestoneLabel, { color: Colors.textSecondary }]}>Progress{goal.cycleCount > 0 ? ` · Cycle ${goal.cycleCount + 1}` : ''}</Text>
-                <Text style={[styles.milestoneValue, { color: Colors.textPrimary }]}>{goalLogs.length} / {goal.targetCount} {goal.unit ?? ''}</Text>
-              </View>
-              <View style={[styles.milestoneTrack, { backgroundColor: Colors.bg3 }]}>
-                <View style={[styles.milestoneFill, { width: `${progressPercent}%`, backgroundColor: goal.color }]} />
-              </View>
+          {grace.graceDayUsed && (
+            <View style={[styles.graceCard, { backgroundColor: hexAlpha(Colors.warning, 0.13), borderColor: hexAlpha(Colors.warning, 0.33) }]}>
+              <Ionicons name="shield-checkmark" size={16} color={Colors.warning} />
+              <Text style={[styles.graceText, { color: Colors.warning }]}>Grace day used — log today to maintain your streak!</Text>
             </View>
           )}
+        </Animated.View>
 
-          <XPBar stats={playerStats} />
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statRow}>
-          {[
-            { label: 'Streak', value: `${streakInfo.currentStreak}d` },
-            { label: 'Best', value: `${streakInfo.longestStreak}d` },
-            { label: 'Total Logs', value: formatStatValue(goalLogs.length) },
-            { label: 'Total XP', value: formatStatValue(totalXP) },
-          ].map(s => (
-            <View key={s.label} style={[styles.statBox, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.statValue, { color: Colors.accentBright }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{s.value}</Text>
-              <Text style={[styles.statLabel, { color: Colors.textSecondary }]}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {grace.graceDayUsed && (
-          <View style={[styles.graceCard, { backgroundColor: hexAlpha(Colors.warning, 0.13), borderColor: hexAlpha(Colors.warning, 0.33) }]}>
-            <Ionicons name="shield-checkmark" size={16} color={Colors.warning} />
-            <Text style={[styles.graceText, { color: Colors.warning }]}>Grace day used — log today to maintain your streak!</Text>
+        {/* Group 2: All charts — 160ms delay */}
+        <Animated.View style={[reveal2, styles.revealGroup]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>This Week</Text>
           </View>
-        )}
-
-        {/* Weekly chart */}
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>This Week</Text>
-        </View>
-        <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <BarChart
-            data={weeklyData}
-            width={W - Spacing.md * 2}
-            height={160}
-            chartConfig={chartConfig}
-            style={styles.chart}
-            fromZero
-            showValuesOnTopOfBars
-            yAxisLabel=""
-            yAxisSuffix=""
-          />
-        </View>
-
-        {/* Heatmap */}
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity Map</Text>
-        </View>
-        <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
-        </View>
-
-        {/* XP Growth */}
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
-        </View>
-        <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-          <LineChart
-            data={xpGrowthData}
-            width={W - Spacing.md * 2}
-            height={140}
-            chartConfig={chartConfig}
-            style={styles.chart}
-            withDots={false}
-            withInnerLines={false}
-            bezier
-            yAxisLabel=""
-            yAxisSuffix=" XP"
-          />
-        </View>
-
-        {/* Badge progress */}
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Badges</Text>
-        </View>
-        {(nextBadgeProgress.streak || nextBadgeProgress.logs) && (
-          <View style={[styles.badgeProgressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-            {nextBadgeProgress.streak && (
-              <View style={styles.badgeProgressRow}>
-                <Ionicons name={nextBadgeProgress.streak.badge.icon as any} size={16} color={goal.color} />
-                <View style={styles.badgeProgressInfo}>
-                  <View style={styles.badgeProgressHeader}>
-                    <Text style={[styles.badgeProgressLabel, { color: Colors.textPrimary }]}>{nextBadgeProgress.streak.badge.label}</Text>
-                    <Text style={[styles.badgeProgressValue, { color: Colors.textSecondary }]}>{nextBadgeProgress.streak.current}/{nextBadgeProgress.streak.badge.threshold}d</Text>
-                  </View>
-                  <View style={[styles.badgeProgressTrack, { backgroundColor: Colors.bg3 }]}>
-                    <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.streak.pct * 100}%`, backgroundColor: goal.color }]} />
-                  </View>
-                </View>
-              </View>
-            )}
-            {nextBadgeProgress.logs && (
-              <View style={styles.badgeProgressRow}>
-                <Ionicons name={nextBadgeProgress.logs.badge.icon as any} size={16} color={Colors.accentBright} />
-                <View style={styles.badgeProgressInfo}>
-                  <View style={styles.badgeProgressHeader}>
-                    <Text style={[styles.badgeProgressLabel, { color: Colors.textPrimary }]}>{nextBadgeProgress.logs.badge.label}</Text>
-                    <Text style={[styles.badgeProgressValue, { color: Colors.textSecondary }]}>{nextBadgeProgress.logs.current}/{nextBadgeProgress.logs.badge.threshold} logs</Text>
-                  </View>
-                  <View style={[styles.badgeProgressTrack, { backgroundColor: Colors.bg3 }]}>
-                    <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.logs.pct * 100}%`, backgroundColor: Colors.accentBright }]} />
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
-        <View style={styles.badgeGrid}>
-          {relevantBadges.map(badge => (
-            <BadgeItem
-              key={badge.id}
-              badge={badge}
-              earned={earnedGoalBadges.earned.has(badge.id)}
-              earnedAt={earnedGoalBadges.earnedAt[badge.id]}
-              size={BADGE_SIZE}
+          <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <BarChart
+              data={weeklyData}
+              width={W - Spacing.md * 2}
+              height={160}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              fromZero
+              showValuesOnTopOfBars
+              yAxisLabel=""
+              yAxisSuffix=""
             />
-          ))}
-        </View>
+          </View>
 
-        {/* Log history */}
-        <View style={styles.sectionRow}>
-          <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Recent Logs</Text>
-          <AnimatedPressable style={[styles.pastDayBtn, { backgroundColor: hexAlpha(Colors.accentDim, 0.33), borderColor: hexAlpha(Colors.accentBright, 0.27) }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
-            <Text style={[styles.pastDayBtnText, { color: Colors.accentBright }]}>Log past day</Text>
-          </AnimatedPressable>
-        </View>
-        {goalLogs.length === 0
-          ? <Text style={[styles.noLogs, { color: Colors.textDisabled }]}>No logs yet — start logging today!</Text>
-          : [...goalLogs].reverse().slice(0, 30).map(log => (
-            <View key={log.id} style={[styles.logRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-              <Text style={[styles.logDate, { color: Colors.textSecondary }]}>{formatShortDate(log.logDate)}</Text>
-              <Text style={[styles.logXP, { color: Colors.accentBright }]}>+{log.xpAwarded + log.bonusXp} XP</Text>
-              {log.bonusXp > 0 && <Text style={[styles.logBonus, { color: Colors.success }]}>+{log.bonusXp} bonus</Text>}
-              {log.note ? <Text style={[styles.logNote, { color: Colors.textSecondary }]} numberOfLines={1}>{log.note}</Text> : null}
-              <AnimatedPressable onPress={() => handleDeleteLog(log.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="trash-outline" size={14} color={Colors.textDisabled} />
-              </AnimatedPressable>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Activity Map</Text>
+          </View>
+          <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <HeatmapGrid logs={goalLogs} goalColor={goal.color} days={91} containerWidth={W - Spacing.md * 2} />
+          </View>
+
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>XP Growth (30 days)</Text>
+          </View>
+          <View style={[styles.chartCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <LineChart
+              data={xpGrowthData}
+              width={W - Spacing.md * 2}
+              height={140}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              withDots={false}
+              withInnerLines={false}
+              bezier
+              yAxisLabel=""
+              yAxisSuffix=" XP"
+            />
+          </View>
+        </Animated.View>
+
+        {/* Group 3: Badges + logs + danger zone — 240ms delay */}
+        <Animated.View style={[reveal3, styles.revealGroup]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionAccentBar, { backgroundColor: goal.color }]} />
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Badges</Text>
+          </View>
+          {(nextBadgeProgress.streak || nextBadgeProgress.logs) && (
+            <View style={[styles.badgeProgressCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+              {nextBadgeProgress.streak && (
+                <View style={styles.badgeProgressRow}>
+                  <Ionicons name={nextBadgeProgress.streak.badge.icon as any} size={16} color={goal.color} />
+                  <View style={styles.badgeProgressInfo}>
+                    <View style={styles.badgeProgressHeader}>
+                      <Text style={[styles.badgeProgressLabel, { color: Colors.textPrimary }]}>{nextBadgeProgress.streak.badge.label}</Text>
+                      <Text style={[styles.badgeProgressValue, { color: Colors.textSecondary }]}>{nextBadgeProgress.streak.current}/{nextBadgeProgress.streak.badge.threshold}d</Text>
+                    </View>
+                    <View style={[styles.badgeProgressTrack, { backgroundColor: Colors.bg3 }]}>
+                      <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.streak.pct * 100}%`, backgroundColor: goal.color }]} />
+                    </View>
+                  </View>
+                </View>
+              )}
+              {nextBadgeProgress.logs && (
+                <View style={styles.badgeProgressRow}>
+                  <Ionicons name={nextBadgeProgress.logs.badge.icon as any} size={16} color={Colors.accentBright} />
+                  <View style={styles.badgeProgressInfo}>
+                    <View style={styles.badgeProgressHeader}>
+                      <Text style={[styles.badgeProgressLabel, { color: Colors.textPrimary }]}>{nextBadgeProgress.logs.badge.label}</Text>
+                      <Text style={[styles.badgeProgressValue, { color: Colors.textSecondary }]}>{nextBadgeProgress.logs.current}/{nextBadgeProgress.logs.badge.threshold} logs</Text>
+                    </View>
+                    <View style={[styles.badgeProgressTrack, { backgroundColor: Colors.bg3 }]}>
+                      <View style={[styles.badgeProgressFill, { width: `${nextBadgeProgress.logs.pct * 100}%`, backgroundColor: Colors.accentBright }]} />
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
-          ))
-        }
+          )}
+          <View style={styles.badgeGrid}>
+            {relevantBadges.map(badge => (
+              <BadgeItem
+                key={badge.id}
+                badge={badge}
+                earned={earnedGoalBadges.earned.has(badge.id)}
+                earnedAt={earnedGoalBadges.earnedAt[badge.id]}
+                size={BADGE_SIZE}
+              />
+            ))}
+          </View>
 
-        {/* Danger zone */}
-        <View style={[styles.dangerZone, { borderTopColor: Colors.bg3 }]}>
-          <AnimatedPressable style={[styles.archiveBtn, { borderColor: hexAlpha(Colors.warning, 0.33) }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
-            <Ionicons name="archive-outline" size={16} color={Colors.warning} />
-            <Text style={[styles.archiveBtnText, { color: Colors.warning }]}>Archive Goal</Text>
-          </AnimatedPressable>
-          <AnimatedPressable style={[styles.deleteBtn, { borderColor: hexAlpha(Colors.danger, 0.33) }]} onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={16} color={Colors.danger} />
-            <Text style={[styles.deleteBtnText, { color: Colors.danger }]}>Delete Goal</Text>
-          </AnimatedPressable>
-        </View>
+          {/* Log history */}
+          <View style={styles.sectionRow}>
+            <Text style={[TextStyle.label, { color: Colors.textSecondary }]}>Recent Logs</Text>
+            <AnimatedPressable style={[styles.pastDayBtn, { backgroundColor: hexAlpha(Colors.accentDim, 0.33), borderColor: hexAlpha(Colors.accentBright, 0.27) }]} onPress={() => setPastPickerVisible(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="calendar-outline" size={14} color={Colors.accentBright} />
+              <Text style={[styles.pastDayBtnText, { color: Colors.accentBright }]}>Log past day</Text>
+            </AnimatedPressable>
+          </View>
+          {goalLogs.length === 0
+            ? <Text style={[styles.noLogs, { color: Colors.textDisabled }]}>No logs yet — start logging today!</Text>
+            : [...goalLogs].reverse().slice(0, 30).map(log => (
+              <View key={log.id} style={[styles.logRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+                <Text style={[styles.logDate, { color: Colors.textSecondary }]}>{formatShortDate(log.logDate)}</Text>
+                <Text style={[styles.logXP, { color: Colors.accentBright }]}>+{log.xpAwarded + log.bonusXp} XP</Text>
+                {log.bonusXp > 0 && <Text style={[styles.logBonus, { color: Colors.success }]}>+{log.bonusXp} bonus</Text>}
+                {log.note ? <Text style={[styles.logNote, { color: Colors.textSecondary }]} numberOfLines={1}>{log.note}</Text> : null}
+                <AnimatedPressable onPress={() => handleDeleteLog(log.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Ionicons name="trash-outline" size={14} color={Colors.textDisabled} />
+                </AnimatedPressable>
+              </View>
+            ))
+          }
+
+          {/* Danger zone */}
+          <View style={[styles.dangerZone, { borderTopColor: Colors.bg3 }]}>
+            <AnimatedPressable style={[styles.archiveBtn, { borderColor: hexAlpha(Colors.warning, 0.33) }]} onPress={() => { archiveGoal(goalId); navigation.goBack(); }}>
+              <Ionicons name="archive-outline" size={16} color={Colors.warning} />
+              <Text style={[styles.archiveBtnText, { color: Colors.warning }]}>Archive Goal</Text>
+            </AnimatedPressable>
+            <AnimatedPressable style={[styles.deleteBtn, { borderColor: hexAlpha(Colors.danger, 0.33) }]} onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={16} color={Colors.danger} />
+              <Text style={[styles.deleteBtnText, { color: Colors.danger }]}>Delete Goal</Text>
+            </AnimatedPressable>
+          </View>
+        </Animated.View>
 
       </ScrollView>
 
@@ -503,6 +538,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   offscreen: { position: 'absolute', top: -9999, left: -9999 },
   content: { padding: Spacing.md, gap: Spacing.md, paddingBottom: Spacing.xxl },
+  revealGroup: { gap: Spacing.md },
   heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroTop: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
   iconWrap: { width: 60, height: 60, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
@@ -550,7 +586,6 @@ const styles = StyleSheet.create({
   logXP: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   logBonus: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   logNote: { fontSize: FontSize.sm, flex: 1, fontFamily: FontFamily.regular },
-  // Past-day picker styles
   pickerOverlay: { flex: 1, justifyContent: 'flex-end' },
   pickerBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.5)' },
   pickerSheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderTopWidth: 1 },

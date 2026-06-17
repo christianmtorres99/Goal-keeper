@@ -39,7 +39,7 @@ import { computeStreakWithGrace } from '../logic/streakEngine';
 import { sumXP, formatStatValue } from '../utils/xpUtils';
 import { getCategoryStats, getCategoryDisplayLabel, getCustomTracks, CATEGORY_LABELS, CATEGORY_ICONS } from '../utils/categoryXP';
 import { shareViewAsImage } from '../utils/shareUtils';
-import { BADGE_DEFINITIONS } from '../constants/badges';
+import { BADGE_DEFINITIONS, RARITY_COLORS } from '../constants/badges';
 import { getCurrentSeason } from '../constants/seasons';
 import { getTitleDefinition } from '../constants/titles';
 import { todayString } from '../utils/dateUtils';
@@ -55,13 +55,15 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const PREFS_KEY = 'shareCardPrefs';
 
-// Badge grid — 4 columns on normal screens, 3 on very small ones
+// Badge grid — 3 columns
 const SCREEN_W   = Dimensions.get('window').width;
-const NUM_COLS   = SCREEN_W < 360 ? 3 : 4;
-const BADGE_GAP  = Spacing.xs;            // 4 px gap between cells
+const NUM_COLS   = 3;
+const BADGE_GAP  = Spacing.sm;            // 8 px gap between cells
 const BADGE_SIZE = Math.floor(
   (SCREEN_W - Spacing.md * 2 - BADGE_GAP * (NUM_COLS - 1)) / NUM_COLS
 );
+
+const RARITY_WEIGHT: Record<string, number> = { legendary: 4, rare: 3, uncommon: 2, common: 1 };
 
 const SHARE_BG_COLORS_DARK = [
   '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D', '#0D2A2A', '#1A1A1A',
@@ -330,29 +332,41 @@ export default function ProfileScreen() {
   const totalEarned = earnedBadges.length;
   const totalBadges = BADGE_DEFINITIONS.length;
 
-  const renderBadgeSection = (title: string, badges: typeof BADGE_DEFINITIONS) => (
-    <View key={title} style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
-        <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>{title}</Text>
+  const renderBadgeSection = (title: string, badges: typeof BADGE_DEFINITIONS) => {
+    const sorted = [...badges].sort((a, b) => {
+      const aEarned = earnedSet.has(a.id) ? 1 : 0;
+      const bEarned = earnedSet.has(b.id) ? 1 : 0;
+      if (aEarned !== bEarned) return bEarned - aEarned;
+      return (RARITY_WEIGHT[b.rarity] ?? 0) - (RARITY_WEIGHT[a.rarity] ?? 0);
+    });
+    const hasLegendary = sorted.some(b => earnedSet.has(b.id) && b.rarity === 'legendary');
+    const hasRare = !hasLegendary && sorted.some(b => earnedSet.has(b.id) && b.rarity === 'rare');
+    const accentColor = hasLegendary ? GameColors.rankLegend : hasRare ? RARITY_COLORS.rare : Colors.accentBright;
+
+    return (
+      <View key={title} style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <View style={[styles.sectionAccentBar, { backgroundColor: accentColor }]} />
+          <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>{title}</Text>
+        </View>
+        <View style={styles.badgeGrid}>
+          {sorted.map(def => (
+            <AnimatedPressable
+              key={def.id}
+              onPress={() => { if (earnedSet.has(def.id)) setSelectedBadgeId(def.id); }}
+            >
+              <BadgeItem
+                badge={def}
+                earned={earnedSet.has(def.id)}
+                earnedAt={earnedAtMap[def.id]}
+                size={BADGE_SIZE}
+              />
+            </AnimatedPressable>
+          ))}
+        </View>
       </View>
-      <View style={styles.badgeGrid}>
-        {badges.map(def => (
-          <AnimatedPressable
-            key={def.id}
-            onPress={() => { if (earnedSet.has(def.id)) setSelectedBadgeId(def.id); }}
-          >
-            <BadgeItem
-              badge={def}
-              earned={earnedSet.has(def.id)}
-              earnedAt={earnedAtMap[def.id]}
-              size={BADGE_SIZE}
-            />
-          </AnimatedPressable>
-        ))}
-      </View>
-    </View>
-  );
+    );
+  };
 
   // Picker item renderer
   type PickerItem =
