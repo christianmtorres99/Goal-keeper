@@ -6,6 +6,7 @@ on:
       - claude/goal-tracking-app-QiCgn
       - claude/project-overview-planning-kXME1
       - claude/project-familiarization-XUrOV
+      - claude/project-handoff-oc7qca
 
 jobs:
   build:
