@@ -35,6 +35,7 @@ import { useSeasonStore } from './src/store/seasonStore';
 import { usePerkStore } from './src/store/perkStore';
 import { useTitleStore } from './src/store/titleStore';
 import { useCraftingStore } from './src/store/craftingStore';
+import { useFriendsStore } from './src/store/friendsStore';
 import { getPlayerStats } from './src/logic/xpEngine';
 import { sumXP } from './src/utils/xpUtils';
 
@@ -103,6 +104,7 @@ export default function App() {
         await useSeasonStore.getState().load();
         await useCraftingStore.getState().load();
         await useRaidStore.getState().load();
+        await useFriendsStore.getState().load();
 
         // Date integrity check (anti-cheat)
         await useGameStore.getState().checkDateIntegrity();

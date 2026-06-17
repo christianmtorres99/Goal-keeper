@@ -570,6 +570,23 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
+        {/* Friends */}
+        <Animated.View style={reveal1}>
+          <AnimatedPressable
+            style={[styles.friendsBtn, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
+            onPress={() => navigation.navigate('Friends')}
+          >
+            <View style={[styles.friendsBtnIcon, { backgroundColor: hexAlpha(Colors.accentBright, 0.12) }]}>
+              <Ionicons name="people-outline" size={20} color={Colors.accentBright} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.friendsBtnTitle, { color: Colors.textPrimary }]}>Friends</Text>
+              <Text style={[styles.friendsBtnSub, { color: Colors.textSecondary }]}>Invite codes · leaderboard</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
+          </AnimatedPressable>
+        </Animated.View>
+
         {/* Skill Tracks */}
         <Animated.View style={reveal2}>
         {(activeCategories.length > 0 || customTracks.length > 0 || currentSeason) && (
@@ -886,6 +903,11 @@ const styles = StyleSheet.create({
   statBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
   statValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold, textAlign: 'center', alignSelf: 'stretch' },
   statLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, textAlign: 'center', alignSelf: 'stretch' },
+
+  friendsBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.lg, borderWidth: 1, padding: Spacing.md },
+  friendsBtnIcon: { width: 40, height: 40, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+  friendsBtnTitle: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  friendsBtnSub: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
 
   section: { gap: Spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

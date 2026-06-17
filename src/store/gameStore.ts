@@ -46,8 +46,12 @@ interface GameStore {
   lastKnownDate: string | null;
   timeManipulated: boolean;
 
+  // User profile
+  userName: string;
+
   // Actions
   load: () => Promise<void>;
+  setUserName: (name: string) => Promise<void>;
   checkAndClaimLoginBonus: () => number;
   markLoginClaimed: () => Promise<void>;
   clearPendingLoginXP: () => Promise<void>;
@@ -85,6 +89,7 @@ const DEFAULT_STATE = {
   prestigeHistory: [] as string[],
   lastKnownDate: null as string | null,
   timeManipulated: false as boolean,
+  userName: '' as string,
 };
 
 async function persist(partial: Record<string, unknown>) {
@@ -104,6 +109,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({ ...DEFAULT_STATE, ...data });
       }
     } catch {}
+  },
+
+  setUserName: async (name: string) => {
+    set({ userName: name });
+    await persist({ userName: name });
   },
 
   checkAndClaimLoginBonus: () => {

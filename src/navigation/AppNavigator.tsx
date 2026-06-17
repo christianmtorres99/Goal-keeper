@@ -23,6 +23,7 @@ import BossRaidScreen from '../screens/BossRaidScreen';
 import SeasonScreen from '../screens/SeasonScreen';
 import ShopScreen from '../screens/ShopScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import FriendsScreen from '../screens/FriendsScreen';
 import type { GoalCategory } from '../types';
 
 export type RootStackParamList = {
@@ -36,6 +37,7 @@ export type RootStackParamList = {
   Season: undefined;
   Shop: undefined;
   Settings: undefined;
+  Friends: undefined;
 };
 
 export type TabParamList = {
@@ -162,6 +164,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Season" component={SeasonScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Shop" component={ShopScreen} options={{ title: 'Perk Shop', headerTitleAlign: 'center' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings', headerTitleAlign: 'center' }} />
+      <Stack.Screen name="Friends" component={FriendsScreen} options={{ title: 'Friends', headerTitleAlign: 'center' }} />
     </Stack.Navigator>
   );
 }
