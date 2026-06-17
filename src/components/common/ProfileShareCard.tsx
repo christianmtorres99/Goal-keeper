@@ -4,28 +4,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import type { Goal, PlayerStats, BadgeDefinition } from '../../types';
 import XPBar from './XPBar';
+import { getTierForLevel } from '../../logic/xpEngine';
 
 export interface SelectedFeature {
   kind: 'badge' | 'goal';
   id: string;
 }
 
-const LEVEL_TIERS = [
-  { min: 50, icon: 'infinite',          color: '#FFFFFF', title: 'Transcendent' },
-  { min: 45, icon: 'star',              color: '#FFD700', title: 'Mythic'       },
-  { min: 40, icon: 'rocket',            color: '#F97316', title: 'Legendary'    },
-  { min: 35, icon: 'planet',            color: '#EC4899', title: 'Cosmic'       },
-  { min: 30, icon: 'shield-checkmark',  color: '#8B5CF6', title: 'Guardian'     },
-  { min: 25, icon: 'diamond',           color: '#06B6D4', title: 'Diamond'      },
-  { min: 20, icon: 'trophy',            color: '#EAB308', title: 'Champion'     },
-  { min: 15, icon: 'flash',             color: '#3B82F6', title: 'Charged'      },
-  { min: 10, icon: 'flame',             color: '#F59E0B', title: 'Blazing'      },
-  { min:  5, icon: 'barbell',           color: '#10B981', title: 'Rising'       },
-  { min:  1, icon: 'leaf',              color: '#22C55E', title: 'Seedling'     },
-] as const;
-
 export function getLevelTier(level: number) {
-  return LEVEL_TIERS.find(t => level >= t.min) ?? LEVEL_TIERS[LEVEL_TIERS.length - 1];
+  const t = getTierForLevel(level);
+  return { title: t.name, icon: t.icon, color: t.color, min: t.minLevel };
 }
 
 interface Props {

@@ -49,6 +49,8 @@ const COLORS = [
   '#10B981', '#22C55E', '#84CC16', '#16A34A',
   // Warm
   '#F59E0B', '#F97316', '#EF4444', '#DC2626',
+  // Coral
+  '#FF6B6B',
   // Pinks & Rose
   '#EC4899', '#F43F5E', '#DB2777', '#BE185D',
 ];
@@ -428,7 +430,7 @@ const styles = StyleSheet.create({
   categoryRow: { flexGrow: 0 },
   categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderWidth: 1, marginRight: Spacing.sm },
   categoryText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
-  colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
+  colorRow: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap', justifyContent: 'center' },
   colorSwatch: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { transform: [{ scale: 1.15 }] },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
