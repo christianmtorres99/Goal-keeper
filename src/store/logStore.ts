@@ -11,14 +11,12 @@ import {
   STREAK_MULTIPLIERS,
   COIN_PER_LOG,
   COIN_STREAK_TIER_BONUS,
-  SHARD_DROP_CHANCE,
 } from '../constants/xp';
 import { useGoalStore } from './goalStore';
 import { useRestDayStore } from './restDayStore';
 import { usePerkStore } from './perkStore';
 import { useGameStore } from './gameStore';
 import { useCoinStore } from './coinStore';
-import { useCraftingStore } from './craftingStore';
 import { useRaidStore } from './raidStore';
 import { getGoalRank } from '../utils/goalRank';
 
@@ -50,7 +48,6 @@ interface LogStore {
     bonusXP: number;
     events: LogEvent[];
     coinsAwarded: number;
-    shardDropped: boolean;
     rankUp: boolean;
   } | null>;
   removeLog: (logId: string) => Promise<void>;
@@ -135,34 +132,18 @@ export const useLogStore = create<LogStore>((set, get) => ({
         xpAwarded = Math.round(calculateXPForLog(newStreak) * diffMult);
       }
 
-      // Lucky drop: use lucky_charm perk or crafting boost to adjust chance
+      // Lucky drop
       const events: LogEvent[] = [];
       let bonusXP = 0;
       if (!isPastDay && !isZeroAward) {
-        const luckyBoostActive = useCraftingStore.getState().isLuckyBoostActive();
         const baseChance = usePerkStore.getState().isEquipped('lucky_charm')
           ? 0.25
           : LUCKY_DROP_CHANCE;
-        const luckyChance = luckyBoostActive ? baseChance * 2 : baseChance;
 
-        const isLucky = Math.random() < luckyChance;
+        const isLucky = Math.random() < baseChance;
         if (isLucky) {
           xpAwarded = Math.round(xpAwarded * 2);
           events.push('luckyDrop');
-          useCraftingStore.getState().incrementLuckyDropCount().catch(() => {});
-        }
-      } else if (!isPastDay) {
-        // isZeroAward: skip lucky drop
-      } else {
-        // isPastDay: skip lucky drop
-      }
-
-      // XP surge consumable
-      if (!isPastDay && !isZeroAward) {
-        const { isSurgeActive, consumeSurge, activeSurge } = useCraftingStore.getState();
-        if (isSurgeActive()) {
-          xpAwarded = Math.round(xpAwarded * (activeSurge?.multiplier ?? 1.5));
-          consumeSurge().catch(() => {});
         }
       }
 
@@ -224,7 +205,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
           logs: [...s.logs, relapseLog],
           graceStates: { ...s.graceStates, [goalId]: { graceDayUsed: false, graceDayRefillDate: null } },
         }));
-        return { log: relapseLog, bonusXP: 0, events: ['relapsed'], coinsAwarded: 0, shardDropped: false, rankUp: false };
+        return { log: relapseLog, bonusXP: 0, events: ['relapsed'], coinsAwarded: 0, rankUp: false };
       }
 
       const log: Log = {
@@ -247,7 +228,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
       // For past-day logs: skip grace day update and bonus event detection
       if (isPastDay) {
         set(s => ({ logs: [...s.logs, log] }));
-        return { log, bonusXP: 0, events: [], coinsAwarded: 0, shardDropped: false, rankUp: false };
+        return { log, bonusXP: 0, events: [], coinsAwarded: 0, rankUp: false };
       }
 
       // Recompute streak with the new log included
@@ -368,14 +349,6 @@ export const useLogStore = create<LogStore>((set, get) => ({
       }
 
       // --- Shard drop ---
-      let shardDropped = false;
-      if (!isZeroAward && !useGameStore.getState().timeManipulated) {
-        if (Math.random() < SHARD_DROP_CHANCE) {
-          useCraftingStore.getState().addShard(1).catch(() => {});
-          events.push('shardDrop');
-          shardDropped = true;
-        }
-      }
 
       // --- Raid damage ---
       if (!isZeroAward) {
@@ -401,7 +374,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         }
       }
 
-      return { log, bonusXP, events, coinsAwarded, shardDropped, rankUp: didRankUp };
+      return { log, bonusXP, events, coinsAwarded, rankUp: didRankUp };
     } catch (e) {
       if (__DEV__) console.error('addLog failed:', e);
       throw e;

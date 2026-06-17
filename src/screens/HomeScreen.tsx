@@ -16,7 +16,6 @@ import { useWeeklyChallengeStore } from '../store/weeklyChallengeStore';
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import GameIcon from '../components/common/GameIcon';
-import AmbientBackground from '../components/common/AmbientBackground';
 import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
@@ -368,7 +367,6 @@ export default function HomeScreen() {
     const totalDisplayXP = result.log.xpAwarded + result.bonusXP + extraXP;
     let toastMsg = getUndoToastMessage(goalName, totalDisplayXP, extraEvents);
     if (result.coinsAwarded > 0) toastMsg += `  ·  +${result.coinsAwarded} coins`;
-    if (result.shardDropped) toastMsg += '  ·  +1 Shard';
     setUndoEntry({ type: 'goal', logId: result.log.id, message: toastMsg });
 
     if (newBadges.length > 0 || result.bonusXP > 0 || extraXP > 0) {
@@ -495,7 +493,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
-      <AmbientBackground />
       <DraggableFlatList
         ref={listRef}
         data={pendingGoals}

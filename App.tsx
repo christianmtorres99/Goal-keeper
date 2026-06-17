@@ -34,10 +34,10 @@ import { useRaidStore } from './src/store/raidStore';
 import { useSeasonStore } from './src/store/seasonStore';
 import { usePerkStore } from './src/store/perkStore';
 import { useTitleStore } from './src/store/titleStore';
-import { useCraftingStore } from './src/store/craftingStore';
 import { useFriendsStore } from './src/store/friendsStore';
 import { getPlayerStats } from './src/logic/xpEngine';
 import { sumXP } from './src/utils/xpUtils';
+import AmbientBackground from './src/components/common/AmbientBackground';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -61,7 +61,7 @@ export default function App() {
     colors: {
       ...DarkTheme.colors,
       primary: appColors.accentBright,
-      background: appColors.bg0,
+      background: 'transparent',
       card: appColors.bg0,
       text: appColors.textPrimary,
       border: appColors.border,
@@ -102,7 +102,6 @@ export default function App() {
         await usePerkStore.getState().load();
         await useTitleStore.getState().load();
         await useSeasonStore.getState().load();
-        await useCraftingStore.getState().load();
         await useRaidStore.getState().load();
         await useFriendsStore.getState().load();
 
@@ -201,14 +200,15 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
-          <ThemeProvider>
-            <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg1 }}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: appColors.bg0 }}>
+          <AmbientBackground />
+          <NavigationContainer ref={navigationRef} theme={NAV_THEME}>
+            <ThemeProvider>
               <StatusBar style={isLight ? 'dark' : 'light'} />
               <AppNavigator />
-            </GestureHandlerRootView>
-          </ThemeProvider>
-        </NavigationContainer>
+            </ThemeProvider>
+          </NavigationContainer>
+        </GestureHandlerRootView>
       </SafeAreaProvider>
     </ErrorBoundary>
   );

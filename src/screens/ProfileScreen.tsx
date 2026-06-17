@@ -22,7 +22,6 @@ import AboutCard from '../components/profile/AboutCard';
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle, GameColors } from '../constants/theme';
 import { Spring, Timing, Stagger } from '../constants/motion';
 import GameIcon from '../components/common/GameIcon';
-import AmbientBackground from '../components/common/AmbientBackground';
 import { useColors } from '../hooks/useColors';
 import { useThemeStore } from '../store/themeStore';
 import { useLogStore } from '../store/logStore';
@@ -31,7 +30,6 @@ import { useGoalStore } from '../store/goalStore';
 import { useTodoXPStore } from '../store/todoXPStore';
 import { useCoinStore } from '../store/coinStore';
 import { useTitleStore } from '../store/titleStore';
-import { useCraftingStore } from '../store/craftingStore';
 import { useSeasonStore } from '../store/seasonStore';
 import { useGameStore } from '../store/gameStore';
 import { getPlayerStats } from '../logic/xpEngine';
@@ -76,13 +74,6 @@ const SHARE_BG_COLORS_LIGHT = [
   '#FAFAFA', '#F5ECD7', '#F2D4CC', '#CCE5FF', '#D4F2E8', '#FFF0FB',
 ];
 
-const CONSUMABLE_LABELS: Record<string, { label: string; icon: string; desc: string }> = {
-  xp_surge:    { label: 'XP Surge',      icon: 'flash',          desc: '+50% XP next 5 logs' },
-  lucky_boost: { label: 'Lucky Boost',   icon: 'sparkles',       desc: '2x lucky drop for 24h' },
-  coin_cache:  { label: 'Coin Cache',    icon: 'cash',           desc: '+75 coins immediately' },
-  grace_refill:{ label: 'Grace Refill',  icon: 'shield',         desc: 'Refill grace day for a goal' },
-  quest_boost: { label: 'Quest Boost',   icon: 'list',           desc: '+50% quest XP today' },
-};
 
 export default function ProfileScreen() {
   const { colors: Colors, isLight } = useColors();
@@ -112,7 +103,6 @@ export default function ProfileScreen() {
   // Game systems
   const coinBalance = useCoinStore(s => s.balance);
   const { earnedTitleIds, equippedTitleId } = useTitleStore();
-  const { shardCount, consumables, isSurgeActive, isLuckyBoostActive } = useCraftingStore();
   const { completedChallengeIds, claimedSeasonIds } = useSeasonStore();
   const { prestigeLevel, canPrestige, getAdjustedXP, prestigeXPBonus } = useGameStore();
 
@@ -263,45 +253,12 @@ export default function ProfileScreen() {
           onPress: async () => {
             await useGameStore.getState().prestige(totalXP);
             await useCoinStore.getState().addCoins(500, 'prestige');
+            const newPrestigeLevel = useGameStore.getState().prestigeLevel;
+            await useBadgeStore.getState().checkAndAwardGlobal({ prestigeLevel: newPrestigeLevel });
           },
         },
       ]
     );
-  };
-
-  const handleUseConsumable = async (id: string) => {
-    const type = await useCraftingStore.getState().useConsumable(id);
-    if (!type) return;
-    if (type === 'coin_cache') {
-      await useCoinStore.getState().addCoins(75, 'consumable');
-      Alert.alert('Coin Cache', '+75 coins added to your balance!');
-    } else if (type === 'xp_surge') {
-      Alert.alert('XP Surge Active', '+50% XP on your next 5 logs.');
-    } else if (type === 'lucky_boost') {
-      Alert.alert('Lucky Boost Active', '2x lucky drop for the next 24h.');
-    } else if (type === 'quest_boost') {
-      Alert.alert('Quest Boost Active', '+50% quest XP for today.');
-    } else if (type === 'grace_refill') {
-      const activeGoalNames = activeGoals.map(g => g.name);
-      if (activeGoalNames.length === 0) {
-        Alert.alert('No Goals', 'You have no active goals to refill grace for.');
-        return;
-      }
-      Alert.alert(
-        'Grace Refill',
-        'Grace day refilled! Active goals:\n' + activeGoalNames.slice(0, 5).join(', '),
-      );
-    }
-  };
-
-  const handleCraft = async () => {
-    const result = await useCraftingStore.getState().craft();
-    if (!result) {
-      Alert.alert('Not enough shards', `You need 3 shards to craft. You have ${shardCount}.`);
-      return;
-    }
-    const info = CONSUMABLE_LABELS[result.type];
-    Alert.alert('Crafted!', `You received: ${info?.label ?? result.type}\n${info?.desc ?? ''}`);
   };
 
   // Picker helpers
@@ -419,7 +376,6 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['bottom', 'left', 'right']}>
-      <AmbientBackground />
       {/* Off-screen share card */}
       <ProfileShareCard
         ref={shareCardRef}
@@ -688,76 +644,6 @@ export default function ProfileScreen() {
         )}
         </Animated.View>
 
-        {/* Inventory section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionAccentBar, { backgroundColor: Colors.accentBright }]} />
-            <Text style={[styles.sectionLabel, { color: Colors.textSecondary }]}>Inventory</Text>
-          </View>
-
-          {/* Shard count + craft */}
-          <View style={[styles.shardRow, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-            <View style={styles.shardInfo}>
-              <View style={styles.shardCountRow}>
-                <GameIcon type="shard" size={16} />
-                <Text style={[styles.shardCount, { color: Colors.textPrimary }]}>{shardCount} / 3 Shards</Text>
-              </View>
-              <View style={[styles.shardBarBg, { backgroundColor: Colors.border }]}>
-                <View style={[styles.shardBarFill, { backgroundColor: Colors.accentBright, width: `${Math.min((shardCount / 3) * 100, 100)}%` as any }]} />
-              </View>
-              <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs }}>
-                {isSurgeActive() && (
-                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha(GameColors.boostGold, 0.20) }]}>
-                    <Ionicons name="flash" size={11} color={GameColors.boostGold} />
-                    <Text style={[styles.boostBadgeText, { color: GameColors.boostGold }]}>Surge Active</Text>
-                  </View>
-                )}
-                {isLuckyBoostActive() && (
-                  <View style={[styles.boostBadge, { backgroundColor: hexAlpha(GameColors.boostPurple, 0.20) }]}>
-                    <Ionicons name="sparkles" size={11} color={GameColors.boostPurple} />
-                    <Text style={[styles.boostBadgeText, { color: GameColors.boostPurple }]}>Lucky Active</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-            {shardCount >= 3 && (
-              <AnimatedPressable
-                style={[styles.craftBtn, { backgroundColor: Colors.accentBright }]}
-                onPress={handleCraft}
-              >
-                <Text style={[styles.craftBtnText, { color: Colors.bg0 }]}>Craft</Text>
-              </AnimatedPressable>
-            )}
-          </View>
-
-          {/* Consumables */}
-          {consumables.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.sm, paddingBottom: Spacing.xs }}>
-              {consumables.map(item => {
-                const info = CONSUMABLE_LABELS[item.type] ?? { label: item.type, icon: 'cube-outline', desc: '' };
-                return (
-                  <View
-                    key={item.id}
-                    style={[styles.consumableCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}
-                  >
-                    <Ionicons name={info.icon as any} size={24} color={Colors.accentBright} />
-                    <Text style={[styles.consumableLabel, { color: Colors.textPrimary }]}>{info.label}</Text>
-                    <Text style={[styles.consumableDesc, { color: Colors.textSecondary }]}>{info.desc}</Text>
-                    <AnimatedPressable
-                      style={[styles.useBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: Colors.accentBright }]}
-                      onPress={() => handleUseConsumable(item.id)}
-                    >
-                      <Text style={[styles.useBtnText, { color: Colors.accentBright }]}>Use</Text>
-                    </AnimatedPressable>
-                  </View>
-                );
-              })}
-            </ScrollView>
-          ) : (
-            <Text style={[styles.emptyInventory, { color: Colors.textDisabled }]}>No consumables — craft some with shards!</Text>
-          )}
-        </View>
-
         {renderBadgeSection('Streak Badges', streakBadges)}
         {renderBadgeSection('Log Count Badges', logBadges)}
         {renderBadgeSection('Consistency Badges', consistencyBadges)}
@@ -929,25 +815,6 @@ const styles = StyleSheet.create({
   trackCard: { borderRadius: Radius.lg, padding: Spacing.md },
   trackName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
   trackSub: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
-
-  // Inventory
-  shardRow: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1, gap: Spacing.sm },
-  shardInfo: { flex: 1, gap: 4 },
-  shardCountRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-  shardCount: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
-  shardBarBg: { height: 6, borderRadius: Radius.full, overflow: 'hidden' },
-  shardBarFill: { height: 6, borderRadius: Radius.full },
-  boostBadge: { borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 2, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  boostBadgeText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
-  craftBtn: { borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  craftBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
-
-  consumableCard: { width: 120, borderRadius: Radius.lg, padding: Spacing.sm, borderWidth: 1, gap: 4, alignItems: 'center' },
-  consumableLabel: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, textAlign: 'center' },
-  consumableDesc: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, textAlign: 'center', color: 'gray' },
-  useBtn: { borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3, marginTop: 4 },
-  useBtnText: { fontSize: FontSize.xs, fontFamily: FontFamily.bold },
-  emptyInventory: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center', paddingVertical: Spacing.sm },
 
   // Picker modal
   pickerScreen: { flex: 1 },

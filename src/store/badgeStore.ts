@@ -27,6 +27,7 @@ interface BadgeStore {
     totalTodosCompleted?: number;
     journalStreak?: number;
     logHour?: number;
+    prestigeLevel?: number;
   }) => Promise<BadgeDefinition[]>;
   getBadgesForGoal: (goalId: string) => EarnedBadge[];
 }
@@ -56,8 +57,9 @@ export const useBadgeStore = create<BadgeStore>((set, get) => ({
       const newEarned: EarnedBadge[] = newBadgeDefs.map(def => ({
         id: uuid(),
         badgeId: def.id,
-        goalId: (def.category === 'level' || def.category === 'consistency'
-          || def.category === 'todos' || def.category === 'journal' || def.category === 'time')
+        goalId: (def.category === 'level' || def.category === 'prestige'
+          || def.category === 'consistency' || def.category === 'todos'
+          || def.category === 'journal' || def.category === 'time')
           ? null : params.goalId,
         earnedAt: now,
       }));

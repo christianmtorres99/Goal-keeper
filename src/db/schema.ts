@@ -72,6 +72,10 @@ export const MIGRATIONS_V6 = [
   `ALTER TABLE logs ADD COLUMN count INTEGER DEFAULT 1`,
 ];
 
+export const MIGRATIONS_V8 = [
+  `DELETE FROM earned_badges WHERE badge_id IN ('prestige_1','prestige_2','prestige_3')`,
+];
+
 export const MIGRATIONS_V7 = [
   // Add is_relapse column (idempotent — fails silently if already exists)
   `ALTER TABLE logs ADD COLUMN is_relapse INTEGER DEFAULT 0`,

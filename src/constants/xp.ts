@@ -69,3 +69,19 @@ export const PRESTIGE_LEVEL_THRESHOLD = 25;
 // ── Weekly Challenges ─────────────────────────────────────────────────────────
 export const COIN_WEEKLY_CHALLENGE = 25;
 export const COIN_WEEKLY_ALL = 30;
+
+// ── Tier Definitions (10 tiers × 10 levels = 100 levels) ─────────────────────
+export const TIER_DEFS = [
+  { name: 'Novice',       minLevel: 1,   maxLevel: 10,  color: '#94A3B8', icon: 'leaf-outline'         },
+  { name: 'Apprentice',   minLevel: 11,  maxLevel: 20,  color: '#22C55E', icon: 'school-outline'       },
+  { name: 'Adept',        minLevel: 21,  maxLevel: 30,  color: '#10B981', icon: 'flash-outline'        },
+  { name: 'Expert',       minLevel: 31,  maxLevel: 40,  color: '#3B82F6', icon: 'ribbon-outline'       },
+  { name: 'Elite',        minLevel: 41,  maxLevel: 50,  color: '#8B5CF6', icon: 'star-outline'         },
+  { name: 'Master',       minLevel: 51,  maxLevel: 60,  color: '#F59E0B', icon: 'flame-outline'        },
+  { name: 'Grandmaster',  minLevel: 61,  maxLevel: 70,  color: '#F97316', icon: 'trophy-outline'       },
+  { name: 'Legend',       minLevel: 71,  maxLevel: 80,  color: '#EF4444', icon: 'planet-outline'       },
+  { name: 'Mythic',       minLevel: 81,  maxLevel: 90,  color: '#EC4899', icon: 'diamond-outline'      },
+  { name: 'Transcendent', minLevel: 91,  maxLevel: 100, color: '#E2C87A', icon: 'infinite-outline'     },
+] as const;
+
+export type TierDef = typeof TIER_DEFS[number];

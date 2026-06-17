@@ -90,7 +90,6 @@ export type LogEvent =
   | 'dailyDouble'
   | 'streakRebuild'
   | 'rankUp'
-  | 'shardDrop'
   | 'relapsed';
 
 // ── Weekly Challenges ─────────────────────────────────────────────────────────

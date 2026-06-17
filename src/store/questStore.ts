@@ -5,7 +5,6 @@ import type { Quest } from '../types';
 import { COIN_QUEST_COMPLETE } from '../constants/xp';
 import { useCoinStore } from './coinStore';
 import { usePerkStore } from './perkStore';
-import { useCraftingStore } from './craftingStore';
 import { useGameStore } from './gameStore';
 
 const KEY = 'dailyQuests_v1';
@@ -157,11 +156,6 @@ export const useQuestStore = create<QuestStore>((set, get) => ({
     if (usePerkStore.getState().isEquipped('quest_master')) {
       xp = Math.round(xp * 1.25);
     }
-    // Apply quest_boost consumable (+50% quest XP)
-    if (useCraftingStore.getState().isQuestBoostActive()) {
-      xp = Math.round(xp * 1.5);
-    }
-
     // Award coins (skip if time manipulated)
     if (!useGameStore.getState().timeManipulated) {
       useCoinStore.getState().addCoins(COIN_QUEST_COMPLETE, 'quest').catch(() => {});

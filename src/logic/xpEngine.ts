@@ -1,4 +1,5 @@
-import { BASE_XP, LEVEL_BASE, LEVEL_EXPONENT, STREAK_MULTIPLIERS } from '../constants/xp';
+import { BASE_XP, LEVEL_BASE, LEVEL_EXPONENT, STREAK_MULTIPLIERS, TIER_DEFS } from '../constants/xp';
+import type { TierDef } from '../constants/xp';
 
 export function getStreakMultiplier(streak: number): number {
   for (const { minDay, multiplier } of STREAK_MULTIPLIERS) {
@@ -22,6 +23,13 @@ export function getLevelFromXP(totalXP: number): number {
     level++;
   }
   return level;
+}
+
+export function getTierForLevel(level: number): TierDef {
+  return (
+    TIER_DEFS.find(t => level >= t.minLevel && level <= t.maxLevel) ??
+    TIER_DEFS[TIER_DEFS.length - 1]
+  );
 }
 
 export function getPlayerStats(totalXP: number) {

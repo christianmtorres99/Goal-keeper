@@ -77,9 +77,9 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   { id: 'season_fall_2026',   category: 'consistency', rarity: 'legendary', label: 'Fall Finisher',    description: 'Complete all Fall 2026 challenges',    icon: 'partly-sunny-outline',  threshold: 1 },
 
   // Prestige badges
-  { id: 'prestige_1', category: 'level', rarity: 'legendary', label: 'First Ascension', description: 'Complete your first prestige',  icon: 'star',          threshold: 1 },
-  { id: 'prestige_2', category: 'level', rarity: 'legendary', label: 'Twice Reborn',    description: 'Complete your second prestige', icon: 'star-half',     threshold: 2 },
-  { id: 'prestige_3', category: 'level', rarity: 'legendary', label: 'The Eternal',     description: 'Complete your third prestige',  icon: 'infinite',      threshold: 3 },
+  { id: 'prestige_1', category: 'prestige', rarity: 'legendary', label: 'First Ascension', description: 'Complete your first prestige',  icon: 'star',          threshold: 1 },
+  { id: 'prestige_2', category: 'prestige', rarity: 'legendary', label: 'Twice Reborn',    description: 'Complete your second prestige', icon: 'star-half',     threshold: 2 },
+  { id: 'prestige_3', category: 'prestige', rarity: 'legendary', label: 'The Eternal',     description: 'Complete your third prestige',  icon: 'infinite',      threshold: 3 },
 
   // Quit goal badges
   { id: 'quit_first_day',   category: 'consistency', rarity: 'common',    label: 'First 24h',       description: 'Check in on a quit goal for the first time',     icon: 'shield-outline',    threshold: 1 },

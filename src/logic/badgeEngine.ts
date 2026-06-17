@@ -8,6 +8,7 @@ export function checkBadges(params: {
   currentStreak: number;
   totalLogs: number;
   playerLevel: number;
+  prestigeLevel?: number;
   cycleCount?: number;
   earnedBadges: EarnedBadge[];
   isFirstLog?: boolean;
@@ -35,15 +36,16 @@ export function checkBadges(params: {
   return BADGE_DEFINITIONS.filter(def => {
     // Global categories use the full earned set (once per account)
     const isGlobal = def.category === 'logs' || def.category === 'level'
-      || def.category === 'consistency' || def.category === 'todos'
-      || def.category === 'journal' || def.category === 'time'
-      || GLOBAL_BADGE_IDS.has(def.id);
+      || def.category === 'prestige' || def.category === 'consistency'
+      || def.category === 'todos' || def.category === 'journal'
+      || def.category === 'time' || GLOBAL_BADGE_IDS.has(def.id);
     if (isGlobal ? globalEarnedIds.has(def.id) : perGoalEarnedIds.has(def.id)) return false;
 
     switch (def.category) {
       case 'streak':      return currentStreak >= def.threshold;
       case 'logs':        return totalLogs >= def.threshold;
       case 'level':       return playerLevel >= def.threshold;
+      case 'prestige':    return (params.prestigeLevel ?? 0) >= def.threshold;
       case 'cycle':       return cycleCount >= def.threshold;
       case 'consistency': {
         if (def.id === 'perfect_week')  return !!isPerfectWeek;
