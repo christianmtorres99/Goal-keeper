@@ -1,84 +1,100 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ensureAuth } from '../services/authService';
+import { initUserProfile, syncProfile } from '../services/profileService';
+import type { PublicProfile } from '../services/profileService';
+import * as FriendsService from '../services/friendsService';
+import type { FriendEntry, AddFriendResult } from '../services/friendsService';
+import { getTopLeaderboard } from '../services/leaderboardService';
 
-const KEY = 'friendsStore_v1';
+export type { FriendEntry };
 
-export interface FriendProfile {
-  id: string;
-  inviteCode: string;
-  displayName: string;
-  level: number;
-  xp: number;
-  bestStreak: number;
-  lastUpdated: string;
-}
+const INVITE_CODE_CACHE = 'firebaseInviteCode_v1';
 
 interface FriendsStore {
+  myUid: string | null;
   myInviteCode: string | null;
-  friends: FriendProfile[];
+  friends: FriendEntry[];
+  leaderboard: PublicProfile[];
+  loading: boolean;
+  leaderboardLoading: boolean;
+  error: string | null;
+
   load: () => Promise<void>;
+  addFriend: (code: string) => Promise<AddFriendResult>;
+  removeFriend: (uid: string) => Promise<void>;
+  loadLeaderboard: () => Promise<void>;
+  syncMyProfile: () => Promise<void>;
+  // kept for compatibility
   save: () => Promise<void>;
-  ensureMyCode: () => Promise<string>;
-  addFriend: (inviteCode: string, displayName: string) => Promise<void>;
-  removeFriend: (id: string) => Promise<void>;
-}
-
-function generateCode(): string {
-  // Unambiguous charset — no 0/O, 1/I/L
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
-
-function generateId(): string {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
 export const useFriendsStore = create<FriendsStore>((set, get) => ({
+  myUid: null,
   myInviteCode: null,
   friends: [],
+  leaderboard: [],
+  loading: false,
+  leaderboardLoading: false,
+  error: null,
 
   load: async () => {
+    set({ loading: true, error: null });
     try {
-      const raw = await AsyncStorage.getItem(KEY);
-      if (raw) {
-        const data = JSON.parse(raw);
-        set({ myInviteCode: data.myInviteCode ?? null, friends: data.friends ?? [] });
+      // Show cached invite code immediately while Firebase loads
+      const cached = await AsyncStorage.getItem(INVITE_CODE_CACHE);
+      if (cached) set({ myInviteCode: cached });
+
+      const user = await ensureAuth();
+      set({ myUid: user.uid });
+
+      const inviteCode = await initUserProfile();
+      set({ myInviteCode: inviteCode });
+      await AsyncStorage.setItem(INVITE_CODE_CACHE, inviteCode);
+
+      const friends = await FriendsService.getFriends();
+      set({ friends, loading: false });
+
+      // Sync local stats to cloud in background — don't block app startup
+      syncProfile(inviteCode).catch(() => {});
+    } catch {
+      set({ loading: false, error: 'Could not connect. Friends will sync when online.' });
+    }
+  },
+
+  addFriend: async (code: string) => {
+    try {
+      const { result } = await FriendsService.addFriendByCode(code.trim().toUpperCase());
+      if (result === 'success') {
+        const friends = await FriendsService.getFriends();
+        set({ friends });
       }
-    } catch {}
+      return result;
+    } catch {
+      return 'error';
+    }
   },
 
-  save: async () => {
-    const { myInviteCode, friends } = get();
-    await AsyncStorage.setItem(KEY, JSON.stringify({ myInviteCode, friends }));
+  removeFriend: async (uid: string) => {
+    await FriendsService.removeFriend(uid);
+    set(state => ({ friends: state.friends.filter(f => f.uid !== uid) }));
   },
 
-  ensureMyCode: async () => {
-    const { myInviteCode, save } = get();
-    if (myInviteCode) return myInviteCode;
-    const code = generateCode();
-    set({ myInviteCode: code });
-    await save();
-    return code;
+  loadLeaderboard: async () => {
+    set({ leaderboardLoading: true });
+    try {
+      const leaderboard = await getTopLeaderboard(100);
+      set({ leaderboard, leaderboardLoading: false });
+    } catch {
+      set({ leaderboardLoading: false });
+    }
   },
 
-  addFriend: async (inviteCode: string, displayName: string) => {
-    const { friends, save } = get();
-    const entry: FriendProfile = {
-      id: generateId(),
-      inviteCode: inviteCode.trim().toUpperCase(),
-      displayName: displayName.trim(),
-      level: 1,
-      xp: 0,
-      bestStreak: 0,
-      lastUpdated: new Date().toISOString(),
-    };
-    set({ friends: [...friends, entry] });
-    await save();
+  syncMyProfile: async () => {
+    const { myInviteCode } = get();
+    if (!myInviteCode) return;
+    await syncProfile(myInviteCode);
   },
 
-  removeFriend: async (id: string) => {
-    const { friends, save } = get();
-    set({ friends: friends.filter(f => f.id !== id) });
-    await save();
-  },
+  save: async () => {},
 }));

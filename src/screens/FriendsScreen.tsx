@@ -1,14 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, Modal, Alert, Share, Platform, ScrollView,
+  TextInput, Modal, Alert, Share, Platform, ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useNavigation } from '@react-navigation/native';
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
-import { useFriendsStore, FriendProfile } from '../store/friendsStore';
+import { useFriendsStore } from '../store/friendsStore';
+import type { FriendEntry } from '../store/friendsStore';
+import type { PublicProfile } from '../services/profileService';
 import { useGameStore } from '../store/gameStore';
 import { useLogStore } from '../store/logStore';
 import { useTodoXPStore } from '../store/todoXPStore';
@@ -16,236 +21,361 @@ import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import AnimatedPressable from '../components/common/AnimatedPressable';
 
-interface LeaderboardEntry {
-  id: string;
-  displayName: string;
-  level: number;
-  xp: number;
-  bestStreak: number;
-  isMe: boolean;
+type Tab = 'friends' | 'global';
+
+function formatXP(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
+const AVATAR_COLORS = ['#7C3AED', '#0891B2', '#059669', '#DC2626', '#D97706', '#EC4899'];
+function avatarColor(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
+
+function RankLabel({ rank }: { rank: number }) {
+  const gold = '#F59E0B', silver = '#9CA3AF', bronze = '#B45309';
+  const color = rank === 1 ? gold : rank === 2 ? silver : rank === 3 ? bronze : '#6B7280';
+  return (
+    <View style={[styles.rankWrap, { backgroundColor: hexAlpha(color, 0.13) }]}>
+      <Text style={[styles.rankText, { color }]}>{rank}</Text>
+    </View>
+  );
+}
+
+interface RowProps {
+  rank: number;
+  item: { uid?: string; displayName: string; level: number; xp: number; bestStreak: number; equippedTitle?: string };
+  isYou: boolean;
+  onRemove?: () => void;
+}
+function Row({ rank, item, isYou, onRemove }: RowProps) {
+  const { colors: Colors } = useColors();
+  const color = avatarColor(item.displayName);
+  const initial = (item.displayName || '?')[0].toUpperCase();
+  return (
+    <View style={[styles.row, {
+      backgroundColor: isYou ? hexAlpha(Colors.accentBright, 0.1) : Colors.bg2,
+      borderColor: isYou ? hexAlpha(Colors.accentBright, 0.35) : Colors.border,
+    }]}>
+      <RankLabel rank={rank} />
+      <View style={[styles.avatar, { backgroundColor: hexAlpha(color, 0.2), borderColor: hexAlpha(color, 0.5) }]}>
+        <Text style={[styles.avatarText, { color }]}>{initial}</Text>
+      </View>
+      <View style={styles.rowMid}>
+        <View style={styles.nameRow}>
+          <Text style={[styles.name, { color: Colors.textPrimary }]} numberOfLines={1}>{item.displayName}</Text>
+          {isYou && (
+            <View style={[styles.youChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.18) }]}>
+              <Text style={[styles.youChipText, { color: Colors.accentBright }]}>YOU</Text>
+            </View>
+          )}
+          {item.equippedTitle ? (
+            <Text style={[styles.titleHint, { color: Colors.textDisabled }]} numberOfLines={1}> · {item.equippedTitle}</Text>
+          ) : null}
+        </View>
+        <View style={styles.metaRow}>
+          <Text style={[styles.meta, { color: Colors.textSecondary }]}>Lv {item.level}</Text>
+          <Text style={[styles.dot, { color: Colors.textDisabled }]}>·</Text>
+          <Ionicons name="flame" size={11} color="#F97316" />
+          <Text style={[styles.meta, { color: Colors.textSecondary }]}>{item.bestStreak}</Text>
+          <Text style={[styles.dot, { color: Colors.textDisabled }]}>·</Text>
+          <Text style={[styles.meta, { color: Colors.textSecondary }]}>{formatXP(item.xp)} XP</Text>
+        </View>
+      </View>
+      {onRemove && (
+        <TouchableOpacity onPress={onRemove} hitSlop={8}>
+          <Ionicons name="close-circle-outline" size={20} color={Colors.textDisabled} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
 }
 
 export default function FriendsScreen() {
   const { colors: Colors, isLight } = useColors();
-  const { myInviteCode, friends, load, ensureMyCode, addFriend, removeFriend } = useFriendsStore();
-  const { userName, personalRecords } = useGameStore();
-  const { logs } = useLogStore();
-  const todoXP = useTodoXPStore(s => s.totalXP);
-
-  const [code, setCode] = useState<string>('');
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [newCode, setNewCode] = useState('');
-  const [newName, setNewName] = useState('');
-  const [saving, setSaving] = useState(false);
+  const navigation = useNavigation();
+  const [tab, setTab] = useState<Tab>('friends');
+  const [addVisible, setAddVisible] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    load().then(async () => {
-      const c = await ensureMyCode();
-      setCode(c);
-    });
-  }, []);
+  const {
+    myUid, myInviteCode, friends, leaderboard,
+    loading, leaderboardLoading, error,
+    addFriend, removeFriend, loadLeaderboard, syncMyProfile,
+  } = useFriendsStore();
 
-  // Build "me" entry from local data
-  const myXP = sumXP(logs) + todoXP;
-  const myStats = getPlayerStats(myXP);
-  const myEntry: LeaderboardEntry = {
-    id: '__me__',
+  const logs = useLogStore(s => s.logs);
+  const todoXP = useTodoXPStore(s => s.totalXP);
+  const { getAdjustedXP, userName, personalRecords } = useGameStore();
+  const adjustedXP = getAdjustedXP(sumXP(logs) + todoXP);
+  const { level } = getPlayerStats(adjustedXP);
+
+  const myEntry = {
+    uid: myUid || '__me__',
     displayName: userName.trim() || 'You',
-    level: myStats.level,
-    xp: myXP,
+    level,
+    xp: adjustedXP,
     bestStreak: personalRecords.longestStreak,
-    isMe: true,
+    equippedTitle: '',
   };
 
-  const allEntries: LeaderboardEntry[] = [
-    myEntry,
-    ...friends.map(f => ({ ...f, isMe: false })),
-  ].sort((a, b) => b.level - a.level || b.xp - a.xp);
+  useEffect(() => {
+    if (tab === 'global') loadLeaderboard();
+  }, [tab]);
 
-  const handleCopy = async () => {
-    if (!code) return;
-    await Clipboard.setStringAsync(code);
+  const handleCopy = useCallback(async () => {
+    if (!myInviteCode) return;
+    await Clipboard.setStringAsync(myInviteCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [myInviteCode]);
 
-  const handleShare = async () => {
-    if (!code) return;
+  const handleShare = useCallback(async () => {
+    if (!myInviteCode) return;
     try {
       await Share.share({
-        message: `Add me on Goal Keeper! My invite code is ${code}. Download the app and enter my code in the Friends section.`,
+        message: `Add me on Goal Keeper! My invite code is ${myInviteCode}.\n\nDownload the app and enter my code in the Friends section to see each other's progress.`,
       });
     } catch {}
-  };
+  }, [myInviteCode]);
 
   const handleAddFriend = useCallback(async () => {
-    const trimCode = newCode.trim().toUpperCase();
-    const trimName = newName.trim();
-    if (!trimCode || !trimName || saving) return;
-    if (trimCode === code) {
-      Alert.alert("That's your own code!", 'Enter a friend\'s invite code, not yours.');
-      return;
+    const code = codeInput.trim().toUpperCase();
+    if (!code || addLoading) return;
+    setAddLoading(true);
+    setAddError('');
+    const result = await addFriend(code);
+    setAddLoading(false);
+    if (result === 'success') {
+      setCodeInput('');
+      setAddVisible(false);
+    } else if (result === 'not_found') {
+      setAddError('No user found with that code. Double-check for typos.');
+    } else if (result === 'self') {
+      setAddError("That's your own code! Enter a friend's code.");
+    } else if (result === 'already_friends') {
+      setAddError("You're already friends with this person.");
+    } else {
+      setAddError('Something went wrong. Check your connection and try again.');
     }
-    setSaving(true);
-    await addFriend(trimCode, trimName);
-    setSaving(false);
-    setNewCode('');
-    setNewName('');
-    setAddModalVisible(false);
-  }, [newCode, newName, code, saving, addFriend]);
+  }, [codeInput, addLoading, addFriend]);
 
-  const handleRemoveFriend = (friend: FriendProfile) => {
-    Alert.alert(
-      'Remove Friend',
-      `Remove ${friend.displayName} from your friends list?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeFriend(friend.id) },
-      ],
-    );
-  };
+  const handleRemove = useCallback((friend: FriendEntry) => {
+    Alert.alert('Remove Friend', `Remove ${friend.displayName} from your friends list?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeFriend(friend.uid) },
+    ]);
+  }, [removeFriend]);
 
-  const renderEntry = ({ item, index }: { item: LeaderboardEntry; index: number }) => {
-    const rankColor = index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : Colors.textSecondary;
-    const initial = item.displayName.charAt(0).toUpperCase();
-    const avatarColor = item.isMe ? Colors.accentBright : `hsl(${(item.id.charCodeAt(0) * 47) % 360}, 60%, 55%)`;
-
-    return (
-      <View style={[styles.entryRow, { backgroundColor: item.isMe ? hexAlpha(Colors.accentBright, 0.08) : Colors.bg2, borderColor: item.isMe ? hexAlpha(Colors.accentBright, 0.3) : Colors.border }]}>
-        <Text style={[styles.rank, { color: rankColor, minWidth: 28 }]}>#{index + 1}</Text>
-        <View style={[styles.avatar, { backgroundColor: hexAlpha(avatarColor, 0.22), borderColor: hexAlpha(avatarColor, 0.5) }]}>
-          <Text style={[styles.avatarText, { color: avatarColor }]}>{initial}</Text>
-        </View>
-        <View style={styles.entryInfo}>
-          <Text style={[styles.entryName, { color: Colors.textPrimary }]} numberOfLines={1}>
-            {item.displayName}{item.isMe ? ' (You)' : ''}
-          </Text>
-          <View style={styles.entryMeta}>
-            <Ionicons name="flash" size={11} color={Colors.textSecondary} />
-            <Text style={[styles.entryMetaText, { color: Colors.textSecondary }]}>Lv {item.level}</Text>
-            <Ionicons name="flame" size={11} color="#F97316" style={{ marginLeft: 6 }} />
-            <Text style={[styles.entryMetaText, { color: Colors.textSecondary }]}>{item.bestStreak}d</Text>
-          </View>
-        </View>
-        {!item.isMe && (
-          <TouchableOpacity onPress={() => handleRemoveFriend(friends.find(f => f.id === item.id)!)} hitSlop={8}>
-            <Ionicons name="close-circle-outline" size={20} color={Colors.textDisabled} />
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
+  const friendRows = [myEntry, ...friends.sort((a, b) => b.xp - a.xp)];
+  const myGlobalRank = leaderboard.findIndex(e => e.uid === myUid) + 1;
+  const formattedCode = myInviteCode
+    ? `${myInviteCode.slice(0, 3)}-${myInviteCode.slice(3)}`
+    : loading ? '······' : '------';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* My invite code card */}
-        <View style={[styles.codeCard, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
-          <View style={styles.codeCardHeader}>
-            <Text style={[styles.codeCardTitle, { color: Colors.textPrimary }]}>Your Invite Code</Text>
-            <Text style={[styles.codeCardSub, { color: Colors.textSecondary }]}>Share this with friends so they can add you</Text>
-          </View>
-          <View style={[styles.codeBlock, { backgroundColor: Colors.bg3 }]}>
-            <Text style={[styles.codeText, { color: Colors.textPrimary }]} selectable>{code || '……'}</Text>
-          </View>
-          <View style={styles.codeActions}>
-            <AnimatedPressable
-              style={[styles.codeBtn, { backgroundColor: copied ? hexAlpha('#22C55E', 0.15) : Colors.bg3, borderColor: copied ? '#22C55E' : Colors.border }]}
-              onPress={handleCopy}
-            >
-              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={copied ? '#22C55E' : Colors.textPrimary} />
-              <Text style={[styles.codeBtnText, { color: copied ? '#22C55E' : Colors.textPrimary }]}>{copied ? 'Copied!' : 'Copy'}</Text>
-            </AnimatedPressable>
-            <AnimatedPressable
-              style={[styles.codeBtn, { backgroundColor: Colors.bg3, borderColor: Colors.border }]}
-              onPress={handleShare}
-            >
-              <Ionicons name="share-outline" size={16} color={Colors.textPrimary} />
-              <Text style={[styles.codeBtnText, { color: Colors.textPrimary }]}>Share</Text>
-            </AnimatedPressable>
-          </View>
-        </View>
-
-        {/* Leaderboard */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: Colors.textSecondary }]}>LEADERBOARD</Text>
-            <AnimatedPressable
-              style={[styles.addBtn, { backgroundColor: Colors.accentBright }]}
-              onPress={() => setAddModalVisible(true)}
-            >
-              <Ionicons name="person-add-outline" size={14} color="#fff" />
-              <Text style={styles.addBtnText}>Add Friend</Text>
-            </AnimatedPressable>
-          </View>
-          {allEntries.map((item, index) => (
-            <View key={item.id}>{renderEntry({ item, index })}</View>
-          ))}
-          {allEntries.length === 1 && (
-            <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>
-              Add friends by sharing your code and entering theirs.
+      {/* Invite Code Hero */}
+      <LinearGradient
+        colors={isLight ? ['#EDE9FE', '#F5F3FF', Colors.bg0] : ['#1E1B4B', '#13102E', Colors.bg0]}
+        style={styles.hero}
+      >
+        <Text style={[styles.heroLabel, { color: hexAlpha('#7C3AED', isLight ? 0.75 : 0.55) }]}>
+          YOUR INVITE CODE
+        </Text>
+        <Text style={[styles.heroCode, { color: isLight ? '#3730A3' : '#A5B4FC' }]}>{formattedCode}</Text>
+        <Text style={[styles.heroSub, { color: Colors.textDisabled }]}>
+          Share this code so friends can add you
+        </Text>
+        <View style={styles.heroButtons}>
+          <AnimatedPressable
+            scale={0.95}
+            style={[styles.heroBtn, { backgroundColor: hexAlpha('#7C3AED', 0.16), borderColor: hexAlpha('#7C3AED', 0.4) }]}
+            onPress={handleCopy}
+          >
+            <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={15} color={copied ? '#22C55E' : '#7C3AED'} />
+            <Text style={[styles.heroBtnText, { color: copied ? '#22C55E' : '#7C3AED' }]}>
+              {copied ? 'Copied!' : 'Copy'}
             </Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            scale={0.95}
+            style={[styles.heroBtn, { backgroundColor: hexAlpha('#7C3AED', 0.16), borderColor: hexAlpha('#7C3AED', 0.4) }]}
+            onPress={handleShare}
+          >
+            <Ionicons name="share-social-outline" size={15} color="#7C3AED" />
+            <Text style={[styles.heroBtnText, { color: '#7C3AED' }]}>Share</Text>
+          </AnimatedPressable>
+          <AnimatedPressable
+            scale={0.95}
+            style={[styles.heroBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.14), borderColor: hexAlpha(Colors.accentBright, 0.35) }]}
+            onPress={syncMyProfile}
+          >
+            <Ionicons name="cloud-upload-outline" size={15} color={Colors.accentBright} />
+            <Text style={[styles.heroBtnText, { color: Colors.accentBright }]}>Sync</Text>
+          </AnimatedPressable>
+        </View>
+        {error ? (
+          <View style={[styles.offlineBanner, { backgroundColor: hexAlpha(Colors.danger, 0.1) }]}>
+            <Ionicons name="cloud-offline-outline" size={13} color={Colors.danger} />
+            <Text style={[styles.offlineText, { color: Colors.danger }]}>{error}</Text>
+          </View>
+        ) : null}
+      </LinearGradient>
+
+      {/* Tab Bar */}
+      <View style={[styles.tabBar, { borderBottomColor: Colors.border }]}>
+        {(['friends', 'global'] as Tab[]).map(t => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.tabItem, tab === t && [styles.tabActive, { borderBottomColor: Colors.accentBright }]]}
+            onPress={() => setTab(t)}
+          >
+            <Text style={[styles.tabText, { color: tab === t ? Colors.accentBright : Colors.textSecondary }]}>
+              {t === 'friends'
+                ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}`
+                : 'Global Top 100'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Friends Tab */}
+      {tab === 'friends' && (
+        <FlatList
+          data={friendRows}
+          keyExtractor={item => ('uid' in item ? item.uid : '__me__')}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <AnimatedPressable
+              scale={0.97}
+              style={[styles.addFriendBtn, { backgroundColor: Colors.accentBright }]}
+              onPress={() => { setCodeInput(''); setAddError(''); setAddVisible(true); }}
+            >
+              <Ionicons name="person-add-outline" size={17} color="#fff" />
+              <Text style={styles.addFriendBtnText}>Add Friend by Code</Text>
+            </AnimatedPressable>
+          }
+          ListEmptyComponent={null}
+          renderItem={({ item, index }) => (
+            <Row
+              rank={index + 1}
+              item={item}
+              isYou={'uid' in item && item.uid === (myUid || '__me__')}
+              onRemove={'uid' in item && item.uid !== (myUid || '__me__') && item.uid !== '__me__'
+                ? () => handleRemove(item as FriendEntry)
+                : undefined}
+            />
           )}
-        </View>
+          ListFooterComponent={
+            friends.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Ionicons name="people-outline" size={38} color={Colors.textDisabled} />
+                <Text style={[styles.emptyTitle, { color: Colors.textSecondary }]}>No friends yet</Text>
+                <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>
+                  Share your code or tap "Add Friend" to enter someone else's code.
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      )}
 
-        {/* Sync notice */}
-        <View style={[styles.syncNotice, { backgroundColor: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.04)', borderColor: Colors.border }]}>
-          <Ionicons name="cloud-outline" size={16} color={Colors.textDisabled} />
-          <Text style={[styles.syncText, { color: Colors.textDisabled }]}>
-            Cloud sync coming soon — stats update manually for now. Share your code with friends and add each other locally.
-          </Text>
-        </View>
+      {/* Global Leaderboard Tab */}
+      {tab === 'global' && (
+        leaderboardLoading ? (
+          <View style={styles.loadBox}>
+            <ActivityIndicator color={Colors.accentBright} size="large" />
+            <Text style={[styles.loadText, { color: Colors.textSecondary }]}>Loading leaderboard…</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={leaderboard}
+            keyExtractor={item => item.uid}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              myGlobalRank > 0 ? (
+                <View style={[styles.myRankCard, { backgroundColor: hexAlpha(Colors.accentBright, 0.1), borderColor: hexAlpha(Colors.accentBright, 0.28) }]}>
+                  <Ionicons name="trophy-outline" size={15} color={Colors.accentBright} />
+                  <Text style={[styles.myRankText, { color: Colors.accentBright }]}>
+                    You are #{myGlobalRank} globally
+                  </Text>
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Ionicons name="podium-outline" size={38} color={Colors.textDisabled} />
+                <Text style={[styles.emptyTitle, { color: Colors.textSecondary }]}>Leaderboard is empty</Text>
+                <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>
+                  Log your goals and tap Sync to appear here!
+                </Text>
+              </View>
+            }
+            renderItem={({ item, index }) => (
+              <Row
+                rank={index + 1}
+                item={item as unknown as FriendEntry}
+                isYou={item.uid === myUid}
+              />
+            )}
+          />
+        )
+      )}
 
-      </ScrollView>
-
-      {/* Add Friend modal */}
-      <Modal visible={addModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setAddModalVisible(false)} activeOpacity={1} />
-          <View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
-            <View style={[styles.modalHandle, { backgroundColor: Colors.bg3 }]} />
-            <Text style={[styles.modalTitle, { color: Colors.textPrimary }]}>Add a Friend</Text>
-            <Text style={[styles.modalSub, { color: Colors.textSecondary }]}>
-              Enter their 6-character invite code and give them a nickname.
+      {/* Add Friend Modal */}
+      <Modal visible={addVisible} transparent animationType="slide" onRequestClose={() => setAddVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalWrap}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setAddVisible(false)} />
+          <View style={[styles.sheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+            <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
+            <Text style={[styles.sheetTitle, { color: Colors.textPrimary }]}>Add a Friend</Text>
+            <Text style={[styles.sheetSub, { color: Colors.textSecondary }]}>
+              Enter their 6-character invite code. Their name and stats will load automatically.
             </Text>
-
-            <Text style={[styles.inputLabel, { color: Colors.textSecondary }]}>Invite Code</Text>
             <TextInput
-              style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
+              style={[styles.input, { backgroundColor: Colors.bg2, borderColor: addError ? Colors.danger : Colors.border, color: Colors.textPrimary }]}
               placeholder="e.g. AB3XYZ"
               placeholderTextColor={Colors.textDisabled}
-              value={newCode}
-              onChangeText={v => setNewCode(v.toUpperCase())}
+              value={codeInput}
+              onChangeText={v => { setCodeInput(v.toUpperCase()); setAddError(''); }}
               maxLength={6}
               autoCapitalize="characters"
               autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleAddFriend}
             />
-
-            <Text style={[styles.inputLabel, { color: Colors.textSecondary }]}>Their Name</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
-              placeholder="e.g. Alex"
-              placeholderTextColor={Colors.textDisabled}
-              value={newName}
-              onChangeText={setNewName}
-              maxLength={30}
-              autoCapitalize="words"
-            />
-
+            {addError ? (
+              <Text style={[styles.addError, { color: Colors.danger }]}>{addError}</Text>
+            ) : null}
             <TouchableOpacity
-              style={[styles.modalAddBtn, { backgroundColor: newCode.trim().length === 6 && newName.trim() ? Colors.accentBright : Colors.bg3 }]}
+              style={[
+                styles.addBtn,
+                { backgroundColor: codeInput.trim().length === 6 && !addLoading ? Colors.accentBright : Colors.bg3 },
+              ]}
               onPress={handleAddFriend}
-              disabled={saving || !newCode.trim() || !newName.trim()}
+              disabled={addLoading || codeInput.trim().length < 6}
               activeOpacity={0.85}
             >
-              <Text style={[styles.modalAddBtnText, { color: newCode.trim().length === 6 && newName.trim() ? '#fff' : Colors.textDisabled }]}>
-                {saving ? 'Adding…' : 'Add Friend'}
-              </Text>
+              {addLoading
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={[styles.addBtnText, { color: codeInput.trim().length === 6 ? '#fff' : Colors.textDisabled }]}>
+                    Add Friend
+                  </Text>
+              }
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -253,56 +383,95 @@ export default function FriendsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
-  // Code card
-  codeCard: { borderRadius: Radius.xl, borderWidth: 1, padding: Spacing.lg, gap: Spacing.md },
-  codeCardHeader: { gap: 2 },
-  codeCardTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
-  codeCardSub: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
-  codeBlock: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center' },
-  codeText: { fontSize: 28, fontFamily: FontFamily.extraBold, letterSpacing: 6 },
-  codeActions: { flexDirection: 'row', gap: Spacing.sm },
-  codeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: Radius.md, borderWidth: 1, paddingVertical: Spacing.sm },
-  codeBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
-  // Section
-  section: { gap: Spacing.sm },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: { fontSize: FontSize.xs, fontFamily: FontFamily.extraBold, letterSpacing: 1.5 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: 6 },
-  addBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.bold, color: '#fff' },
-  // Leaderboard entry
-  entryRow: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    borderRadius: Radius.lg, borderWidth: 1, padding: Spacing.md,
+
+  hero: {
+    paddingHorizontal: Spacing.xl, paddingTop: Spacing.lg, paddingBottom: Spacing.xl,
+    alignItems: 'center', gap: Spacing.sm,
   },
-  rank: { fontSize: FontSize.sm, fontFamily: FontFamily.extraBold, textAlign: 'center' },
-  avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+  heroLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.extraBold, letterSpacing: 2.5 },
+  heroCode: { fontSize: 34, fontFamily: FontFamily.extraBold, letterSpacing: 8 },
+  heroSub: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  heroButtons: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.xs },
+  heroBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: Spacing.md, paddingVertical: 7,
+    borderRadius: Radius.full, borderWidth: 1,
+  },
+  heroBtnText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+  offlineBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
+    borderRadius: Radius.sm, paddingHorizontal: Spacing.md, paddingVertical: 6,
+    marginTop: Spacing.xs,
+  },
+  offlineText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+
+  tabBar: {
+    flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  tabItem: {
+    flex: 1, alignItems: 'center', paddingVertical: Spacing.md,
+    borderBottomWidth: 2, borderBottomColor: 'transparent',
+  },
+  tabActive: {},
+  tabText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+
+  list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: 32 },
+
+  addFriendBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.sm, borderRadius: Radius.md, paddingVertical: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  addFriendBtnText: { color: '#fff', fontSize: FontSize.md, fontFamily: FontFamily.bold },
+
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1,
+  },
+  rankWrap: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  rankText: { fontSize: FontSize.sm, fontFamily: FontFamily.extraBold },
+  avatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
   avatarText: { fontSize: FontSize.md, fontFamily: FontFamily.extraBold },
-  entryInfo: { flex: 1 },
-  entryName: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
-  entryMeta: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
-  entryMetaText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
-  emptyHint: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center', paddingVertical: Spacing.sm },
-  // Sync notice
-  syncNotice: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm, borderRadius: Radius.md, borderWidth: 1, padding: Spacing.md },
-  syncText: { flex: 1, fontSize: FontSize.sm, fontFamily: FontFamily.regular, lineHeight: 18 },
-  // Add Friend modal
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalSheet: {
+  rowMid: { flex: 1 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'nowrap' },
+  name: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold, flexShrink: 1 },
+  youChip: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  youChipText: { fontSize: 9, fontFamily: FontFamily.extraBold, letterSpacing: 0.5 },
+  titleHint: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, flexShrink: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  meta: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
+  dot: { fontSize: FontSize.xs },
+
+  loadBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
+  loadText: { fontSize: FontSize.md, fontFamily: FontFamily.regular },
+
+  myRankCard: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    borderRadius: Radius.md, padding: Spacing.md, borderWidth: 1,
+    marginBottom: Spacing.sm,
+  },
+  myRankText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+
+  emptyBox: { alignItems: 'center', paddingVertical: 36, gap: Spacing.sm },
+  emptyTitle: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  emptyHint: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center', paddingHorizontal: Spacing.xl },
+
+  modalWrap: { flex: 1, justifyContent: 'flex-end' },
+  sheet: {
     borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
     borderWidth: 1, borderBottomWidth: 0,
     padding: Spacing.xl, gap: Spacing.md,
     paddingBottom: Platform.OS === 'ios' ? 36 : Spacing.xl,
   },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
-  modalTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
-  modalSub: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
-  inputLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, letterSpacing: 0.8, textTransform: 'uppercase' },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
+  sheetSub: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
   input: {
     borderRadius: Radius.md, borderWidth: 1.5,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
-    fontSize: FontSize.md, fontFamily: FontFamily.semiBold,
+    fontSize: 22, fontFamily: FontFamily.bold, letterSpacing: 4, textAlign: 'center',
   },
-  modalAddBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.sm },
-  modalAddBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
+  addError: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center' },
+  addBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.xs },
+  addBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
 });
