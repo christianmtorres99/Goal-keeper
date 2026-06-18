@@ -257,7 +257,7 @@ export default function SeasonScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]}>
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* ── Season Header ── */}

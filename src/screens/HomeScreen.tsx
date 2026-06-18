@@ -505,7 +505,7 @@ export default function HomeScreen() {
   }, [logs, graceStates, navigation, handleLogPress, handleRelapsePress, dailyDoubleGoalId, animateSignals]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
       <DraggableFlatList
         ref={listRef}
         data={pendingGoals}

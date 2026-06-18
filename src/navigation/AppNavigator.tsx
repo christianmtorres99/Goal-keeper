@@ -142,7 +142,7 @@ export default function AppNavigator() {
         headerStyle: { backgroundColor: Colors.bg1 },
         headerTintColor: Colors.textPrimary,
         headerTitleStyle: { fontFamily: FontFamily.bold },
-        contentStyle: { backgroundColor: Colors.bg0 },
+        contentStyle: { backgroundColor: 'transparent' },
         animation: 'slide_from_right',
       }}
     >

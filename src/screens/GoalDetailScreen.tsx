@@ -245,7 +245,7 @@ export default function GoalDetailScreen() {
   const chartConfig = makeChartConfig(goal.color, Colors.bg1, Colors);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]}>
       {/* Hidden ShareCard for image capture */}
       <View style={styles.offscreen}>
         <ShareCard

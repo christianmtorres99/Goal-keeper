@@ -106,7 +106,7 @@ export default function BossRaidScreen() {
 
   if (!currentBoss || !boss) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]}>
         <View style={styles.emptyContainer}>
           <Ionicons name="shield-outline" size={48} color={Colors.textDisabled} />
           <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>No active raid right now.</Text>
@@ -119,7 +119,7 @@ export default function BossRaidScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 80 }]} showsVerticalScrollIndicator={false}>
 
         {/* ── Boss Header ─────────────────────────────────────────────── */}

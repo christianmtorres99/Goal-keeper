@@ -14,7 +14,6 @@ import Animated, {
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import { Spring, Timing, Stagger } from '../constants/motion';
-import AmbientBackground from '../components/common/AmbientBackground';
 import { Elevation } from '../constants/elevation';
 import AnimatedPressable from '../components/common/AnimatedPressable';
 import { useColors } from '../hooks/useColors';
@@ -249,8 +248,7 @@ export default function StatsScreen() {
 
   if (activeGoals.length === 0) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
-        <AmbientBackground />
+      <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
         <Text style={[styles.title, { color: Colors.textPrimary, padding: Spacing.md }]}>Stats</Text>
         <EmptyState icon="bar-chart-outline" title="No stats yet" subtitle="Log your first goal to see stats here." />
       </SafeAreaView>
@@ -258,8 +256,7 @@ export default function StatsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
-      <AmbientBackground />
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 80 }]}>
         <Text style={[styles.title, { color: Colors.textPrimary }]}>Stats</Text>
 

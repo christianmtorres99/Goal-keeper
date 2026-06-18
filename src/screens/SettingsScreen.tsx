@@ -125,7 +125,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: Colors.bg0 }]} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={[s.safe, { backgroundColor: 'transparent' }]} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={s.content}>
 
         <SectionHeader title="Notifications" />

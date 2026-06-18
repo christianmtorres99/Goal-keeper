@@ -10,7 +10,6 @@ import Svg, { Path as SvgPath } from 'react-native-svg';
 
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing, TextStyle } from '../constants/theme';
 import AnimatedPressable from '../components/common/AnimatedPressable';
-import AmbientBackground from '../components/common/AmbientBackground';
 import { useColors } from '../hooks/useColors';
 import { useLogStore } from '../store/logStore';
 import { useGoalStore } from '../store/goalStore';
@@ -207,8 +206,7 @@ export default function CalendarScreen() {
 
   if (activeGoals.length === 0 && monthLogs.length === 0) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
-        <AmbientBackground />
+      <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
         <View style={styles.header}>
           <AnimatedPressable onPress={prevMonth} style={styles.arrow}>
             <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
@@ -224,8 +222,7 @@ export default function CalendarScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg1 }]} edges={['top', 'left', 'right']}>
-      <AmbientBackground />
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
       {/* Fixed header */}
       <View style={styles.header}>
         <AnimatedPressable onPress={prevMonth} style={styles.arrow}>

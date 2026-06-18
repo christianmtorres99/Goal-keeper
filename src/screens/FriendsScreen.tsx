@@ -181,7 +181,7 @@ export default function FriendsScreen() {
     : loading ? '······' : '------';
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['bottom']}>
 
       {/* Invite Code Hero */}
       <LinearGradient

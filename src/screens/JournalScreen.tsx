@@ -24,7 +24,6 @@ import { useJournalStore } from '../store/journalStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { computeJournalStreak } from '../utils/journalUtils';
 import DrawingCanvas from '../components/journal/DrawingCanvas';
-import AmbientBackground from '../components/common/AmbientBackground';
 import { todayString, formatDisplayDate, formatShortDate, addDays } from '../utils/dateUtils';
 import type { DrawingPath, JournalEntry } from '../types';
 
@@ -295,8 +294,7 @@ export default function JournalScreen() {
   }, [entries, today]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['top', 'left', 'right']}>
-      <AmbientBackground />
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['top', 'left', 'right']}>
 
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: Colors.border }]}>

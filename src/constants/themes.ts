@@ -25,8 +25,8 @@ export interface ColorPalette {
 export const THEMES: Record<ThemeName, ColorPalette> = {
   violet: {
     bg0: '#08080C',
-    bg1: '#101018',
-    bg2: '#16161F',
+    bg1: '#101018CC',
+    bg2: '#16161FCC',
     bg3: '#222230',
     border: '#2E2E3E',
     cardBorder: 'rgba(255,255,255,0.08)',
@@ -49,8 +49,8 @@ export const THEMES: Record<ThemeName, ColorPalette> = {
   },
   ocean: {
     bg0: '#060C18',
-    bg1: '#091524',
-    bg2: '#0C1C32',
+    bg1: '#091524CC',
+    bg2: '#0C1C32CC',
     bg3: '#14243E',
     border: '#1C3850',
     cardBorder: 'rgba(255,255,255,0.07)',
@@ -73,8 +73,8 @@ export const THEMES: Record<ThemeName, ColorPalette> = {
   },
   forest: {
     bg0: '#060E08',
-    bg1: '#09180C',
-    bg2: '#0C200F',
+    bg1: '#09180CCC',
+    bg2: '#0C200FCC',
     bg3: '#112614',
     border: '#1C3C20',
     cardBorder: 'rgba(255,255,255,0.07)',
@@ -97,8 +97,8 @@ export const THEMES: Record<ThemeName, ColorPalette> = {
   },
   crimson: {
     bg0: '#110304',
-    bg1: '#1A0506',
-    bg2: '#220809',
+    bg1: '#1A0506CC',
+    bg2: '#220809CC',
     bg3: '#2A0C0E',
     border: '#481818',
     cardBorder: 'rgba(255,255,255,0.07)',
@@ -121,8 +121,8 @@ export const THEMES: Record<ThemeName, ColorPalette> = {
   },
   golden: {
     bg0: '#100E02',
-    bg1: '#181402',
-    bg2: '#201A04',
+    bg1: '#181402CC',
+    bg2: '#201A04CC',
     bg3: '#282006',
     border: '#483608',
     cardBorder: 'rgba(255,255,255,0.07)',
@@ -145,8 +145,8 @@ export const THEMES: Record<ThemeName, ColorPalette> = {
   },
   sakura: {
     bg0: '#11050C',
-    bg1: '#1A0813',
-    bg2: '#220C1A',
+    bg1: '#1A0813CC',
+    bg2: '#220C1ACC',
     bg3: '#2A1022',
     border: '#481838',
     cardBorder: 'rgba(255,255,255,0.07)',
@@ -174,7 +174,7 @@ export type ThemePalette = ColorPalette;
 
 export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
   violet: {
-    bg0: '#FFFFFF', bg1: '#F4F3FF', bg2: '#ECEAFD', bg3: '#DCDAFB', border: '#C0BEFA', cardBorder: 'rgba(0,0,0,0.08)',
+    bg0: '#FFFFFF', bg1: '#F4F3FFD9', bg2: '#ECEAFDD9', bg3: '#DCDAFB', border: '#C0BEFA', cardBorder: 'rgba(0,0,0,0.08)',
     accent: '#5551E8', accentBright: '#7B78F2', accentDim: '#3E3CB8',
     accentGlow: 'rgba(85, 81, 232, 0.15)',
     textPrimary: '#18182A', textSecondary: '#48476A', textDisabled: '#9898BE',
@@ -183,7 +183,7 @@ export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
     xpGradient: ['#5551E8', '#7B78F2'],
   },
   ocean: {
-    bg0: '#FFFFFF', bg1: '#EEF4FE', bg2: '#D8E8FC', bg3: '#BCCFEE', border: '#90B4DC', cardBorder: 'rgba(0,0,0,0.07)',
+    bg0: '#FFFFFF', bg1: '#EEF4FED9', bg2: '#D8E8FCD9', bg3: '#BCCFEE', border: '#90B4DC', cardBorder: 'rgba(0,0,0,0.07)',
     accent: '#1E5EAA', accentBright: '#2E7CD6', accentDim: '#1C3F6E',
     accentGlow: 'rgba(30, 94, 170, 0.15)',
     textPrimary: '#0C1A38', textSecondary: '#385070', textDisabled: '#7890B0',
@@ -192,7 +192,7 @@ export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
     xpGradient: ['#1E5EAA', '#2E7CD6'],
   },
   forest: {
-    bg0: '#FFFFFF', bg1: '#EDFBF2', bg2: '#D4F5E2', bg3: '#B0E8C8', border: '#80CC9E', cardBorder: 'rgba(0,0,0,0.07)',
+    bg0: '#FFFFFF', bg1: '#EDFBF2D9', bg2: '#D4F5E2D9', bg3: '#B0E8C8', border: '#80CC9E', cardBorder: 'rgba(0,0,0,0.07)',
     accent: '#15804A', accentBright: '#1EAE5A', accentDim: '#0F5232',
     accentGlow: 'rgba(21, 128, 74, 0.15)',
     textPrimary: '#061E0E', textSecondary: '#1A5830', textDisabled: '#60A078',
@@ -201,7 +201,7 @@ export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
     xpGradient: ['#15804A', '#1EAE5A'],
   },
   crimson: {
-    bg0: '#FFFFFF', bg1: '#FFF0F0', bg2: '#FFE0E0', bg3: '#FFBCBC', border: '#F89898', cardBorder: 'rgba(0,0,0,0.07)',
+    bg0: '#FFFFFF', bg1: '#FFF0F0D9', bg2: '#FFE0E0D9', bg3: '#FFBCBC', border: '#F89898', cardBorder: 'rgba(0,0,0,0.07)',
     accent: '#B82828', accentBright: '#E03A3A', accentDim: '#7A1A1A',
     accentGlow: 'rgba(184, 40, 40, 0.15)',
     textPrimary: '#1A0404', textSecondary: '#5E1818', textDisabled: '#D07070',
@@ -210,7 +210,7 @@ export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
     xpGradient: ['#B82828', '#E03A3A'],
   },
   golden: {
-    bg0: '#FFFFFF', bg1: '#FDF8EE', bg2: '#FAEDCC', bg3: '#F5DC98', border: '#E8C060', cardBorder: 'rgba(0,0,0,0.07)',
+    bg0: '#FFFFFF', bg1: '#FDF8EED9', bg2: '#FAEDCCD9', bg3: '#F5DC98', border: '#E8C060', cardBorder: 'rgba(0,0,0,0.07)',
     accent: '#B86E08', accentBright: '#E58E10', accentDim: '#7A4A08',
     accentGlow: 'rgba(184, 110, 8, 0.15)',
     textPrimary: '#1A1002', textSecondary: '#6A400A', textDisabled: '#C09840',
@@ -219,7 +219,7 @@ export const LIGHT_THEMES: Record<ThemeName, ColorPalette> = {
     xpGradient: ['#B86E08', '#E58E10'],
   },
   sakura: {
-    bg0: '#FFFFFF', bg1: '#FFF0F8', bg2: '#FFE0F0', bg3: '#FFBEDD', border: '#F890C0', cardBorder: 'rgba(0,0,0,0.07)',
+    bg0: '#FFFFFF', bg1: '#FFF0F8D9', bg2: '#FFE0F0D9', bg3: '#FFBEDD', border: '#F890C0', cardBorder: 'rgba(0,0,0,0.07)',
     accent: '#A82868', accentBright: '#E0408A', accentDim: '#701848',
     accentGlow: 'rgba(168, 40, 104, 0.15)',
     textPrimary: '#1A0410', textSecondary: '#601840', textDisabled: '#D070A0',
