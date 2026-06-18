@@ -91,7 +91,11 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
   },
 
   syncMyProfile: async () => {
-    const { myInviteCode } = get();
+    let { myInviteCode, myUid } = get();
+    if (!myUid || !myInviteCode) {
+      await get().load();
+      myInviteCode = get().myInviteCode;
+    }
     if (!myInviteCode) return;
     await syncProfile(myInviteCode);
   },

@@ -108,7 +108,7 @@ export default function FriendsScreen() {
   const {
     myUid, myInviteCode, friends, leaderboard,
     loading, leaderboardLoading, error,
-    addFriend, removeFriend, loadLeaderboard, syncMyProfile,
+    load, addFriend, removeFriend, loadLeaderboard, syncMyProfile,
   } = useFriendsStore();
 
   const logs = useLogStore(s => s.logs);
@@ -125,6 +125,11 @@ export default function FriendsScreen() {
     bestStreak: personalRecords.longestStreak,
     equippedTitle: '',
   };
+
+  useEffect(() => {
+    // Retry connection if load failed in background or hasn't completed yet
+    if (!myUid || error) load();
+  }, []);
 
   useEffect(() => {
     if (tab === 'global') loadLeaderboard();
@@ -337,7 +342,7 @@ export default function FriendsScreen() {
       <Modal visible={addVisible} transparent animationType="slide" onRequestClose={() => setAddVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalWrap}>
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setAddVisible(false)} />
-          <View style={[styles.sheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <View style={[styles.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
             <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
             <Text style={[styles.sheetTitle, { color: Colors.textPrimary }]}>Add a Friend</Text>
             <Text style={[styles.sheetSub, { color: Colors.textSecondary }]}>
