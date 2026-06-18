@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -118,7 +119,10 @@ export default function GoalCard({ goal, logs, streakInfo, onPress, onLog, onRel
     }
   }, [animateSignal]);
 
-  const handleLog = useCallback(() => { onLog(); }, [onLog]);
+  const handleLog = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onLog();
+  }, [onLog]);
 
   const xpLabel = `+${Math.round(BASE_LOG_XP * multiplier)} XP`;
   const doneBtnStyle = loggedToday && !goal.allowMultiplePerDay && goal.type !== 'count';

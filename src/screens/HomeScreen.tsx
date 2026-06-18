@@ -1,5 +1,9 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert, LayoutAnimation, UIManager, Platform } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -590,7 +594,10 @@ export default function HomeScreen() {
             {/* Collapsible Missions section */}
             <TouchableOpacity
               style={[styles.missionHeader, { borderColor: Colors.border }]}
-              onPress={() => setMissionsExpanded(v => !v)}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setMissionsExpanded(v => !v);
+              }}
               activeOpacity={0.7}
             >
               <Ionicons name="shield-outline" size={16} color={Colors.textSecondary} />

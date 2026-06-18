@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../../constants/theme';
 import type { Goal, PlayerStats, BadgeDefinition } from '../../types';
@@ -22,13 +23,15 @@ interface Props {
   totalXP: number;
   features: SelectedFeature[];
   bgColor: string;
+  bgGradient?: readonly [string, string];
   goals: Goal[];
   badgeDefs: BadgeDefinition[];
 }
 
 const ProfileShareCard = forwardRef<View, Props>(
-  ({ inline, stats, totalXP, features, bgColor, goals, badgeDefs }, ref) => {
+  ({ inline, stats, totalXP, features, bgColor, bgGradient, goals, badgeDefs }, ref) => {
     const tier = getLevelTier(stats.level);
+    const gradient: readonly [string, string] = bgGradient ?? [bgColor, bgColor];
 
     const filledSlots: (SelectedFeature | null)[] = [
       features[0] ?? null,
@@ -66,7 +69,14 @@ const ProfileShareCard = forwardRef<View, Props>(
     };
 
     return (
-      <View ref={ref} collapsable={false} style={[styles.card, { backgroundColor: bgColor }, inline && styles.cardInline]}>
+      <LinearGradient
+        ref={ref}
+        collapsable={false}
+        colors={gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.card, inline && styles.cardInline]}
+      >
         {/* App branding */}
         <View style={styles.appRow}>
           <Ionicons name="trophy" size={12} color={Colors.accentBright} />
@@ -95,7 +105,7 @@ const ProfileShareCard = forwardRef<View, Props>(
         </View>
 
         <Text style={styles.tagline}>Track your goals. Level up your life.</Text>
-      </View>
+      </LinearGradient>
     );
   }
 );
@@ -112,6 +122,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -9999,
     left: 0,
+    overflow: 'hidden',
   },
   appRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   appName: { color: Colors.accentBright, fontSize: 11, fontFamily: FontFamily.bold, letterSpacing: 2 },

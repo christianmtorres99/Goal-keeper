@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ interface Props {
   onClose: () => void;
   shareBgColor?: string;
   shareBgColors?: string[];
+  shareBgGradients?: readonly (readonly [string, string])[];
   onShareBgChange?: (color: string) => void;
 }
 
@@ -25,6 +27,7 @@ export default function ThemePickerModal({
   onClose,
   shareBgColor,
   shareBgColors = [],
+  shareBgGradients,
   onShareBgChange,
 }: Props) {
   const { colors: Colors, isLight } = useColors();
@@ -151,18 +154,29 @@ export default function ThemePickerModal({
                   Pick a background for your share card
                 </Text>
                 <View style={styles.swatchGrid}>
-                  {shareBgColors.map(c => (
-                    <TouchableOpacity
-                      key={c}
-                      style={[
-                        styles.swatch,
-                        { backgroundColor: c },
-                        shareBgColor === c && styles.swatchSelected,
-                        shareBgColor === c && { borderColor: Colors.textPrimary },
-                      ]}
-                      onPress={() => onShareBgChange!(c)}
-                    />
-                  ))}
+                  {(shareBgGradients ?? shareBgColors.map(c => [c, c] as const)).map((entry, i) => {
+                    const [from, to] = Array.isArray(entry) ? entry : [entry, entry];
+                    const key = from;
+                    const isSelected = shareBgColor === from;
+                    return (
+                      <TouchableOpacity
+                        key={key + i}
+                        style={[
+                          styles.swatch,
+                          isSelected && styles.swatchSelected,
+                          isSelected && { borderColor: Colors.textPrimary },
+                        ]}
+                        onPress={() => onShareBgChange!(from)}
+                      >
+                        <LinearGradient
+                          colors={[from, to]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.swatchGradient}
+                        />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </ScrollView>
             )}
@@ -290,11 +304,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   swatch: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: 'transparent',
+    overflow: 'hidden',
+  },
+  swatchGradient: {
+    flex: 1,
   },
   swatchSelected: {
     transform: [{ scale: 1.2 }],

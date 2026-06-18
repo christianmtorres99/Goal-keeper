@@ -62,16 +62,36 @@ const BADGE_SIZE = Math.floor(
 
 const RARITY_WEIGHT: Record<string, number> = { legendary: 4, rare: 3, uncommon: 2, common: 1 };
 
-const SHARE_BG_COLORS_DARK = [
-  '#1A0A2E', '#0D1B2A', '#0D2818', '#2E0D0D', '#0D2A2A', '#1A1A1A',
-  '#1A1430', '#2A1A0D', '#16213E', '#0F3460', '#2C1654',
-  '#1A0A14', '#0A1A14', '#1A1400', '#2D1B69', '#0A3060',
+// Named gradient presets for share card — [from, to] pairs
+const SHARE_GRADIENTS_DARK: readonly (readonly [string, string])[] = [
+  ['#2D1B69', '#0D0520'],   // Midnight — deep purple
+  ['#0D1B2A', '#030D14'],   // Abyss — navy
+  ['#2E0D0D', '#140404'],   // Ember — dark red
+  ['#1A1A1A', '#050505'],   // Void — near-black
+  ['#0D2A2A', '#030E0E'],   // Dusk — dark teal
+  ['#1A1430', '#08060F'],   // Twilight — charcoal purple
+  ['#16213E', '#060C17'],   // Storm — midnight blue
+  ['#1E1B0F', '#0A0905'],   // Obsidian gold
+  ['#1A0A14', '#08040A'],   // Garnet — dark crimson
+  ['#0A1A14', '#03080A'],   // Forest — deep green
+  ['#0F3460', '#06152A'],   // Ocean — deep navy
+  ['#2C1654', '#0E0820'],   // Cosmos — violet
 ];
-const SHARE_BG_COLORS_LIGHT = [
-  '#F0E6FF', '#E6F0FF', '#E6FFE6', '#FFE6E6', '#FFF0E6', '#E6FFFF',
-  '#FFFCE6', '#F5E6FF', '#EEF2FF', '#FFF8F0',
-  '#FAFAFA', '#F5ECD7', '#F2D4CC', '#CCE5FF', '#D4F2E8', '#FFF0FB',
+const SHARE_GRADIENTS_LIGHT: readonly (readonly [string, string])[] = [
+  ['#EEF2FF', '#F5F0FF'],   // Lavender
+  ['#E6F4FF', '#EEF8FF'],   // Sky
+  ['#E6FFE6', '#F0FFF4'],   // Mint
+  ['#FFE6F0', '#FFF0F6'],   // Sakura
+  ['#FFF4E6', '#FFFCE6'],   // Sand
+  ['#E6FFFF', '#F0FFFF'],   // Mist
+  ['#FFF0FB', '#FFE8F8'],   // Blush
+  ['#EEF9E6', '#F5FFE8'],   // Sage
+  ['#FFF8E6', '#FFFDE6'],   // Cream
+  ['#F5F0E6', '#FEFAF5'],   // Linen
 ];
+
+const SHARE_BG_COLORS_DARK = SHARE_GRADIENTS_DARK.map(g => g[0]);
+const SHARE_BG_COLORS_LIGHT = SHARE_GRADIENTS_LIGHT.map(g => g[0]);
 
 
 export default function ProfileScreen() {
@@ -81,6 +101,7 @@ export default function ProfileScreen() {
   const colorMode = useThemeStore(s => s.colorMode);
   const effectiveMode = colorMode === 'system' ? (systemScheme ?? 'dark') : colorMode;
   const shareBgColors = effectiveMode === 'light' ? SHARE_BG_COLORS_LIGHT : SHARE_BG_COLORS_DARK;
+  const shareGradients = effectiveMode === 'light' ? SHARE_GRADIENTS_LIGHT : SHARE_GRADIENTS_DARK;
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
   const { earnedBadges } = useBadgeStore();
@@ -90,6 +111,7 @@ export default function ProfileScreen() {
   const [bgColorDark, setBgColorDark] = useState(SHARE_BG_COLORS_DARK[0]);
   const [bgColorLight, setBgColorLight] = useState(SHARE_BG_COLORS_LIGHT[0]);
   const bgColor = isLight ? bgColorLight : bgColorDark;
+  const bgGradient = shareGradients.find(g => g[0] === bgColor) ?? [bgColor, bgColor] as const;
   const [pickerVisible, setPickerVisible] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
@@ -374,6 +396,7 @@ export default function ProfileScreen() {
         totalXP={totalXP}
         features={features}
         bgColor={bgColor}
+        bgGradient={bgGradient}
         goals={activeGoals}
         badgeDefs={BADGE_DEFINITIONS}
       />
@@ -630,6 +653,7 @@ export default function ProfileScreen() {
         onClose={() => setThemePickerVisible(false)}
         shareBgColor={bgColor}
         shareBgColors={shareBgColors}
+        shareBgGradients={shareGradients}
         onShareBgChange={setAndSaveBgColor}
       />
 
