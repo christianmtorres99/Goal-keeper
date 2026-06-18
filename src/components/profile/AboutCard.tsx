@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
   supportBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.xs,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.lg,

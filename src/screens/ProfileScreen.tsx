@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from 'expo-blur';
 import ThemePickerModal from '../components/profile/ThemePickerModal';
+import ShareCustomizerModal from '../components/profile/ShareCustomizerModal';
 import BadgeDetailModal from '../components/common/BadgeDetailModal';
 import LevelLadderModal from '../components/common/LevelLadderModal';
 import AboutCard from '../components/profile/AboutCard';
@@ -100,7 +101,6 @@ export default function ProfileScreen() {
   const systemScheme = useColorScheme();
   const colorMode = useThemeStore(s => s.colorMode);
   const effectiveMode = colorMode === 'system' ? (systemScheme ?? 'dark') : colorMode;
-  const shareBgColors = effectiveMode === 'light' ? SHARE_BG_COLORS_LIGHT : SHARE_BG_COLORS_DARK;
   const shareGradients = effectiveMode === 'light' ? SHARE_GRADIENTS_LIGHT : SHARE_GRADIENTS_DARK;
   const goals = useGoalStore(s => s.goals);
   const { logs, graceStates } = useLogStore();
@@ -117,6 +117,7 @@ export default function ProfileScreen() {
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
   const [levelLadderVisible, setLevelLadderVisible] = useState(false);
   const [titlePickerVisible, setTitlePickerVisible] = useState(false);
+  const [shareCustomizerVisible, setShareCustomizerVisible] = useState(false);
 
   const todoXP = useTodoXPStore(s => s.totalXP);
   const activeGoals = useMemo(() => goals.filter(g => !g.isArchived), [goals]);
@@ -246,7 +247,10 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = () => setShareCustomizerVisible(true);
+
+  const handleDoShare = async () => {
+    setShareCustomizerVisible(false);
     try {
       await shareViewAsImage(shareCardRef);
     } catch {
@@ -421,16 +425,7 @@ export default function ProfileScreen() {
             <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
           </AnimatedPressable>
 
-          {/* Coin chip */}
-          <AnimatedPressable
-            style={[styles.coinChip, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}
-            onPress={() => navigation.navigate('Shop')}
-          >
-            <GameIcon type="coin" size={11} />
-            <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>{coinBalance}</Text>
-          </AnimatedPressable>
-
-          <View style={styles.heroHeader}>
+          <View style={styles.heroCentered}>
             <View style={styles.heroIconContainer}>
               <View style={[styles.heroIconGlow, { backgroundColor: hexAlpha(tier.color, 0.22) }]} />
               <AnimatedPressable
@@ -440,29 +435,35 @@ export default function ProfileScreen() {
                 <Ionicons name={tier.icon as any} size={48} color={tier.color} />
               </AnimatedPressable>
             </View>
-            <AnimatedPressable style={styles.heroInfo} onPress={() => setLevelLadderVisible(true)}>
-              <Text style={[styles.heroLevel, { color: tier.color }]}>{adjustedStats.level}</Text>
-              {prestigeLevel > 0 && (
-                <View style={styles.prestigeStarsRow}>
-                  {Array.from({ length: Math.min(prestigeLevel, 5) }).map((_, i) => (
-                    <GameIcon key={i} type="star" size={14} color={GameColors.starGold} />
-                  ))}
-                </View>
-              )}
-              <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
-              {/* Title display */}
-              {equippedTitle ? (
-                <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
-                  <Text style={[styles.titleLabel, { color: Colors.accentBright }]}>{equippedTitle.label}</Text>
-                </AnimatedPressable>
-              ) : (
-                <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
-                  <Text style={[styles.titleLabel, { color: Colors.textDisabled }]}>— Tap to set title —</Text>
-                </AnimatedPressable>
-              )}
-              <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP total</Text>
-              <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(adjustedStats.xpForNextLevel - adjustedStats.xpIntoLevel).toLocaleString()} XP to Level {adjustedStats.level + 1}</Text>
-            </AnimatedPressable>
+            <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
+            <Text style={[styles.heroLevel, { color: tier.color }]}>{adjustedStats.level}</Text>
+            {prestigeLevel > 0 && (
+              <View style={styles.prestigeStarsRow}>
+                {Array.from({ length: Math.min(prestigeLevel, 5) }).map((_, i) => (
+                  <GameIcon key={i} type="star" size={14} color={GameColors.starGold} />
+                ))}
+              </View>
+            )}
+            {equippedTitle ? (
+              <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
+                <Text style={[styles.titleLabel, { color: Colors.accentBright }]}>{equippedTitle.label}</Text>
+              </AnimatedPressable>
+            ) : (
+              <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
+                <Text style={[styles.titleLabel, { color: Colors.textDisabled }]}>— Tap to set title —</Text>
+              </AnimatedPressable>
+            )}
+            <View style={styles.heroXPRow}>
+              <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP</Text>
+              <AnimatedPressable
+                style={[styles.coinChipInline, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}
+                onPress={() => navigation.navigate('Shop')}
+              >
+                <GameIcon type="coin" size={11} />
+                <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>{coinBalance}</Text>
+              </AnimatedPressable>
+            </View>
+            <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(adjustedStats.xpForNextLevel - adjustedStats.xpIntoLevel).toLocaleString()} XP to Level {adjustedStats.level + 1}</Text>
           </View>
           <View style={{ width: '100%' }}>
             <XPBar stats={adjustedStats} hideLevel />
@@ -479,7 +480,7 @@ export default function ProfileScreen() {
           )}
 
           {/* 3 feature slots */}
-          <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Achievements</Text>
+          <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Highlighted Achievements</Text>
           <View style={styles.featureSlots}>
             {[0, 1, 2].map(idx => {
               const f = features[idx];
@@ -510,7 +511,7 @@ export default function ProfileScreen() {
                     <Ionicons name="close" size={9} color={Colors.textDisabled} />
                   </View>
                   <Ionicons name={icon as any} size={30} color={iconColor} />
-                  <Text style={[styles.featureSlotLabel, { color: Colors.textPrimary }]} numberOfLines={2}>{label}</Text>
+                  <Text style={[styles.featureSlotLabel, { color: Colors.textPrimary }]} numberOfLines={2} ellipsizeMode="tail">{label}</Text>
                 </AnimatedPressable>
               );
             })}
@@ -651,10 +652,22 @@ export default function ProfileScreen() {
       <ThemePickerModal
         visible={themePickerVisible}
         onClose={() => setThemePickerVisible(false)}
-        shareBgColor={bgColor}
-        shareBgColors={shareBgColors}
-        shareBgGradients={shareGradients}
-        onShareBgChange={setAndSaveBgColor}
+      />
+
+      {/* Share customizer modal */}
+      <ShareCustomizerModal
+        visible={shareCustomizerVisible}
+        onClose={() => setShareCustomizerVisible(false)}
+        stats={playerStats}
+        totalXP={totalXP}
+        features={features}
+        goals={activeGoals}
+        badgeDefs={BADGE_DEFINITIONS}
+        bgColor={bgColor}
+        bgGradient={bgGradient}
+        gradients={shareGradients}
+        onBgChange={setAndSaveBgColor}
+        onShare={handleDoShare}
       />
 
       {/* Badge detail modal */}
@@ -742,18 +755,18 @@ const styles = StyleSheet.create({
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xxl },
 
   heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
-  heroHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  heroCentered: { alignItems: 'center', gap: Spacing.xs },
+  heroXPRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 2 },
   heroIconContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   heroIconGlow: { position: 'absolute', width: 96, height: 96, borderRadius: 48 },
-  heroIconWrap: { width: 80, height: 80, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  heroInfo: { flex: 1, gap: 4, justifyContent: 'center', paddingRight: Spacing.lg },
+  heroIconWrap: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   heroLevel: { fontSize: FontSize.xxxl, fontFamily: FontFamily.extraBold },
   heroTierTitle: { fontSize: FontSize.lg, fontFamily: FontFamily.bold },
   heroXP: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
   heroNext: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   shareBtn: { position: 'absolute', top: Spacing.md, right: Spacing.md, padding: Spacing.xs, zIndex: 1 },
 
-  coinChip: { position: 'absolute', top: Spacing.md, left: Spacing.md, borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3, zIndex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  coinChipInline: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.full, borderWidth: 1, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
   coinChipText: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold },
 
   prestigeStarsRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 1 },
@@ -765,9 +778,9 @@ const styles = StyleSheet.create({
 
   pickerSublabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
   featureSlots: { flexDirection: 'row', gap: Spacing.sm },
-  featureSlot: { flex: 1, minHeight: 96, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs },
-  featureSlotFilled: { flex: 1, minHeight: 104, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xs, position: 'relative' },
-  featureSlotLabel: { fontSize: FontSize.sm, textAlign: 'center', fontFamily: FontFamily.semiBold },
+  featureSlot: { flex: 1, minHeight: 110, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.md, paddingHorizontal: Spacing.xs },
+  featureSlotFilled: { flex: 1, minHeight: 110, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.md, paddingHorizontal: Spacing.xs, position: 'relative' },
+  featureSlotLabel: { fontSize: FontSize.xs, lineHeight: 15, textAlign: 'center', fontFamily: FontFamily.semiBold },
   featureSlotEmpty: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
   featureSlotRemoveBadge: { position: 'absolute', top: 5, right: 5, borderRadius: 7, padding: 2 },
 
