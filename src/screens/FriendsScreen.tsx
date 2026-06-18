@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, Modal, Alert, Share, Platform, ActivityIndicator,
-  KeyboardAvoidingView,
+  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +20,7 @@ import { useTodoXPStore } from '../store/todoXPStore';
 import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import AnimatedPressable from '../components/common/AnimatedPressable';
+import { BADGE_DEFINITIONS } from '../constants/badges';
 
 type Tab = 'friends' | 'global';
 
@@ -51,12 +52,13 @@ interface RowProps {
   item: { uid?: string; displayName: string; level: number; xp: number; bestStreak: number; equippedTitle?: string };
   isYou: boolean;
   onRemove?: () => void;
+  onPress?: () => void;
 }
-function Row({ rank, item, isYou, onRemove }: RowProps) {
+function Row({ rank, item, isYou, onRemove, onPress }: RowProps) {
   const { colors: Colors } = useColors();
   const color = avatarColor(item.displayName);
   const initial = (item.displayName || '?')[0].toUpperCase();
-  return (
+  const inner = (
     <View style={[styles.row, {
       backgroundColor: isYou ? hexAlpha(Colors.accentBright, 0.1) : Colors.bg2,
       borderColor: isYou ? hexAlpha(Colors.accentBright, 0.35) : Colors.border,
@@ -91,9 +93,26 @@ function Row({ rank, item, isYou, onRemove }: RowProps) {
           <Ionicons name="close-circle-outline" size={20} color={Colors.textDisabled} />
         </TouchableOpacity>
       )}
+      {onPress && !onRemove && (
+        <Ionicons name="chevron-forward" size={16} color={Colors.textDisabled} />
+      )}
     </View>
   );
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress} activeOpacity={0.75}>{inner}</TouchableOpacity>;
+  }
+  return inner;
 }
+
+type ProfileSheetData = {
+  uid: string;
+  displayName: string;
+  level: number;
+  xp: number;
+  bestStreak: number;
+  equippedTitle: string;
+  topBadgeIds: string[];
+};
 
 export default function FriendsScreen() {
   const { colors: Colors, isLight } = useColors();
@@ -104,6 +123,7 @@ export default function FriendsScreen() {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [profileSheet, setProfileSheet] = useState<ProfileSheetData | null>(null);
 
   const {
     myUid, myInviteCode, friends, leaderboard,
@@ -271,16 +291,27 @@ export default function FriendsScreen() {
             </AnimatedPressable>
           }
           ListEmptyComponent={null}
-          renderItem={({ item, index }) => (
-            <Row
-              rank={index + 1}
-              item={item}
-              isYou={'uid' in item && item.uid === (myUid || '__me__')}
-              onRemove={'uid' in item && item.uid !== (myUid || '__me__') && item.uid !== '__me__'
-                ? () => handleRemove(item as FriendEntry)
-                : undefined}
-            />
-          )}
+          renderItem={({ item, index }) => {
+            const isYou = 'uid' in item && item.uid === (myUid || '__me__');
+            const isFriend = !isYou && 'uid' in item && item.uid !== '__me__';
+            return (
+              <Row
+                rank={index + 1}
+                item={item}
+                isYou={isYou}
+                onRemove={isFriend ? () => handleRemove(item as FriendEntry) : undefined}
+                onPress={isFriend ? () => setProfileSheet({
+                  uid: (item as FriendEntry).uid,
+                  displayName: (item as FriendEntry).displayName,
+                  level: (item as FriendEntry).level,
+                  xp: (item as FriendEntry).xp,
+                  bestStreak: (item as FriendEntry).bestStreak,
+                  equippedTitle: (item as FriendEntry).equippedTitle,
+                  topBadgeIds: (item as FriendEntry).topBadgeIds ?? [],
+                }) : undefined}
+              />
+            );
+          }}
           ListFooterComponent={
             friends.length === 0 ? (
               <View style={styles.emptyBox}>
@@ -327,16 +358,86 @@ export default function FriendsScreen() {
                 </Text>
               </View>
             }
-            renderItem={({ item, index }) => (
-              <Row
-                rank={index + 1}
-                item={item as unknown as FriendEntry}
-                isYou={item.uid === myUid}
-              />
-            )}
+            renderItem={({ item, index }) => {
+              const isYou = item.uid === myUid;
+              const isFriend = !isYou && friends.some(f => f.uid === item.uid);
+              return (
+                <Row
+                  rank={index + 1}
+                  item={item as unknown as FriendEntry}
+                  isYou={isYou}
+                  onPress={isFriend ? () => {
+                    const friend = friends.find(f => f.uid === item.uid);
+                    if (friend) setProfileSheet({
+                      uid: friend.uid,
+                      displayName: friend.displayName,
+                      level: friend.level,
+                      xp: friend.xp,
+                      bestStreak: friend.bestStreak,
+                      equippedTitle: friend.equippedTitle,
+                      topBadgeIds: friend.topBadgeIds ?? [],
+                    });
+                  } : undefined}
+                />
+              );
+            }}
           />
         )
       )}
+
+      {/* Friend Profile Sheet */}
+      <Modal visible={!!profileSheet} transparent animationType="slide" onRequestClose={() => setProfileSheet(null)}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setProfileSheet(null)} />
+        {profileSheet && (
+          <View style={styles.modalWrap}>
+            <View style={[styles.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
+              <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
+              <View style={styles.profileHeader}>
+                <View style={[styles.profileAvatar, { backgroundColor: hexAlpha(avatarColor(profileSheet.displayName), 0.2), borderColor: hexAlpha(avatarColor(profileSheet.displayName), 0.5) }]}>
+                  <Text style={[styles.profileAvatarText, { color: avatarColor(profileSheet.displayName) }]}>
+                    {(profileSheet.displayName || '?')[0].toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.profileName, { color: Colors.textPrimary }]}>{profileSheet.displayName}</Text>
+                  {profileSheet.equippedTitle ? (
+                    <Text style={[styles.profileTitle, { color: Colors.accentBright }]}>{profileSheet.equippedTitle}</Text>
+                  ) : null}
+                </View>
+              </View>
+              <View style={styles.profileStats}>
+                {[
+                  { label: 'Level', value: String(profileSheet.level) },
+                  { label: 'XP', value: formatXP(profileSheet.xp) },
+                  { label: 'Streak', value: `${profileSheet.bestStreak}d` },
+                ].map(stat => (
+                  <View key={stat.label} style={[styles.profileStatBox, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
+                    <Text style={[styles.profileStatValue, { color: Colors.accentBright }]}>{stat.value}</Text>
+                    <Text style={[styles.profileStatLabel, { color: Colors.textSecondary }]}>{stat.label}</Text>
+                  </View>
+                ))}
+              </View>
+              {profileSheet.topBadgeIds.length > 0 && (
+                <>
+                  <Text style={[styles.profileBadgeLabel, { color: Colors.textSecondary }]}>ACHIEVEMENTS</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.profileBadgeRow}>
+                    {profileSheet.topBadgeIds.map(id => {
+                      const def = BADGE_DEFINITIONS.find(b => b.id === id);
+                      if (!def) return null;
+                      return (
+                        <View key={id} style={[styles.profileBadgeChip, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
+                          <Ionicons name={def.icon as any} size={22} color={Colors.accentBright} />
+                          <Text style={[styles.profileBadgeChipText, { color: Colors.textSecondary }]} numberOfLines={2}>{def.label}</Text>
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                </>
+              )}
+            </View>
+          </View>
+        )}
+      </Modal>
 
       {/* Add Friend Modal */}
       <Modal visible={addVisible} transparent animationType="slide" onRequestClose={() => setAddVisible(false)}>
@@ -479,4 +580,19 @@ const styles = StyleSheet.create({
   addError: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center' },
   addBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.xs },
   addBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
+
+  modalWrap: { flex: 1, justifyContent: 'flex-end' },
+  profileHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  profileAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  profileAvatarText: { fontSize: FontSize.xxl, fontFamily: FontFamily.extraBold },
+  profileName: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
+  profileTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, marginTop: 2 },
+  profileStats: { flexDirection: 'row', gap: Spacing.sm },
+  profileStatBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
+  profileStatValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
+  profileStatLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
+  profileBadgeLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, letterSpacing: 1 },
+  profileBadgeRow: { gap: Spacing.sm, paddingHorizontal: Spacing.xs },
+  profileBadgeChip: { borderRadius: Radius.md, borderWidth: 1, padding: Spacing.sm, alignItems: 'center', gap: 6, width: 80 },
+  profileBadgeChipText: { fontSize: 10, textAlign: 'center', fontFamily: FontFamily.regular },
 });

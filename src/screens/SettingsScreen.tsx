@@ -7,6 +7,11 @@ import {
   Switch,
   Alert,
   Linking,
+  Modal,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +26,7 @@ import { useBadgeStore } from '../store/badgeStore';
 import { useGameStore } from '../store/gameStore';
 import { useCoinStore } from '../store/coinStore';
 import { useJournalStore } from '../store/journalStore';
+import { useFriendsStore } from '../store/friendsStore';
 
 // ── Row components ────────────────────────────────────────────────────────────
 
@@ -69,8 +75,25 @@ function SectionHeader({ title }: { title: string }) {
 export default function SettingsScreen() {
   const { colors: Colors } = useColors();
   const [notificationsEnabled] = useState(true);
+  const [nameModalVisible, setNameModalVisible] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+
+  const { userName, setUserName } = useGameStore();
+  const { syncMyProfile } = useFriendsStore();
 
   const version = Constants.expoConfig?.version ?? '1.0.0';
+
+  const handleOpenNameModal = () => {
+    setNameInput(userName);
+    setNameModalVisible(true);
+  };
+
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim();
+    await setUserName(trimmed);
+    try { await syncMyProfile(); } catch {}
+    setNameModalVisible(false);
+  };
 
   const handleOpenNotificationSettings = () => {
     Linking.openSettings();
@@ -128,6 +151,14 @@ export default function SettingsScreen() {
     <SafeAreaView style={[s.safe, { backgroundColor: 'transparent' }]} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={s.content}>
 
+        <SectionHeader title="Profile" />
+        <Row
+          icon="person-outline"
+          label="Display Name"
+          sublabel={userName.trim() || 'Not set — tap to add your name'}
+          onPress={handleOpenNameModal}
+        />
+
         <SectionHeader title="Notifications" />
         <Row
           icon="notifications-outline"
@@ -158,6 +189,39 @@ export default function SettingsScreen() {
         />
 
       </ScrollView>
+
+      {/* Display Name Edit Sheet */}
+      <Modal visible={nameModalVisible} transparent animationType="slide" onRequestClose={() => setNameModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={s.modalWrap}>
+          <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setNameModalVisible(false)} />
+          <View style={[s.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
+            <View style={[s.handle, { backgroundColor: Colors.bg3 }]} />
+            <Text style={[s.sheetTitle, { color: Colors.textPrimary }]}>Display Name</Text>
+            <Text style={[s.sheetSub, { color: Colors.textSecondary }]}>
+              This name appears on the leaderboard and when friends view your profile.
+            </Text>
+            <TextInput
+              style={[s.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
+              placeholder="Enter your name…"
+              placeholderTextColor={Colors.textDisabled}
+              value={nameInput}
+              onChangeText={setNameInput}
+              maxLength={24}
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleSaveName}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[s.saveBtn, { backgroundColor: nameInput.trim() ? Colors.accentBright : Colors.bg3 }]}
+              onPress={handleSaveName}
+              activeOpacity={0.85}
+            >
+              <Text style={[s.saveBtnText, { color: nameInput.trim() ? '#fff' : Colors.textDisabled }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -177,4 +241,23 @@ const s = StyleSheet.create({
   rowSublabel:{ fontSize: FontSize.sm, fontFamily: FontFamily.regular, marginTop: 2 },
 
   versionText: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
+
+  modalWrap: { flex: 1, justifyContent: 'flex-end' },
+  modalOverlay: { ...StyleSheet.absoluteFillObject },
+  sheet: {
+    borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
+    borderWidth: 1, borderBottomWidth: 0,
+    padding: Spacing.xl, gap: Spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.xl,
+  },
+  handle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.xs },
+  sheetTitle: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
+  sheetSub: { fontSize: FontSize.sm, fontFamily: FontFamily.regular },
+  input: {
+    borderRadius: Radius.md, borderWidth: 1.5,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
+    fontSize: FontSize.lg, fontFamily: FontFamily.semiBold,
+  },
+  saveBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.xs },
+  saveBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
 });
