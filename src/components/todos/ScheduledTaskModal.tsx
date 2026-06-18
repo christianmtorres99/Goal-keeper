@@ -108,7 +108,7 @@ export default function ScheduledTaskModal({ visible, onClose }: Props) {
         <Animated.View style={{ transform: [{ translateY: sheetTranslateY }] }}>
           {/* Inner: Reanimated for drag gesture */}
           <GestureDetector gesture={panGesture}>
-            <ReanimatedAnimated.View style={[styles.sheet, dragStyle, { backgroundColor: Colors.bg1, borderColor: Colors.border, paddingBottom: bottomPad }]}>
+            <ReanimatedAnimated.View style={[styles.sheet, dragStyle, { backgroundColor: Colors.bg0, borderColor: Colors.border, paddingBottom: bottomPad }]}>
               <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
               <Text style={[styles.title, { color: Colors.textPrimary }]}>Scheduled Tasks</Text>
               <ScrollView style={styles.list} showsVerticalScrollIndicator={true}>

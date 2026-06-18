@@ -75,7 +75,7 @@ export default function App() {
         await setupNotificationHandler();
         await runMigrations();
 
-        // Daily reset: clear todos from previous days
+        // Daily reset check (fast - just AsyncStorage)
         const lastClear = await AsyncStorage.getItem('lastTodoClearDate');
         const todayDateStr = (() => {
           const d = new Date();
@@ -85,37 +85,17 @@ export default function App() {
           await useTodoStore.getState().clearExpiredTodos();
           await AsyncStorage.setItem('lastTodoClearDate', todayDateStr);
         }
-        await useTodoStore.getState().loadTodos();
 
-        await useGoalStore.getState().loadGoals();
-        await useLogStore.getState().loadLogs();
-        await useBadgeStore.getState().loadBadges();
-        await useGameStore.getState().load();
-        await useTodoXPStore.getState().load();
-        await useJournalStore.getState().loadEntries();
-        await useThemeStore.getState().loadTheme();
-        await useScheduledTaskStore.getState().loadScheduledTasks();
-        await useScheduledTaskStore.getState().generateTodaysTasks();
-
-        // New stores
-        await useCoinStore.getState().load();
-        await usePerkStore.getState().load();
-        await useTitleStore.getState().load();
-        await useSeasonStore.getState().load();
-        await useRaidStore.getState().load();
-        await useFriendsStore.getState().load();
-
-        // Date integrity check (anti-cheat)
-        await useGameStore.getState().checkDateIntegrity();
-
-        // Boss spawn check (uses player level)
-        const logs = useLogStore.getState().logs;
-        const todoXP = useTodoXPStore.getState().totalXP;
-        const rawXP = sumXP(logs) + todoXP;
-        const adjustedXP = useGameStore.getState().getAdjustedXP(rawXP);
-        const { level } = getPlayerStats(adjustedXP);
-        await useRaidStore.getState().checkSpawn(level);
-        await useRaidStore.getState().checkDebuff();
+        // Load all critical local stores in parallel
+        await Promise.all([
+          useGoalStore.getState().loadGoals(),
+          useLogStore.getState().loadLogs(),
+          useBadgeStore.getState().loadBadges(),
+          useGameStore.getState().load(),
+          useTodoXPStore.getState().load(),
+          useTodoStore.getState().loadTodos(),
+          useThemeStore.getState().loadTheme(),
+        ]);
 
         // Apply the loaded theme to Colors immediately
         const { activeTheme, colorMode } = useThemeStore.getState();
@@ -126,7 +106,34 @@ export default function App() {
         const onboarded = await AsyncStorage.getItem(ONBOARDING_KEY);
         if (!onboarded) setShowOnboarding(true);
 
-        setReady(true);
+        setReady(true); // Show UI immediately — don't wait for network
+
+        // Load non-critical stores in background after UI is shown
+        Promise.all([
+          useJournalStore.getState().loadEntries(),
+          useScheduledTaskStore.getState().loadScheduledTasks(),
+          useCoinStore.getState().load(),
+          usePerkStore.getState().load(),
+          useTitleStore.getState().load(),
+          useSeasonStore.getState().load(),
+          useRaidStore.getState().load(),
+        ]).then(async () => {
+          try {
+            await useScheduledTaskStore.getState().generateTodaysTasks();
+            await useGameStore.getState().checkDateIntegrity();
+            const logs = useLogStore.getState().logs;
+            const todoXP = useTodoXPStore.getState().totalXP;
+            const rawXP = sumXP(logs) + todoXP;
+            const adjustedXP = useGameStore.getState().getAdjustedXP(rawXP);
+            const { level } = getPlayerStats(adjustedXP);
+            await useRaidStore.getState().checkSpawn(level);
+            await useRaidStore.getState().checkDebuff();
+          } catch {}
+        }).catch(() => {});
+
+        // Firebase/network load completely in background — never blocks UI
+        useFriendsStore.getState().load().catch(() => {});
+
       } catch (e: any) {
         setError(e?.message ?? 'Failed to initialize');
       }

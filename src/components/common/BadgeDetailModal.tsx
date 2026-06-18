@@ -246,7 +246,7 @@ export default function BadgeDetailModal({ badgeId, onClose }: BadgeDetailModalP
           <View
             style={{
               width: SCREEN_W - Spacing.xl * 2,
-              backgroundColor: Colors.bg1,
+              backgroundColor: Colors.bg0,
               borderRadius: Radius.xl,
               padding: Spacing.xl,
               alignItems: 'center',

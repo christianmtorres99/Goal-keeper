@@ -482,7 +482,7 @@ export default function GoalDetailScreen() {
       <Modal visible={pastPickerVisible} transparent animationType="fade" onRequestClose={() => setPastPickerVisible(false)}>
         <View style={styles.pickerOverlay}>
           <AnimatedPressable style={styles.pickerBackdrop} onPress={() => setPastPickerVisible(false)} />
-          <View style={[styles.pickerSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <View style={[styles.pickerSheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
             <View style={[styles.pickerHandle, { backgroundColor: Colors.bg3 }]} />
             <Text style={[styles.pickerTitle, { color: Colors.textPrimary }]}>Log a Past Day</Text>
             <Text style={[styles.pickerSubtitle, { color: Colors.textSecondary }]}>Tap a day you forgot to log</Text>

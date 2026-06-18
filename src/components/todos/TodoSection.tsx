@@ -108,7 +108,7 @@ function AddTodoModal({ visible, onClose }: AddTodoModalProps) {
       />
       <KeyboardAvoidingView behavior="padding" style={styles.modalKAV}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-        <Animated.View style={[styles.modalSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border, paddingBottom: bottomPad, transform: [{ translateY: sheetTranslateY }] }]}>
+        <Animated.View style={[styles.modalSheet, { backgroundColor: Colors.bg0, borderColor: Colors.border, paddingBottom: bottomPad, transform: [{ translateY: sheetTranslateY }] }]}>
           <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
           <Text style={[styles.modalTitle, { color: Colors.textPrimary }]}>New Task</Text>
 
@@ -438,7 +438,7 @@ export default function TodoSection({ onComplete }: TodoSectionProps) {
         onRequestClose={() => setActionTodo(null)}
       >
         <TouchableOpacity style={[styles.actionBackdrop, { backgroundColor: isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK }]} activeOpacity={1} onPress={() => setActionTodo(null)} />
-        <View style={[styles.actionSheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+        <View style={[styles.actionSheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
           <View style={[styles.actionHandle, { backgroundColor: Colors.border }]} />
           <Text style={[styles.actionTitle, { color: Colors.textSecondary }]} numberOfLines={1}>{actionTodo?.title}</Text>
           <TouchableOpacity style={styles.actionBtn} onPress={() => { setEditText(actionTodo?.title ?? ''); setEditingTodo(actionTodo); setActionTodo(null); }}>
@@ -462,7 +462,7 @@ export default function TodoSection({ onComplete }: TodoSectionProps) {
       {/* Edit modal */}
       <Modal visible={!!editingTodo} transparent statusBarTranslucent animationType="fade" onRequestClose={() => setEditingTodo(null)}>
         <KeyboardAvoidingView behavior="padding" style={[styles.editOverlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
-          <View style={[styles.editCard, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <View style={[styles.editCard, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
             <Text style={[styles.editTitle, { color: Colors.textPrimary }]}>Edit Task</Text>
             <TextInput
               style={[styles.editInput, { backgroundColor: Colors.bg2, color: Colors.textPrimary, borderColor: Colors.border }]}

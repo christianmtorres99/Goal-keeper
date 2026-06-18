@@ -159,7 +159,7 @@ export default function SkillTrackScreen({ route }: Props) {
   const reveal2 = useAnimatedStyle(() => ({ opacity: revealOp2.value, transform: [{ translateY: revealY2.value }] }));
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
         {/* Hero header */}

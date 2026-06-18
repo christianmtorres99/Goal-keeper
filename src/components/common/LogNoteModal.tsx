@@ -79,7 +79,7 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
         />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleCancel} />
         <GestureDetector gesture={panGesture}>
-          <ReAnimated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <ReAnimated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
             <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
             <View style={styles.header}>
               <View style={[styles.colorDot, { backgroundColor: goalColor }]} />

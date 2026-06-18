@@ -67,7 +67,7 @@ export default function LevelLadderModal({ visible, currentLevel, onClose }: Pro
           onPress={onClose}
         />
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+          <Animated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
             <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
             <Text style={[styles.title, { color: Colors.textPrimary }]}>Path of Ascension</Text>
             <Text style={[styles.subtitle, { color: Colors.textSecondary }]}>Your journey through all 10 tiers</Text>

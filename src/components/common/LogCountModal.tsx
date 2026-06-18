@@ -55,7 +55,7 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor, opacity: backdropOpacity }]} pointerEvents="none" />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleCancel} />
-        <View style={[styles.sheet, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
+        <View style={[styles.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
           <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
           <View style={styles.header}>
             <View style={[styles.colorDot, { backgroundColor: goalColor }]} />

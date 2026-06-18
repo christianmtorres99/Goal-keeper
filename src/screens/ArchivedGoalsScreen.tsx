@@ -21,7 +21,7 @@ export default function ArchivedGoalsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.bg0 }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]}>
       <FlatList
         data={archivedGoals}
         keyExtractor={g => g.id}

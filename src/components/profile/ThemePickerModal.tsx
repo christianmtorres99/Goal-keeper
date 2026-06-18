@@ -69,7 +69,7 @@ export default function ThemePickerModal({
     >
       <TouchableOpacity style={[styles.overlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]} activeOpacity={1} onPress={onClose}>
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.sheet, { backgroundColor: Colors.bg1 }, sheetStyle]}>
+          <Animated.View style={[styles.sheet, { backgroundColor: Colors.bg0 }, sheetStyle]}>
             <View style={[styles.handle, { backgroundColor: Colors.border }]} />
             <Text style={[styles.title, { color: Colors.textPrimary }]}>Appearance</Text>
 
