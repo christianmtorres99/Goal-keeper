@@ -19,4 +19,4 @@ export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
-export const db = getFirestore(app);
+export const db = getFirestore(app, 'goalie-db');

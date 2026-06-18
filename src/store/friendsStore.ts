@@ -57,9 +57,8 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
 
       // Sync local stats to cloud in background — don't block app startup
       syncProfile(inviteCode).catch(() => {});
-    } catch (e: any) {
-      const msg = e?.code ?? e?.message ?? String(e);
-      set({ loading: false, error: `Could not connect: ${msg}` });
+    } catch {
+      set({ loading: false, error: 'Could not connect. Friends will sync when online.' });
     }
   },
 
