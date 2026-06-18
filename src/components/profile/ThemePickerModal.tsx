@@ -156,11 +156,10 @@ export default function ThemePickerModal({
                 <View style={styles.swatchGrid}>
                   {(shareBgGradients ?? shareBgColors.map(c => [c, c] as const)).map((entry, i) => {
                     const [from, to] = Array.isArray(entry) ? entry : [entry, entry];
-                    const key = from;
                     const isSelected = shareBgColor === from;
                     return (
                       <TouchableOpacity
-                        key={key + i}
+                        key={`${from}_${to}_${i}`}
                         style={[
                           styles.swatch,
                           isSelected && styles.swatchSelected,

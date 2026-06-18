@@ -69,14 +69,13 @@ const ProfileShareCard = forwardRef<View, Props>(
     };
 
     return (
-      <LinearGradient
-        ref={ref}
-        collapsable={false}
-        colors={gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.card, inline && styles.cardInline]}
-      >
+      <View ref={ref} collapsable={false} style={[styles.card, inline && styles.cardInline]}>
+        <LinearGradient
+          colors={[...gradient] as [string, string]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         {/* App branding */}
         <View style={styles.appRow}>
           <Ionicons name="trophy" size={12} color={Colors.accentBright} />
@@ -105,7 +104,7 @@ const ProfileShareCard = forwardRef<View, Props>(
         </View>
 
         <Text style={styles.tagline}>Track your goals. Level up your life.</Text>
-      </LinearGradient>
+      </View>
     );
   }
 );
