@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +28,7 @@ import { useGameStore } from '../store/gameStore';
 import { useCoinStore } from '../store/coinStore';
 import { useJournalStore } from '../store/journalStore';
 import { useFriendsStore } from '../store/friendsStore';
+import { checkDisplayNameAvailable } from '../services/profileService';
 
 // ── Row components ────────────────────────────────────────────────────────────
 
@@ -77,6 +79,8 @@ export default function SettingsScreen() {
   const [notificationsEnabled] = useState(true);
   const [nameModalVisible, setNameModalVisible] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   const { userName, setUserName } = useGameStore();
   const { syncMyProfile } = useFriendsStore();
@@ -85,14 +89,30 @@ export default function SettingsScreen() {
 
   const handleOpenNameModal = () => {
     setNameInput(userName);
+    setNameError('');
     setNameModalVisible(true);
   };
 
   const handleSaveName = async () => {
     const trimmed = nameInput.trim();
-    await setUserName(trimmed);
-    try { await syncMyProfile(); } catch {}
-    setNameModalVisible(false);
+    if (!trimmed || nameSaving) return;
+    setNameSaving(true);
+    setNameError('');
+    try {
+      const available = await checkDisplayNameAvailable(trimmed);
+      if (!available) {
+        setNameError('This name is already taken. Please choose another.');
+        setNameSaving(false);
+        return;
+      }
+      await setUserName(trimmed);
+      try { await syncMyProfile(); } catch {}
+      setNameModalVisible(false);
+    } catch {
+      setNameError('Could not check name availability. Try again.');
+    } finally {
+      setNameSaving(false);
+    }
   };
 
   const handleOpenNotificationSettings = () => {
@@ -201,23 +221,30 @@ export default function SettingsScreen() {
               This name appears on the leaderboard and when friends view your profile.
             </Text>
             <TextInput
-              style={[s.input, { backgroundColor: Colors.bg2, borderColor: Colors.border, color: Colors.textPrimary }]}
+              style={[s.input, { backgroundColor: Colors.bg2, borderColor: nameError ? Colors.danger : Colors.border, color: Colors.textPrimary }]}
               placeholder="Enter your name…"
               placeholderTextColor={Colors.textDisabled}
               value={nameInput}
-              onChangeText={setNameInput}
+              onChangeText={v => { setNameInput(v); setNameError(''); }}
               maxLength={24}
               autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleSaveName}
               autoFocus
             />
+            {nameError ? (
+              <Text style={[s.nameError, { color: Colors.danger }]}>{nameError}</Text>
+            ) : null}
             <TouchableOpacity
-              style={[s.saveBtn, { backgroundColor: nameInput.trim() ? Colors.accentBright : Colors.bg3 }]}
+              style={[s.saveBtn, { backgroundColor: nameInput.trim() && !nameSaving ? Colors.accentBright : Colors.bg3 }]}
               onPress={handleSaveName}
+              disabled={nameSaving || !nameInput.trim()}
               activeOpacity={0.85}
             >
-              <Text style={[s.saveBtnText, { color: nameInput.trim() ? '#fff' : Colors.textDisabled }]}>Save</Text>
+              {nameSaving
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={[s.saveBtnText, { color: nameInput.trim() ? '#fff' : Colors.textDisabled }]}>Save</Text>
+              }
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -258,6 +285,7 @@ const s = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
     fontSize: FontSize.lg, fontFamily: FontFamily.semiBold,
   },
+  nameError: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center' },
   saveBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.xs },
   saveBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
 });

@@ -405,70 +405,65 @@ export default function ProfileScreen() {
         badgeDefs={BADGE_DEFINITIONS}
       />
 
-      {/* Hero banner — transparent, fixed above scroll */}
-      <Animated.View style={[styles.heroBanner, reveal0]}>
-        <AnimatedPressable style={styles.shareBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
-        </AnimatedPressable>
-        <View style={styles.heroCentered}>
-          <View style={styles.heroIconContainer}>
-            <View style={[styles.heroIconGlow, { backgroundColor: hexAlpha(tier.color, 0.22) }]} />
-            <AnimatedPressable
-              style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
-              onPress={() => setLevelLadderVisible(true)}
-            >
-              <Ionicons name={tier.icon as any} size={48} color={tier.color} />
-            </AnimatedPressable>
-          </View>
-          <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
-          <Text style={[styles.heroLevel, { color: tier.color }]}>{adjustedStats.level}</Text>
-          {prestigeLevel > 0 && (
-            <View style={styles.prestigeStarsRow}>
-              {Array.from({ length: Math.min(prestigeLevel, 5) }).map((_, i) => (
-                <GameIcon key={i} type="star" size={14} color={GameColors.starGold} />
-              ))}
-            </View>
-          )}
-          {equippedTitle ? (
-            <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
-              <Text style={[styles.titleLabel, { color: Colors.accentBright }]}>{equippedTitle.label}</Text>
-            </AnimatedPressable>
-          ) : (
-            <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
-              <Text style={[styles.titleLabel, { color: Colors.textDisabled }]}>— Tap to set title —</Text>
-            </AnimatedPressable>
-          )}
-          <View style={styles.heroXPRow}>
-            <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP</Text>
-            <AnimatedPressable
-              style={[styles.coinChipInline, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}
-              onPress={() => navigation.navigate('Shop')}
-            >
-              <GameIcon type="coin" size={11} />
-              <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>{coinBalance}</Text>
-            </AnimatedPressable>
-          </View>
-          <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(adjustedStats.xpForNextLevel - adjustedStats.xpIntoLevel).toLocaleString()} XP to Level {adjustedStats.level + 1}</Text>
-        </View>
-        <View style={{ width: '100%', paddingHorizontal: Spacing.lg }}>
-          <XPBar stats={adjustedStats} hideLevel />
-        </View>
-        {canPrestige(adjustedStats.level) && (
-          <AnimatedPressable
-            style={[styles.ascendBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: Colors.accentBright }]}
-            onPress={handlePrestige}
-          >
-            <Text style={[styles.ascendBtnText, { color: Colors.accentBright }]}>✨ Ascend</Text>
-          </AnimatedPressable>
-        )}
-      </Animated.View>
-
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
-        {/* Highlighted Achievements */}
+        {/* Hero card — transparent, scrolls with content */}
         <Animated.View style={reveal0}>
-          <View style={[styles.achievementCard, { borderColor: Colors.accentDim, overflow: 'hidden' }]}>
-            <BlurView style={StyleSheet.absoluteFill} intensity={18} tint={isLight ? 'light' : 'dark'} />
+          <View style={styles.heroCard}>
+            <AnimatedPressable style={styles.shareBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+            </AnimatedPressable>
+            <View style={styles.heroCentered}>
+              <View style={styles.heroIconContainer}>
+                <View style={[styles.heroIconGlow, { backgroundColor: hexAlpha(tier.color, 0.22) }]} />
+                <AnimatedPressable
+                  style={[styles.heroIconWrap, { borderColor: hexAlpha(tier.color, 0.40), backgroundColor: hexAlpha(tier.color, 0.13) }]}
+                  onPress={() => setLevelLadderVisible(true)}
+                >
+                  <Ionicons name={tier.icon as any} size={48} color={tier.color} />
+                </AnimatedPressable>
+              </View>
+              <Text style={[styles.heroTierTitle, { color: tier.color }]}>{tier.title}</Text>
+              <Text style={[styles.heroLevel, { color: tier.color }]}>{adjustedStats.level}</Text>
+              {prestigeLevel > 0 && (
+                <View style={styles.prestigeStarsRow}>
+                  {Array.from({ length: Math.min(prestigeLevel, 5) }).map((_, i) => (
+                    <GameIcon key={i} type="star" size={14} color={GameColors.starGold} />
+                  ))}
+                </View>
+              )}
+              {equippedTitle ? (
+                <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
+                  <Text style={[styles.titleLabel, { color: Colors.accentBright }]}>{equippedTitle.label}</Text>
+                </AnimatedPressable>
+              ) : (
+                <AnimatedPressable onPress={() => setTitlePickerVisible(true)}>
+                  <Text style={[styles.titleLabel, { color: Colors.textDisabled }]}>— Tap to set title —</Text>
+                </AnimatedPressable>
+              )}
+              <View style={styles.heroXPRow}>
+                <Text style={[styles.heroXP, { color: Colors.accentBright }]}>{totalXP.toLocaleString()} XP</Text>
+                <AnimatedPressable
+                  style={[styles.coinChipInline, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: hexAlpha(Colors.accentBright, 0.30) }]}
+                  onPress={() => navigation.navigate('Shop')}
+                >
+                  <GameIcon type="coin" size={11} />
+                  <Text style={[styles.coinChipText, { color: Colors.accentBright }]}>{coinBalance}</Text>
+                </AnimatedPressable>
+              </View>
+              <Text style={[styles.heroNext, { color: Colors.textSecondary }]}>{(adjustedStats.xpForNextLevel - adjustedStats.xpIntoLevel).toLocaleString()} XP to Level {adjustedStats.level + 1}</Text>
+            </View>
+            <View style={{ width: '100%' }}>
+              <XPBar stats={adjustedStats} hideLevel />
+            </View>
+            {canPrestige(adjustedStats.level) && (
+              <AnimatedPressable
+                style={[styles.ascendBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.15), borderColor: Colors.accentBright }]}
+                onPress={handlePrestige}
+              >
+                <Text style={[styles.ascendBtnText, { color: Colors.accentBright }]}>✨ Ascend</Text>
+              </AnimatedPressable>
+            )}
             <Text style={[styles.pickerSublabel, { color: Colors.textSecondary }]}>Highlighted Achievements</Text>
             <View style={styles.featureSlots}>
               {[0, 1, 2].map(idx => {
@@ -742,8 +737,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xxl },
 
-  heroBanner: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, paddingBottom: Spacing.md, gap: Spacing.md, alignItems: 'center', position: 'relative' },
-  achievementCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
+  heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md },
   heroCentered: { alignItems: 'center', gap: Spacing.xs },
   heroXPRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 2 },
   heroIconContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },

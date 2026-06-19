@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, serverTimestamp } from '@firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from '@firebase/firestore';
 import { db, auth } from './firebase';
 import { useGameStore } from '../store/gameStore';
 import { useLogStore } from '../store/logStore';
@@ -61,6 +61,18 @@ export async function initUserProfile(): Promise<string> {
 
   await setDoc(userRef, profile);
   return inviteCode;
+}
+
+export async function checkDisplayNameAvailable(name: string): Promise<boolean> {
+  const user = auth.currentUser;
+  const q = query(
+    collection(db, 'leaderboard'),
+    where('displayName', '==', name),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  // Taken if a doc exists that belongs to someone else
+  return snap.docs.every(d => d.id === user?.uid);
 }
 
 export async function syncProfile(inviteCode: string): Promise<void> {
