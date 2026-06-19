@@ -126,7 +126,8 @@ function TabNavigator() {
           title: 'Profile',
           headerShown: true,
           headerTitleAlign: 'center',
-          headerStyle: { backgroundColor: Colors.bg1 },
+          headerStyle: { backgroundColor: 'transparent' },
+          headerShadowVisible: false,
           headerTintColor: Colors.textPrimary,
         }}
       />

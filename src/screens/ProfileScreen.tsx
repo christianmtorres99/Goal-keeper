@@ -407,9 +407,16 @@ export default function ProfileScreen() {
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxl + 80 }]}>
 
-        {/* Hero card — transparent, scrolls with content */}
+        {/* Hero card */}
         <Animated.View style={reveal0}>
-          <View style={styles.heroCard}>
+          <View style={[styles.heroCard, { borderColor: Colors.accentDim, overflow: 'hidden' }]}>
+            <BlurView style={StyleSheet.absoluteFill} intensity={18} tint={isLight ? 'light' : 'dark'} />
+            <LinearGradient
+              colors={[hexAlpha(bgColor, 0.45), hexAlpha(bgColor, 0.08)]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
             <AnimatedPressable style={styles.shareBtn} onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
             </AnimatedPressable>
@@ -737,7 +744,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: Spacing.md, gap: Spacing.lg, paddingBottom: Spacing.xxl },
 
-  heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md },
+  heroCard: { borderRadius: Radius.xl, padding: Spacing.lg, gap: Spacing.md, borderWidth: 1 },
   heroCentered: { alignItems: 'center', gap: Spacing.xs },
   heroXPRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: 2 },
   heroIconContainer: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
@@ -760,7 +767,7 @@ const styles = StyleSheet.create({
   titleLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, letterSpacing: 0.5, marginTop: 2 },
 
   pickerSublabel: { fontSize: FontSize.xs, fontFamily: FontFamily.semiBold, textTransform: 'uppercase', letterSpacing: 0.5 },
-  featureSlots: { flexDirection: 'row', gap: Spacing.sm },
+  featureSlots: { flexDirection: 'row', gap: Spacing.sm, width: '100%' },
   featureSlot: { flex: 1, minHeight: 110, borderRadius: Radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.md, paddingHorizontal: Spacing.xs },
   featureSlotFilled: { flex: 1, minHeight: 110, borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: Spacing.md, paddingHorizontal: Spacing.xs, position: 'relative' },
   featureSlotLabel: { fontSize: FontSize.xs, lineHeight: 15, textAlign: 'center', fontFamily: FontFamily.semiBold },
