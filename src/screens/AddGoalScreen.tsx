@@ -181,6 +181,8 @@ export default function AddGoalScreen() {
         }
       }
       navigation.goBack();
+    } catch (e: any) {
+      Alert.alert('Save Failed', e?.message ?? 'Could not save goal. Please try again.');
     } finally {
       savingRef.current = false;
       setSaving(false);

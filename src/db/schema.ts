@@ -3,7 +3,7 @@ export const CREATE_GOALS = `
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    type TEXT NOT NULL CHECK(type IN ('habit','milestone','count','quit')),
+    type TEXT NOT NULL,
     color TEXT NOT NULL,
     icon TEXT NOT NULL,
     created_at TEXT NOT NULL,
@@ -30,7 +30,9 @@ export const CREATE_LOGS = `
     note TEXT,
     created_at TEXT NOT NULL,
     xp_awarded REAL NOT NULL DEFAULT 0,
-    bonus_xp REAL NOT NULL DEFAULT 0
+    bonus_xp REAL NOT NULL DEFAULT 0,
+    count INTEGER DEFAULT 1,
+    is_relapse INTEGER DEFAULT 0
   )
 `;
 

@@ -280,7 +280,13 @@ export default function HomeScreen() {
     if (!goalId) return;
 
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const result = await addLog(goalId, note, undefined, goals.find(g => g.id === goalId)?.allowMultiplePerDay);
+    let result: Awaited<ReturnType<typeof addLog>>;
+    try {
+      result = await addLog(goalId, note, undefined, goals.find(g => g.id === goalId)?.allowMultiplePerDay);
+    } catch (e: any) {
+      Alert.alert('Log Failed', e?.message ?? 'Could not save log. Please try again.');
+      return;
+    }
     if (!result) return;
 
     const goalName = goals.find(g => g.id === goalId)?.name ?? '';

@@ -29,6 +29,11 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
 
 export async function runMigrations(): Promise<void> {
   const db = await getDb();
+
+  const vRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+  const v = vRow?.user_version ?? 0;
+
+  // Base tables always run with IF NOT EXISTS — safe no-op on existing DBs
   await db.execAsync(CREATE_GOALS);
   await db.execAsync(CREATE_LOGS);
   await db.execAsync(CREATE_EARNED_BADGES);
@@ -38,25 +43,41 @@ export async function runMigrations(): Promise<void> {
   await db.execAsync(CREATE_JOURNALS);
   await db.execAsync(CREATE_SCHEDULED_TASKS);
 
-  for (const sql of MIGRATIONS_V2) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 2) {
+    for (const sql of MIGRATIONS_V2) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
-  for (const sql of MIGRATIONS_V3) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 3) {
+    for (const sql of MIGRATIONS_V3) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
-  for (const sql of MIGRATIONS_V4) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 4) {
+    for (const sql of MIGRATIONS_V4) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
-  for (const sql of MIGRATIONS_V5) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 5) {
+    for (const sql of MIGRATIONS_V5) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
-  for (const sql of MIGRATIONS_V6) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 6) {
+    for (const sql of MIGRATIONS_V6) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
-  for (const sql of MIGRATIONS_V7) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 7) {
+    for (const sql of MIGRATIONS_V7) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
-  for (const sql of MIGRATIONS_V8) {
-    try { await db.execAsync(sql); } catch {}
+  if (v < 8) {
+    for (const sql of MIGRATIONS_V8) {
+      try { await db.execAsync(sql); } catch {}
+    }
   }
+
+  await db.execAsync('PRAGMA user_version = 8');
 }
