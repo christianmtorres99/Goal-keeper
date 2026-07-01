@@ -6,7 +6,7 @@ import { useColors } from '../hooks/useColors';
 import { useGoalStore } from '../store/goalStore';
 import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
-import { todayString, addDays, formatCompactDate } from '../utils/dateUtils';
+import { todayString, addDays, formatCompactDate, dateFromString } from '../utils/dateUtils';
 import { sumXP } from '../utils/xpUtils';
 import { computeStreakWithGrace } from '../logic/streakEngine';
 import { BADGE_DEFINITIONS } from '../constants/badges';
@@ -15,7 +15,7 @@ interface Props {
   onClose: () => void;
 }
 
-const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function WeeklyReviewScreen({ onClose }: Props) {
   const { colors: Colors, isLight } = useColors();
@@ -101,7 +101,11 @@ export default function WeeklyReviewScreen({ onClose }: Props) {
         <View style={[styles.card, { backgroundColor: Colors.bg1, borderColor: Colors.border }]}>
           <Text style={[styles.cardLabel, { color: Colors.textSecondary }]}>Daily Consistency</Text>
           <View style={styles.dowRow}>
-            {DOW.map((d, i) => <Text key={i} style={[styles.dowLabel, { color: Colors.textSecondary }]}>{d}</Text>)}
+            {weekDays.map((d, i) => (
+              <Text key={i} style={[styles.dowLabel, { color: Colors.textSecondary }]}>
+                {DAY_LETTERS[dateFromString(d).getDay()]}
+              </Text>
+            ))}
           </View>
           {goals.map(goal => {
             const loggedDays = new Set(weekLogs.filter(l => l.goalId === goal.id).map(l => l.logDate));

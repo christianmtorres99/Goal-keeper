@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = 'coinStore_v1';
+export const COIN_CAP = 2000;
 
 interface CoinStore {
   balance: number;
@@ -37,9 +38,11 @@ export const useCoinStore = create<CoinStore>((set, get) => ({
   addCoins: async (amount, _source) => {
     if (amount <= 0) return;
     const { balance, lifetimeEarned } = get();
+    const newBalance = Math.min(balance + amount, COIN_CAP);
+    const gained = newBalance - balance;
     const next = {
-      balance: balance + amount,
-      lifetimeEarned: lifetimeEarned + amount,
+      balance: newBalance,
+      lifetimeEarned: lifetimeEarned + gained,
     };
     set(next);
     await persist(next);

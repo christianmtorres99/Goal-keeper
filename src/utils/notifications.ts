@@ -14,6 +14,7 @@ export async function scheduleGoalReminder(
 ): Promise<string> {
   const [hour, minute] = time.split(':').map(Number);
   return Notifications.scheduleNotificationAsync({
+    identifier: goalId,
     content: {
       title: `Time to log ${goalName}`,
       body: 'Keep your streak alive — tap to open Goal Keeper.',

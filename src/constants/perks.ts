@@ -1,4 +1,31 @@
 import type { PerkDefinition } from '../types';
+import type { ActiveBuff } from '../store/perkStore';
+
+export interface BuffDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  cost: number;
+  durationDays: number;
+  buffType: ActiveBuff['type'];
+  multiplier?: number;
+}
+
+export const BUFF_CATALOG: BuffDefinition[] = [
+  { id: 'xp_boost_7d',       name: 'XP Surge',        description: '+25% XP from all goal logs for 7 days.',       icon: 'flash-outline',        cost: 200, durationDays: 7,  buffType: 'xp_boost',     multiplier: 1.25 },
+  { id: 'streak_shield_7d',  name: 'Streak Shield',   description: 'Extra grace day preserved for 7 days.',        icon: 'shield-outline',       cost: 150, durationDays: 7,  buffType: 'streak_shield' },
+  { id: 'coin_magnet_3d',    name: 'Coin Magnet',     description: '2× coins from all goal logs for 3 days.',     icon: 'cash-outline',         cost: 100, durationDays: 3,  buffType: 'coin_magnet',  multiplier: 2 },
+  { id: 'xp_boost_14d',      name: 'Scholar\'s Boon', description: '+15% XP from all goal logs for 14 days.',     icon: 'book-outline',         cost: 250, durationDays: 14, buffType: 'xp_boost',     multiplier: 1.15 },
+  { id: 'coin_magnet_7d',    name: 'Treasure Sense',  description: '1.5× coins from all goal logs for 7 days.',   icon: 'diamond-outline',      cost: 180, durationDays: 7,  buffType: 'coin_magnet',  multiplier: 1.5 },
+  { id: 'streak_shield_14d', name: 'Iron Covenant',   description: 'Extra grace day preserved for 14 days.',      icon: 'shield-checkmark-outline', cost: 220, durationDays: 14, buffType: 'streak_shield' },
+];
+
+export function getWeeklyBuffs(weekSeed: number): BuffDefinition[] {
+  const len = BUFF_CATALOG.length;
+  const start = (weekSeed * 3) % len;
+  return [0, 1, 2].map(i => BUFF_CATALOG[(start + i) % len]);
+}
 
 export const PERK_DEFINITIONS: PerkDefinition[] = [
   // XP perks

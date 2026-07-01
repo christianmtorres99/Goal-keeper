@@ -32,6 +32,11 @@ export function getTierForLevel(level: number): TierDef {
   );
 }
 
+export function computeLeaderboardScore(adjustedXP: number, currentStreak: number): number {
+  const multiplier = 1 + Math.min(currentStreak / 30, 3);
+  return Math.round(adjustedXP * multiplier);
+}
+
 export function getPlayerStats(totalXP: number) {
   const level = getLevelFromXP(totalXP);
   const xpAtCurrentLevel = xpThresholdForLevel(level);

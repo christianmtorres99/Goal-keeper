@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { FontFamily, FontSize, Radius, Spacing, OVERLAY_MID_DARK, OVERLAY_MID_LIGHT } from '../../constants/theme';
+import { Spring } from '../../constants/motion';
 import { useColors } from '../../hooks/useColors';
 
 interface Props {
@@ -20,12 +22,20 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
   const [countText, setCountText] = useState('');
   const [note, setNote] = useState('');
   const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const translateY = useSharedValue(0);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   useEffect(() => {
     if (visible) {
       Animated.timing(backdropOpacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+      translateY.value = 500;
+      translateY.value = withSpring(0, Spring.snappy);
     } else {
       backdropOpacity.setValue(0);
+      translateY.value = 0;
       setCountText('');
       setNote('');
     }
@@ -51,11 +61,11 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
   const backdropColor = isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleCancel}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: backdropColor, opacity: backdropOpacity }]} pointerEvents="none" />
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleCancel} />
-        <View style={[styles.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
+        <ReAnimated.View style={[styles.sheet, sheetStyle, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
           <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
           <View style={styles.header}>
             <View style={[styles.colorDot, { backgroundColor: goalColor }]} />
@@ -112,7 +122,7 @@ export default function LogCountModal({ visible, goalName, goalColor, targetCoun
               <Text style={styles.confirmText}>Add {countValue > 0 ? `${countValue.toLocaleString()}` : ''}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ReAnimated.View>
       </KeyboardAvoidingView>
     </Modal>
   );

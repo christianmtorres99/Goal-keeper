@@ -15,6 +15,7 @@ import {
   MIGRATIONS_V6,
   MIGRATIONS_V7,
   MIGRATIONS_V8,
+  MIGRATIONS_V9,
 } from './schema';
 
 let _db: SQLite.SQLiteDatabase | null = null;
@@ -78,6 +79,11 @@ export async function runMigrations(): Promise<void> {
       try { await db.execAsync(sql); } catch {}
     }
   }
+  if (v < 9) {
+    for (const sql of MIGRATIONS_V9) {
+      try { await db.execAsync(sql); } catch {}
+    }
+  }
 
-  await db.execAsync('PRAGMA user_version = 8');
+  await db.execAsync('PRAGMA user_version = 9');
 }

@@ -9,10 +9,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FontFamily, FontSize, hexAlpha, Radius, Spacing } from '../constants/theme';
 import { useColors } from '../hooks/useColors';
 import { useFriendsStore } from '../store/friendsStore';
-import type { FriendEntry } from '../store/friendsStore';
+import type { FriendEntry, FriendRequest } from '../store/friendsStore';
 import type { PublicProfile } from '../services/profileService';
 import { useGameStore } from '../store/gameStore';
 import { useLogStore } from '../store/logStore';
@@ -21,8 +22,12 @@ import { getPlayerStats } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
 import AnimatedPressable from '../components/common/AnimatedPressable';
 import { BADGE_DEFINITIONS } from '../constants/badges';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 type Tab = 'friends' | 'global';
+type LeaderboardFilter = 'daily' | 'weekly' | 'monthly' | 'alltime';
 
 function formatXP(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -104,31 +109,21 @@ function Row({ rank, item, isYou, onRemove, onPress }: RowProps) {
   return inner;
 }
 
-type ProfileSheetData = {
-  uid: string;
-  displayName: string;
-  level: number;
-  xp: number;
-  bestStreak: number;
-  equippedTitle: string;
-  topBadgeIds: string[];
-};
-
 export default function FriendsScreen() {
   const { colors: Colors, isLight } = useColors();
-  const navigation = useNavigation();
+  const navigation = useNavigation<Nav>();
   const [tab, setTab] = useState<Tab>('friends');
+  const [leaderboardFilter, setLeaderboardFilter] = useState<LeaderboardFilter>('alltime');
   const [addVisible, setAddVisible] = useState(false);
   const [codeInput, setCodeInput] = useState('');
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [profileSheet, setProfileSheet] = useState<ProfileSheetData | null>(null);
 
   const {
-    myUid, myInviteCode, friends, leaderboard,
+    myUid, myInviteCode, friends, pendingRequests, leaderboard,
     loading, leaderboardLoading, error,
-    load, addFriend, removeFriend, loadLeaderboard, syncMyProfile,
+    load, sendRequest, acceptRequest, declineRequest, removeFriend, loadLeaderboard, syncMyProfile,
   } = useFriendsStore();
 
   const logs = useLogStore(s => s.logs);
@@ -147,7 +142,6 @@ export default function FriendsScreen() {
   };
 
   useEffect(() => {
-    // Retry connection if load failed in background or hasn't completed yet
     if (!myUid || error) load();
   }, []);
 
@@ -171,26 +165,29 @@ export default function FriendsScreen() {
     } catch {}
   }, [myInviteCode]);
 
-  const handleAddFriend = useCallback(async () => {
+  const handleSendRequest = useCallback(async () => {
     const code = codeInput.trim().toUpperCase();
     if (!code || addLoading) return;
     setAddLoading(true);
     setAddError('');
-    const result = await addFriend(code);
+    const result = await sendRequest(code);
     setAddLoading(false);
     if (result === 'success') {
       setCodeInput('');
       setAddVisible(false);
+      Alert.alert('Request Sent!', 'Your friend request has been sent. They\'ll see it when they open the app.');
     } else if (result === 'not_found') {
       setAddError('No user found with that code. Double-check for typos.');
     } else if (result === 'self') {
       setAddError("That's your own code! Enter a friend's code.");
     } else if (result === 'already_friends') {
       setAddError("You're already friends with this person.");
+    } else if (result === 'already_sent') {
+      setAddError("You already sent a request to this person. Wait for them to accept.");
     } else {
       setAddError('Something went wrong. Check your connection and try again.');
     }
-  }, [codeInput, addLoading, addFriend]);
+  }, [codeInput, addLoading, sendRequest]);
 
   const handleRemove = useCallback((friend: FriendEntry) => {
     Alert.alert('Remove Friend', `Remove ${friend.displayName} from your friends list?`, [
@@ -199,11 +196,44 @@ export default function FriendsScreen() {
     ]);
   }, [removeFriend]);
 
+  const handleAcceptRequest = useCallback((req: FriendRequest) => {
+    Alert.alert('Accept Request', `Add ${req.fromDisplayName} as a friend?`, [
+      { text: 'Decline', style: 'destructive', onPress: () => declineRequest(req.fromUid) },
+      { text: 'Accept', onPress: () => acceptRequest(req.fromUid) },
+    ]);
+  }, [acceptRequest, declineRequest]);
+
+  const navigateToFriendProfile = useCallback((friend: FriendEntry) => {
+    navigation.navigate('FriendProfile', {
+      uid: friend.uid,
+      displayName: friend.displayName,
+      level: friend.level,
+      xp: friend.xp,
+      bestStreak: friend.bestStreak,
+      equippedTitle: friend.equippedTitle || undefined,
+      topBadgeIds: friend.topBadgeIds || [],
+    });
+  }, [navigation]);
+
   const friendRows = [myEntry, ...friends.sort((a, b) => b.xp - a.xp)];
-  const myGlobalRank = leaderboard.findIndex(e => e.uid === myUid) + 1;
+  const sortedLeaderboard = React.useMemo(() => {
+    if (leaderboard.length === 0) return leaderboard;
+    const scoreKey: Record<LeaderboardFilter, keyof typeof leaderboard[0]> = {
+      daily: 'xpToday',
+      weekly: 'xpThisWeek',
+      monthly: 'xpThisMonth',
+      alltime: 'leaderboardScore',
+    };
+    const key = scoreKey[leaderboardFilter];
+    return [...leaderboard].sort((a, b) => ((b[key] as number) ?? 0) - ((a[key] as number) ?? 0));
+  }, [leaderboard, leaderboardFilter]);
+
+  const myGlobalRank = sortedLeaderboard.findIndex(e => e.uid === myUid) + 1;
   const formattedCode = myInviteCode
     ? `${myInviteCode.slice(0, 3)}-${myInviteCode.slice(3)}`
     : loading ? '······' : '------';
+
+  const hasPendingRequests = pendingRequests.length > 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: 'transparent' }]} edges={['bottom']}>
@@ -218,7 +248,7 @@ export default function FriendsScreen() {
         </Text>
         <Text style={[styles.heroCode, { color: isLight ? '#3730A3' : '#A5B4FC' }]}>{formattedCode}</Text>
         <Text style={[styles.heroSub, { color: Colors.textDisabled }]}>
-          Share this code so friends can add you
+          Share this code so friends can send you a request
         </Text>
         <View style={styles.heroButtons}>
           <AnimatedPressable
@@ -264,11 +294,18 @@ export default function FriendsScreen() {
             style={[styles.tabItem, tab === t && [styles.tabActive, { borderBottomColor: Colors.accentBright }]]}
             onPress={() => setTab(t)}
           >
-            <Text style={[styles.tabText, { color: tab === t ? Colors.accentBright : Colors.textSecondary }]}>
-              {t === 'friends'
-                ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}`
-                : 'Global Top 100'}
-            </Text>
+            <View style={styles.tabInner}>
+              <Text style={[styles.tabText, { color: tab === t ? Colors.accentBright : Colors.textSecondary }]}>
+                {t === 'friends'
+                  ? `Friends${friends.length > 0 ? ` (${friends.length})` : ''}`
+                  : 'Global Top 100'}
+              </Text>
+              {t === 'friends' && hasPendingRequests && (
+                <View style={[styles.requestBadge, { backgroundColor: Colors.danger }]}>
+                  <Text style={styles.requestBadgeText}>{pendingRequests.length}</Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -281,14 +318,54 @@ export default function FriendsScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={
-            <AnimatedPressable
-              scale={0.97}
-              style={[styles.addFriendBtn, { backgroundColor: Colors.accentBright }]}
-              onPress={() => { setCodeInput(''); setAddError(''); setAddVisible(true); }}
-            >
-              <Ionicons name="person-add-outline" size={17} color="#fff" />
-              <Text style={styles.addFriendBtnText}>Add Friend by Code</Text>
-            </AnimatedPressable>
+            <>
+              {/* Pending Requests */}
+              {hasPendingRequests && (
+                <View style={styles.pendingSection}>
+                  <View style={styles.pendingHeader}>
+                    <Ionicons name="person-add" size={15} color={Colors.warning} />
+                    <Text style={[styles.pendingTitle, { color: Colors.warning }]}>
+                      Friend Requests ({pendingRequests.length})
+                    </Text>
+                  </View>
+                  {pendingRequests.map(req => (
+                    <View key={req.fromUid} style={[styles.requestRow, { backgroundColor: Colors.bg2, borderColor: hexAlpha(Colors.warning, 0.3) }]}>
+                      <View style={[styles.requestAvatar, { backgroundColor: hexAlpha(avatarColor(req.fromDisplayName), 0.2) }]}>
+                        <Text style={[styles.requestAvatarText, { color: avatarColor(req.fromDisplayName) }]}>
+                          {(req.fromDisplayName || '?')[0].toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={styles.requestMid}>
+                        <Text style={[styles.requestName, { color: Colors.textPrimary }]}>{req.fromDisplayName}</Text>
+                        <Text style={[styles.requestCode, { color: Colors.textDisabled }]}>Code: {req.fromCode}</Text>
+                      </View>
+                      <View style={styles.requestActions}>
+                        <TouchableOpacity
+                          style={[styles.requestBtn, { backgroundColor: hexAlpha(Colors.success, 0.15), borderColor: Colors.success }]}
+                          onPress={() => acceptRequest(req.fromUid)}
+                        >
+                          <Ionicons name="checkmark" size={16} color={Colors.success} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.requestBtn, { backgroundColor: hexAlpha(Colors.danger, 0.1), borderColor: hexAlpha(Colors.danger, 0.4) }]}
+                          onPress={() => declineRequest(req.fromUid)}
+                        >
+                          <Ionicons name="close" size={16} color={Colors.danger} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <AnimatedPressable
+                scale={0.97}
+                style={[styles.addFriendBtn, { backgroundColor: Colors.accentBright }]}
+                onPress={() => { setCodeInput(''); setAddError(''); setAddVisible(true); }}
+              >
+                <Ionicons name="person-add-outline" size={17} color="#fff" />
+                <Text style={styles.addFriendBtnText}>Send Friend Request</Text>
+              </AnimatedPressable>
+            </>
           }
           ListEmptyComponent={null}
           renderItem={({ item, index }) => {
@@ -300,15 +377,7 @@ export default function FriendsScreen() {
                 item={item}
                 isYou={isYou}
                 onRemove={isFriend ? () => handleRemove(item as FriendEntry) : undefined}
-                onPress={isFriend ? () => setProfileSheet({
-                  uid: (item as FriendEntry).uid,
-                  displayName: (item as FriendEntry).displayName,
-                  level: (item as FriendEntry).level,
-                  xp: (item as FriendEntry).xp,
-                  bestStreak: (item as FriendEntry).bestStreak,
-                  equippedTitle: (item as FriendEntry).equippedTitle,
-                  topBadgeIds: (item as FriendEntry).topBadgeIds ?? [],
-                }) : undefined}
+                onPress={isFriend ? () => navigateToFriendProfile(item as FriendEntry) : undefined}
               />
             );
           }}
@@ -318,7 +387,7 @@ export default function FriendsScreen() {
                 <Ionicons name="people-outline" size={38} color={Colors.textDisabled} />
                 <Text style={[styles.emptyTitle, { color: Colors.textSecondary }]}>No friends yet</Text>
                 <Text style={[styles.emptyHint, { color: Colors.textDisabled }]}>
-                  Share your code or tap "Add Friend" to enter someone else's code.
+                  Share your code or tap "Send Friend Request" to add someone by their code.
                 </Text>
               </View>
             ) : null
@@ -335,19 +404,39 @@ export default function FriendsScreen() {
           </View>
         ) : (
           <FlatList
-            data={leaderboard}
+            data={sortedLeaderboard}
             keyExtractor={item => item.uid}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
-              myGlobalRank > 0 ? (
-                <View style={[styles.myRankCard, { backgroundColor: hexAlpha(Colors.accentBright, 0.1), borderColor: hexAlpha(Colors.accentBright, 0.28) }]}>
-                  <Ionicons name="trophy-outline" size={15} color={Colors.accentBright} />
-                  <Text style={[styles.myRankText, { color: Colors.accentBright }]}>
-                    You are #{myGlobalRank} globally
-                  </Text>
-                </View>
-              ) : null
+              <>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPills}>
+                  {([
+                    { id: 'daily' as const, label: 'Daily' },
+                    { id: 'weekly' as const, label: 'Weekly' },
+                    { id: 'monthly' as const, label: 'Monthly' },
+                    { id: 'alltime' as const, label: 'All-time' },
+                  ]).map(f => (
+                    <TouchableOpacity
+                      key={f.id}
+                      style={[styles.filterPill, leaderboardFilter === f.id && { backgroundColor: Colors.accentBright }]}
+                      onPress={() => setLeaderboardFilter(f.id)}
+                    >
+                      <Text style={[styles.filterPillText, { color: leaderboardFilter === f.id ? '#fff' : Colors.textSecondary }]}>
+                        {f.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                {myGlobalRank > 0 ? (
+                  <View style={[styles.myRankCard, { backgroundColor: hexAlpha(Colors.accentBright, 0.1), borderColor: hexAlpha(Colors.accentBright, 0.28) }]}>
+                    <Ionicons name="trophy-outline" size={15} color={Colors.accentBright} />
+                    <Text style={[styles.myRankText, { color: Colors.accentBright }]}>
+                      You are #{myGlobalRank} globally
+                    </Text>
+                  </View>
+                ) : null}
+              </>
             }
             ListEmptyComponent={
               <View style={styles.emptyBox}>
@@ -368,15 +457,7 @@ export default function FriendsScreen() {
                   isYou={isYou}
                   onPress={isFriend ? () => {
                     const friend = friends.find(f => f.uid === item.uid);
-                    if (friend) setProfileSheet({
-                      uid: friend.uid,
-                      displayName: friend.displayName,
-                      level: friend.level,
-                      xp: friend.xp,
-                      bestStreak: friend.bestStreak,
-                      equippedTitle: friend.equippedTitle,
-                      topBadgeIds: friend.topBadgeIds ?? [],
-                    });
+                    if (friend) navigateToFriendProfile(friend);
                   } : undefined}
                 />
               );
@@ -385,69 +466,15 @@ export default function FriendsScreen() {
         )
       )}
 
-      {/* Friend Profile Sheet */}
-      <Modal visible={!!profileSheet} transparent animationType="slide" onRequestClose={() => setProfileSheet(null)}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setProfileSheet(null)} />
-        {profileSheet && (
-          <View style={styles.modalWrap}>
-            <View style={[styles.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
-              <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
-              <View style={styles.profileHeader}>
-                <View style={[styles.profileAvatar, { backgroundColor: hexAlpha(avatarColor(profileSheet.displayName), 0.2), borderColor: hexAlpha(avatarColor(profileSheet.displayName), 0.5) }]}>
-                  <Text style={[styles.profileAvatarText, { color: avatarColor(profileSheet.displayName) }]}>
-                    {(profileSheet.displayName || '?')[0].toUpperCase()}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.profileName, { color: Colors.textPrimary }]}>{profileSheet.displayName}</Text>
-                  {profileSheet.equippedTitle ? (
-                    <Text style={[styles.profileTitle, { color: Colors.accentBright }]}>{profileSheet.equippedTitle}</Text>
-                  ) : null}
-                </View>
-              </View>
-              <View style={styles.profileStats}>
-                {[
-                  { label: 'Level', value: String(profileSheet.level) },
-                  { label: 'XP', value: formatXP(profileSheet.xp) },
-                  { label: 'Streak', value: `${profileSheet.bestStreak}d` },
-                ].map(stat => (
-                  <View key={stat.label} style={[styles.profileStatBox, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
-                    <Text style={[styles.profileStatValue, { color: Colors.accentBright }]}>{stat.value}</Text>
-                    <Text style={[styles.profileStatLabel, { color: Colors.textSecondary }]}>{stat.label}</Text>
-                  </View>
-                ))}
-              </View>
-              {profileSheet.topBadgeIds.length > 0 && (
-                <>
-                  <Text style={[styles.profileBadgeLabel, { color: Colors.textSecondary }]}>ACHIEVEMENTS</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.profileBadgeRow}>
-                    {profileSheet.topBadgeIds.map(id => {
-                      const def = BADGE_DEFINITIONS.find(b => b.id === id);
-                      if (!def) return null;
-                      return (
-                        <View key={id} style={[styles.profileBadgeChip, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
-                          <Ionicons name={def.icon as any} size={22} color={Colors.accentBright} />
-                          <Text style={[styles.profileBadgeChipText, { color: Colors.textSecondary }]} numberOfLines={2}>{def.label}</Text>
-                        </View>
-                      );
-                    })}
-                  </ScrollView>
-                </>
-              )}
-            </View>
-          </View>
-        )}
-      </Modal>
-
-      {/* Add Friend Modal */}
+      {/* Send Request Modal */}
       <Modal visible={addVisible} transparent animationType="slide" onRequestClose={() => setAddVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalWrap}>
           <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setAddVisible(false)} />
           <View style={[styles.sheet, { backgroundColor: Colors.bg0, borderColor: Colors.border }]}>
             <View style={[styles.handle, { backgroundColor: Colors.bg3 }]} />
-            <Text style={[styles.sheetTitle, { color: Colors.textPrimary }]}>Add a Friend</Text>
+            <Text style={[styles.sheetTitle, { color: Colors.textPrimary }]}>Send Friend Request</Text>
             <Text style={[styles.sheetSub, { color: Colors.textSecondary }]}>
-              Enter their 6-character invite code. Their name and stats will load automatically.
+              Enter their 6-character invite code. They'll receive a notification and can accept or decline.
             </Text>
             <TextInput
               style={[styles.input, { backgroundColor: Colors.bg2, borderColor: addError ? Colors.danger : Colors.border, color: Colors.textPrimary }]}
@@ -459,7 +486,7 @@ export default function FriendsScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
               returnKeyType="done"
-              onSubmitEditing={handleAddFriend}
+              onSubmitEditing={handleSendRequest}
             />
             {addError ? (
               <Text style={[styles.addError, { color: Colors.danger }]}>{addError}</Text>
@@ -469,14 +496,14 @@ export default function FriendsScreen() {
                 styles.addBtn,
                 { backgroundColor: codeInput.trim().length === 6 && !addLoading ? Colors.accentBright : Colors.bg3 },
               ]}
-              onPress={handleAddFriend}
+              onPress={handleSendRequest}
               disabled={addLoading || codeInput.trim().length < 6}
               activeOpacity={0.85}
             >
               {addLoading
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <Text style={[styles.addBtnText, { color: codeInput.trim().length === 6 ? '#fff' : Colors.textDisabled }]}>
-                    Add Friend
+                    Send Request
                   </Text>
               }
             </TouchableOpacity>
@@ -511,17 +538,36 @@ const styles = StyleSheet.create({
   },
   offlineText: { fontSize: FontSize.xs, fontFamily: FontFamily.regular },
 
-  tabBar: {
-    flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+  tabBar: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth },
   tabItem: {
     flex: 1, alignItems: 'center', paddingVertical: Spacing.md,
     borderBottomWidth: 2, borderBottomColor: 'transparent',
   },
   tabActive: {},
+  tabInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tabText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
+  requestBadge: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  requestBadgeText: { color: '#fff', fontSize: 10, fontFamily: FontFamily.bold },
 
   list: { padding: Spacing.md, gap: Spacing.sm, paddingBottom: 112 },
+
+  pendingSection: { gap: Spacing.sm, marginBottom: Spacing.xs },
+  pendingHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  pendingTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.bold },
+  requestRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    borderRadius: Radius.lg, padding: Spacing.md, borderWidth: 1,
+  },
+  requestAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  requestAvatarText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
+  requestMid: { flex: 1 },
+  requestName: { fontSize: FontSize.md, fontFamily: FontFamily.semiBold },
+  requestCode: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
+  requestActions: { flexDirection: 'row', gap: Spacing.xs },
+  requestBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1,
+  },
 
   addFriendBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -550,6 +596,13 @@ const styles = StyleSheet.create({
 
   loadBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.md },
   loadText: { fontSize: FontSize.md, fontFamily: FontFamily.regular },
+
+  filterPills: { flexDirection: 'row', gap: Spacing.sm, paddingBottom: Spacing.sm },
+  filterPill: {
+    borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+    backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+  },
+  filterPillText: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold },
 
   myRankCard: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
@@ -580,19 +633,4 @@ const styles = StyleSheet.create({
   addError: { fontSize: FontSize.sm, fontFamily: FontFamily.regular, textAlign: 'center' },
   addBtn: { borderRadius: Radius.md, paddingVertical: Spacing.md, alignItems: 'center', marginTop: Spacing.xs },
   addBtnText: { fontSize: FontSize.md, fontFamily: FontFamily.bold },
-
-  modalWrap: { flex: 1, justifyContent: 'flex-end' },
-  profileHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  profileAvatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  profileAvatarText: { fontSize: FontSize.xxl, fontFamily: FontFamily.extraBold },
-  profileName: { fontSize: FontSize.xl, fontFamily: FontFamily.bold },
-  profileTitle: { fontSize: FontSize.sm, fontFamily: FontFamily.semiBold, marginTop: 2 },
-  profileStats: { flexDirection: 'row', gap: Spacing.sm },
-  profileStatBox: { flex: 1, borderRadius: Radius.md, padding: Spacing.sm, alignItems: 'center', borderWidth: 1 },
-  profileStatValue: { fontSize: FontSize.xl, fontFamily: FontFamily.extraBold },
-  profileStatLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.regular, marginTop: 2 },
-  profileBadgeLabel: { fontSize: FontSize.xs, fontFamily: FontFamily.bold, letterSpacing: 1 },
-  profileBadgeRow: { gap: Spacing.sm, paddingHorizontal: Spacing.xs },
-  profileBadgeChip: { borderRadius: Radius.md, borderWidth: 1, padding: Spacing.sm, alignItems: 'center', gap: 6, width: 80 },
-  profileBadgeChipText: { fontSize: 10, textAlign: 'center', fontFamily: FontFamily.regular },
 });

@@ -330,7 +330,7 @@ export default function JournalScreen() {
 
         {/* Write tab */}
         {tab === 'write' && (
-          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
+          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 44 : 0}>
             <View style={styles.flex}>
               {/* Journal header — mood, energy, date */}
               <View style={[styles.journalHeader, { borderBottomColor: Colors.border }]}>
@@ -401,7 +401,7 @@ export default function JournalScreen() {
                   placeholder="Write something..."
                   placeholderTextColor={Colors.textDisabled}
                   selectionColor={Colors.accent}
-                  scrollEnabled={false}
+                  scrollEnabled
                   autoCorrect
                   spellCheck
                 />

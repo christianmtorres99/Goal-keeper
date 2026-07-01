@@ -177,7 +177,7 @@ export default function LevelUpModal({ visible, oldLevel, newLevel, currentXP, o
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
       {/* Screen flash */}
       <Animated.View pointerEvents="none" style={[styles.flash, { opacity: flashAnim }]} />
-      <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: overlayBg }]}>
+      <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: Colors.bg0 }]}>
         <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: tier.color, borderWidth: isTierUp ? 2 : 1.5 }]}>
           <LinearGradient
             colors={[hexAlpha(tier.color, isTierUp ? 0.45 : 0.35), Colors.bg2, Colors.bg2]}

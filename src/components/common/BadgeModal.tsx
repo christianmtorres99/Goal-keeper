@@ -37,7 +37,7 @@ export default function BadgeModal({ badges, bonusXP, events = [], visible, onCl
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
+      <Animated.View style={[styles.overlay, { opacity: opacityAnim, backgroundColor: Colors.bg0 }]}>
         <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }], backgroundColor: Colors.bg2, borderColor: Colors.accentDim }]}>
           <Text style={[styles.title, { color: Colors.textPrimary }]}>{title}</Text>
 

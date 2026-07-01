@@ -24,6 +24,7 @@ import SeasonScreen from '../screens/SeasonScreen';
 import ShopScreen from '../screens/ShopScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import FriendsScreen from '../screens/FriendsScreen';
+import FriendProfileScreen from '../screens/FriendProfileScreen';
 import type { GoalCategory } from '../types';
 
 export type RootStackParamList = {
@@ -38,6 +39,16 @@ export type RootStackParamList = {
   Shop: undefined;
   Settings: undefined;
   Friends: undefined;
+  FriendProfile: {
+    uid: string;
+    displayName: string;
+    level: number;
+    xp: number;
+    bestStreak: number;
+    equippedTitle?: string;
+    topBadgeIds?: string[];
+    pushToken?: string | null;
+  };
 };
 
 export type TabParamList = {
@@ -166,6 +177,7 @@ export default function AppNavigator() {
       <Stack.Screen name="Shop" component={ShopScreen} options={{ title: 'Perk Shop', headerTitleAlign: 'center' }} />
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings', headerTitleAlign: 'center' }} />
       <Stack.Screen name="Friends" component={FriendsScreen} options={{ title: 'Friends', headerTitleAlign: 'center' }} />
+      <Stack.Screen name="FriendProfile" component={FriendProfileScreen} options={{ title: '', headerBackTitle: 'Friends' }} />
     </Stack.Navigator>
   );
 }

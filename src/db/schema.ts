@@ -108,6 +108,10 @@ export const MIGRATIONS_V2 = [
   `ALTER TABLE logs ADD COLUMN bonus_xp REAL NOT NULL DEFAULT 0`,
 ];
 
+export const MIGRATIONS_V9 = [
+  `ALTER TABLE goals ADD COLUMN is_public INTEGER DEFAULT 1`,
+];
+
 // ── Todos ────────────────────────────────────────────────────────────────────
 export const CREATE_TODOS = `
   CREATE TABLE IF NOT EXISTS todos (

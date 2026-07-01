@@ -14,7 +14,7 @@ interface GoalStore {
   archivedGoals: Goal[];
   loadGoals: () => Promise<void>;
   loadArchivedGoals: () => Promise<void>;
-  addGoal: (input: Omit<Goal, 'id' | 'createdAt' | 'isArchived' | 'sortOrder' | 'cycleCount'>) => Promise<Goal>;
+  addGoal: (input: Omit<Goal, 'id' | 'createdAt' | 'isArchived' | 'sortOrder' | 'cycleCount' | 'isPublic'> & { isPublic?: boolean }) => Promise<Goal>;
   updateGoal: (id: string, updates: Partial<Omit<Goal, 'id'>>) => Promise<void>;
   archiveGoal: (id: string) => Promise<void>;
   restoreGoal: (id: string) => Promise<void>;
@@ -45,6 +45,7 @@ function rowToGoal(r: any): Goal {
     allowMultiplePerDay: r.allow_multiple_per_day === 1,
     difficulty: (r.difficulty ?? 'medium') as GoalDifficulty,
     customCategoryLabel: r.custom_category_label ?? undefined,
+    isPublic: r.is_public !== 0, // default true for all existing goals
   };
 }
 
@@ -85,17 +86,18 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
         isArchived: false,
         sortOrder: maxOrder + 1,
         cycleCount: 0,
+        isPublic: input.isPublic !== false, // default true
       };
       await db.runAsync(
         `INSERT INTO goals (id, name, description, type, color, icon, created_at, is_archived,
-          target_count, unit, sort_order, category, notification_time, notification_id, completed_at, cycle_count, allow_multiple_per_day, difficulty, custom_category_label)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          target_count, unit, sort_order, category, notification_time, notification_id, completed_at, cycle_count, allow_multiple_per_day, difficulty, custom_category_label, is_public)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [goal.id, goal.name, goal.description, goal.type, goal.color, goal.icon,
          goal.createdAt, 0, goal.targetCount ?? null, goal.unit ?? null,
          goal.sortOrder, goal.category, goal.notificationTime ?? null,
          goal.notificationId ?? null, goal.completedAt ?? null, goal.cycleCount,
          goal.allowMultiplePerDay ? 1 : 0, goal.difficulty ?? 'medium',
-         goal.customCategoryLabel ?? null]
+         goal.customCategoryLabel ?? null, goal.isPublic ? 1 : 0]
       );
       set(s => ({ goals: [...s.goals, goal] }));
       return goal;
@@ -114,13 +116,13 @@ export const useGoalStore = create<GoalStore>((set, get) => ({
       await db.runAsync(
         `UPDATE goals SET name=?, description=?, type=?, color=?, icon=?, is_archived=?,
           target_count=?, unit=?, sort_order=?, category=?, notification_time=?,
-          notification_id=?, completed_at=?, cycle_count=?, allow_multiple_per_day=?, difficulty=?, custom_category_label=? WHERE id=?`,
+          notification_id=?, completed_at=?, cycle_count=?, allow_multiple_per_day=?, difficulty=?, custom_category_label=?, is_public=? WHERE id=?`,
         [updated.name, updated.description, updated.type, updated.color, updated.icon,
          updated.isArchived ? 1 : 0, updated.targetCount ?? null, updated.unit ?? null,
          updated.sortOrder, updated.category, updated.notificationTime ?? null,
          updated.notificationId ?? null, updated.completedAt ?? null, updated.cycleCount,
          updated.allowMultiplePerDay ? 1 : 0, updated.difficulty ?? 'medium',
-         updated.customCategoryLabel ?? null, id]
+         updated.customCategoryLabel ?? null, updated.isPublic !== false ? 1 : 0, id]
       );
       set(s => ({
         goals: s.goals.map(g => g.id === id ? updated : g),

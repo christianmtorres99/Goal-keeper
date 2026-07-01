@@ -77,10 +77,7 @@ export default function CalendarScreen() {
   const isCurrentMonth = todayStr.startsWith(monthPrefix);
 
   // ── Stats ──────────────────────────
-  const elapsedDays = useMemo(() => {
-    if (!isCurrentMonth) return days.length;
-    return parseInt(todayStr.split('-')[2]);
-  }, [isCurrentMonth, days.length, todayStr]);
+  const elapsedDays = useMemo(() => days.length, [days.length]);
 
   const loggedDayCount = useMemo(() => Object.keys(dayActivities).length, [dayActivities]);
 

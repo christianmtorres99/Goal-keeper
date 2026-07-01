@@ -23,7 +23,7 @@ export default function MilestoneCompleteModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
-      <View style={[styles.overlay, { backgroundColor: isLight ? OVERLAY_LIGHT_MODE : OVERLAY_DARK_MODE }]}>
+      <View style={[styles.overlay, { backgroundColor: Colors.bg0 }]}>
         <View style={[styles.card, { backgroundColor: Colors.bg2, borderColor: Colors.border }]}>
           <Ionicons name="trophy" size={56} color={goalColor} />
           <Text style={[styles.title, { color: Colors.textPrimary }]}>Milestone Complete!</Text>

@@ -55,7 +55,12 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
   }));
 
   useEffect(() => {
-    if (!visible) translateY.value = 0;
+    if (visible) {
+      translateY.value = 500;
+      translateY.value = withSpring(0, Spring.snappy);
+    } else {
+      translateY.value = 0;
+    }
   }, [visible]);
 
   const handleConfirm = () => {
@@ -71,7 +76,7 @@ export default function LogNoteModal({ visible, goalName, goalColor, currentStre
   const backdropColor = isLight ? OVERLAY_MID_LIGHT : OVERLAY_MID_DARK;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleCancel}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
         <Animated.View
           style={[styles.backdrop, { backgroundColor: backdropColor, opacity: backdropOpacity }]}

@@ -5,8 +5,11 @@ import { useLogStore } from '../store/logStore';
 import { useBadgeStore } from '../store/badgeStore';
 import { useTitleStore } from '../store/titleStore';
 import { useTodoXPStore } from '../store/todoXPStore';
-import { getPlayerStats } from '../logic/xpEngine';
+import { useGoalStore } from '../store/goalStore';
+import { getPlayerStats, computeLeaderboardScore } from '../logic/xpEngine';
 import { sumXP } from '../utils/xpUtils';
+import { todayString, addDays, daysBetween, getWeekStart } from '../utils/dateUtils';
+import type { Log } from '../types';
 
 export interface PublicProfile {
   uid: string;
@@ -15,9 +18,40 @@ export interface PublicProfile {
   level: number;
   xp: number;
   bestStreak: number;
+  currentStreak: number;
+  leaderboardScore: number;
+  xpToday: number;
+  xpThisWeek: number;
+  xpThisMonth: number;
   equippedTitle: string;
   topBadgeIds: string[];
   updatedAt: unknown;
+}
+
+function computeOverallStreak(logs: Log[]): number {
+  if (logs.length === 0) return 0;
+  const uniqueDays = [...new Set(logs.map(l => l.logDate))].sort().reverse();
+  const today = todayString();
+  const yesterday = addDays(today, -1);
+  if (uniqueDays[0] !== today && uniqueDays[0] !== yesterday) return 0;
+  let streak = 1;
+  let graceUsed = uniqueDays[0] !== today;
+  for (let i = 1; i < uniqueDays.length; i++) {
+    const gap = daysBetween(uniqueDays[i], uniqueDays[i - 1]);
+    if (gap === 1) {
+      streak++;
+    } else if (gap === 2 && !graceUsed) {
+      graceUsed = true;
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function computePeriodXP(logs: Log[], fromDate: string): number {
+  return logs.filter(l => l.logDate >= fromDate).reduce((s, l) => s + (l.xpAwarded || 0) + (l.bonusXP || 0), 0);
 }
 
 function generateInviteCode(): string {
@@ -93,19 +127,60 @@ export async function syncProfile(inviteCode: string): Promise<void> {
   const topBadgeIds = earnedBadges.slice(-3).map(b => b.badgeId).reverse();
   const equippedTitle = useTitleStore.getState().equippedTitleId || '';
 
+  const today = todayString();
+  const weekStart = getWeekStart(today);
+  const monthStart = `${today.slice(0, 7)}-01`;
+
+  const currentStreak = computeOverallStreak(logs);
+  const leaderboardScore = computeLeaderboardScore(adjustedXP, currentStreak);
+  const xpToday = computePeriodXP(logs, today);
+  const xpThisWeek = computePeriodXP(logs, weekStart);
+  const xpThisMonth = computePeriodXP(logs, monthStart);
+
   const update = {
     displayName,
     inviteCode,
     level,
     xp: adjustedXP,
     bestStreak,
+    currentStreak,
+    leaderboardScore,
+    xpToday,
+    xpThisWeek,
+    xpThisMonth,
     equippedTitle,
     topBadgeIds,
     updatedAt: serverTimestamp(),
   };
 
+  const goals = useGoalStore.getState().goals;
+  const publicGoalWrites = goals
+    .filter(g => g.isPublic)
+    .map(g => {
+      const goalLogs = logs.filter(l => l.goalId === g.id);
+      const logDates = [...new Set(goalLogs.map(l => l.logDate))].sort().reverse();
+      let streak = 0;
+      if (logDates.length > 0 && (logDates[0] === today || logDates[0] === addDays(today, -1))) {
+        streak = 1;
+        for (let i = 1; i < logDates.length; i++) {
+          const gap = daysBetween(logDates[i], logDates[i - 1]);
+          if (gap === 1) { streak++; } else { break; }
+        }
+      }
+      return setDoc(doc(db, 'users', user.uid, 'publicGoals', g.id), {
+        name: g.name,
+        type: g.type,
+        color: g.color,
+        icon: g.icon,
+        currentStreak: streak,
+        totalLogs: goalLogs.length,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
   await Promise.all([
     setDoc(doc(db, 'users', user.uid), update, { merge: true }),
     setDoc(doc(db, 'leaderboard', user.uid), { ...update, uid: user.uid }, { merge: true }),
+    ...publicGoalWrites,
   ]);
 }

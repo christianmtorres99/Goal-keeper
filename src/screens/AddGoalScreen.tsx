@@ -133,18 +133,20 @@ export default function AddGoalScreen() {
     setSaving(true);
 
     let notificationId = existing?.notificationId;
+    let notifGranted = false;
 
     if (reminderEnabled) {
-      const granted = await requestNotificationPermissions();
-      if (granted) {
-        if (notificationId) await cancelGoalReminder(notificationId).catch(() => {});
-        try {
-          notificationId = await scheduleGoalReminder('temp', reminderTime24, name.trim());
-        } catch {}
-      } else {
+      notifGranted = await requestNotificationPermissions();
+      if (!notifGranted) {
         Alert.alert('Notifications Disabled', 'Please enable notification permissions in your device settings to use reminders.');
         notificationId = undefined;
+      } else if (editingId) {
+        // For edits, reschedule immediately with the real goal ID (identifier replaces the old one)
+        try {
+          notificationId = await scheduleGoalReminder(editingId, reminderTime24, name.trim());
+        } catch {}
       }
+      // For new goals, schedule after addGoal() returns the real ID (handled below)
     } else if (notificationId) {
       await cancelGoalReminder(notificationId).catch(() => {});
       notificationId = undefined;
@@ -172,11 +174,10 @@ export default function AddGoalScreen() {
         await updateGoal(editingId, data);
       } else {
         const newGoal = await addGoal(data);
-        if (notificationId && reminderEnabled) {
+        if (reminderEnabled && notifGranted) {
           try {
-            await cancelGoalReminder(notificationId).catch(() => {});
             const realId = await scheduleGoalReminder(newGoal.id, reminderTime24, name.trim());
-            await updateGoal(newGoal.id, { notificationId: realId });
+            await updateGoal(newGoal.id, { notificationId: realId, notificationTime: reminderTime24 });
           } catch {}
         }
       }

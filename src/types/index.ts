@@ -22,6 +22,7 @@ export interface Goal {
   allowMultiplePerDay?: boolean;
   difficulty: GoalDifficulty;
   customCategoryLabel?: string;
+  isPublic: boolean;
 }
 
 export interface Log {
