@@ -62,10 +62,8 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       set({ myInviteCode: inviteCode });
       await AsyncStorage.setItem(INVITE_CODE_CACHE, inviteCode);
 
-      const [friends, pendingRequests] = await Promise.all([
-        FriendsService.getFriends(),
-        FriendsService.getPendingRequests(),
-      ]);
+      const friends = await FriendsService.getFriends();
+      const pendingRequests = await FriendsService.getPendingRequests().catch(() => [] as FriendRequest[]);
       set({ friends, pendingRequests, loading: false });
 
       syncProfile(inviteCode).catch(() => {});
@@ -148,7 +146,7 @@ export const useFriendsStore = create<FriendsStore>((set, get) => ({
       await get().load();
       myInviteCode = get().myInviteCode;
     }
-    if (!myInviteCode) return;
+    if (!myInviteCode) throw new Error('Could not connect');
     await syncProfile(myInviteCode);
   },
 

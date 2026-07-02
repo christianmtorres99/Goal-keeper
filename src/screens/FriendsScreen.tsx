@@ -119,6 +119,8 @@ export default function FriendsScreen() {
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
 
   const {
     myUid, myInviteCode, friends, pendingRequests, leaderboard,
@@ -155,6 +157,21 @@ export default function FriendsScreen() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [myInviteCode]);
+
+  const handleSync = useCallback(async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncSuccess(false);
+    try {
+      await syncMyProfile();
+      setSyncSuccess(true);
+      setTimeout(() => setSyncSuccess(false), 2000);
+    } catch {
+      Alert.alert('Sync Failed', 'Could not sync your profile. Check your connection and try again.');
+    } finally {
+      setSyncing(false);
+    }
+  }, [syncing, syncMyProfile]);
 
   const handleShare = useCallback(async () => {
     if (!myInviteCode) return;
@@ -272,10 +289,16 @@ export default function FriendsScreen() {
           <AnimatedPressable
             scale={0.95}
             style={[styles.heroBtn, { backgroundColor: hexAlpha(Colors.accentBright, 0.14), borderColor: hexAlpha(Colors.accentBright, 0.35) }]}
-            onPress={syncMyProfile}
+            onPress={handleSync}
+            disabled={syncing}
           >
-            <Ionicons name="cloud-upload-outline" size={15} color={Colors.accentBright} />
-            <Text style={[styles.heroBtnText, { color: Colors.accentBright }]}>Sync</Text>
+            {syncing
+              ? <ActivityIndicator size={13} color={Colors.accentBright} />
+              : <Ionicons name={syncSuccess ? 'checkmark' : 'cloud-upload-outline'} size={15} color={syncSuccess ? Colors.success : Colors.accentBright} />
+            }
+            <Text style={[styles.heroBtnText, { color: syncSuccess ? Colors.success : Colors.accentBright }]}>
+              {syncSuccess ? 'Synced!' : 'Sync'}
+            </Text>
           </AnimatedPressable>
         </View>
         {error ? (
